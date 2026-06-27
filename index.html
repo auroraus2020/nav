@@ -457,7 +457,7 @@
 
     /* === Responsive === */
     @media (min-width: 1024px) { .sidebar { display: block; } .card-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
-    @media (max-width: 1023px) { .hero h1 { font-size: 1.6rem; } .hero { min-height: 220px; padding: 2rem 1rem; } .page-wrapper { flex-direction: column; padding: 0 0.75rem 2rem; } .desktop-only { display: none !important; } .category-header h2 { font-size: 1.05rem; } .category-header img { width: 28px; height: 28px; } .settings-btn { top: 0.5rem; left: 0.5rem; width: 32px; height: 32px; font-size: 0.95rem; } }
+    @media (max-width: 1023px) { .hero h1 { font-size: 1.6rem; } .hero { min-height: 220px; padding: 2rem 1rem; } .page-wrapper { flex-direction: column; padding: 0 0.75rem 2rem; } .desktop-only { display: none; } .category-header h2 { font-size: 1.05rem; } .category-header img { width: 28px; height: 28px; } .settings-btn { top: 0.5rem; left: 0.5rem; width: 32px; height: 32px; font-size: 0.95rem; } }
     @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.4rem; } .search-box input { font-size: 0.85rem; padding: 0.5rem 0.7rem; } .search-box button { font-size: 0.8rem; padding: 0.5rem 1rem; } .settings-btn { width: 30px; height: 30px; font-size: 0.85rem; } }
   </style>
 </head>
@@ -1903,23 +1903,36 @@
 
     initWallpaper();
 
+    var desktopOnlyEngines = ['google','sogouweixin','sogouzhihu','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub'];
+
+    function hiddenEnginesSetter(val, hidden) {
+      hiddenEngines[val] = hidden;
+      try { localStorage.setItem('nav_hidden_engines', JSON.stringify(hiddenEngines)); } catch(e) {}
+      applySettings();
+    }
+
     function applySettings() {
       document.querySelectorAll('.search-engines .engine-option').forEach(function(el) {
         var radio = el.querySelector('input[type="radio"]');
-        if (!radio) return;
-        var val = radio.value;
-        if (val === 'custom') {
-          el.closest('.search-engines') && (el.style.display = hiddenEngines['custom'] ? 'none' : '');
+        var val;
+        if (radio) {
+          val = radio.value;
+        } else if (el.classList.contains('engine-custom-btn')) {
+          val = 'custom';
         } else {
-          el.style.display = hiddenEngines[val] ? 'none' : '';
+          return;
+        }
+        if (hiddenEngines[val] === true) {
+          el.style.display = 'none';
+          if (desktopOnlyEngines.indexOf(val) >= 0) el.classList.add('desktop-only');
+        } else if (hiddenEngines[val] === false) {
+          el.classList.remove('desktop-only');
+          el.style.display = '';
+        } else {
+          if (desktopOnlyEngines.indexOf(val) >= 0) { el.classList.add('desktop-only'); el.style.display = ''; }
+          else { el.style.display = ''; }
         }
       });
-      setTimeout(function() {
-        document.querySelectorAll('.search-engines .engine-option').forEach(function(el) {
-          if (el.style.display === 'none') return;
-          el.style.display = '';
-        });
-      }, 0);
       var freqSec = document.getElementById('frequentSection');
       if (freqSec) {
         if (freqVisible) { freqSec.classList.add('visible'); }
