@@ -65,6 +65,64 @@
     }
     .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* === Settings Panel === */
+    .settings-btn {
+      position: absolute; top: 1rem; left: 1.5rem; z-index: 10;
+      width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--rule);
+      background: var(--bg2); color: var(--muted); font-size: 1.1rem;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .settings-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.4); align-items: flex-start; justify-content: center;
+      padding-top: 3rem; overflow-y: auto; animation: fadeIn 0.2s ease;
+    }
+    .settings-overlay.visible { display: flex; }
+    .settings-panel {
+      background: var(--bg2); border: 1px solid var(--rule); border-radius: 16px;
+      width: 90%; max-width: 520px; padding: 1.5rem;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15); animation: modalIn 0.25s ease;
+      margin-bottom: 2rem;
+    }
+    .settings-panel h3 { font-size: 1.05rem; color: var(--ink); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem; }
+    .settings-section { margin-bottom: 1.1rem; }
+    .settings-section h4 { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--rule); }
+    .settings-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem; }
+    .settings-chip {
+      display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.55rem;
+      border-radius: 14px; font-size: 0.72rem; background: var(--bg3); border: 1px solid var(--rule);
+      color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .settings-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .settings-chip.on { background: rgba(59,130,246,0.1); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .settings-toggle {
+      display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--ink); cursor: pointer; user-select: none;
+    }
+    .settings-toggle .sw {
+      width: 38px; height: 22px; border-radius: 11px; background: var(--rule);
+      position: relative; transition: background 0.2s; flex-shrink: 0;
+    }
+    .settings-toggle .sw::after {
+      content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+      border-radius: 50%; background: #fff; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .settings-toggle.on .sw { background: var(--accent); }
+    .settings-toggle.on .sw::after { left: 19px; }
+    .settings-num {
+      width: 48px; padding: 0.25rem 0.35rem; border: 1px solid var(--rule); border-radius: 8px;
+      background: var(--bg); color: var(--ink); font-size: 0.8rem; text-align: center;
+      font-family: var(--font); outline: none; margin-left: 0.3rem;
+    }
+    .settings-num:focus { border-color: var(--accent); }
+    .settings-close {
+      display: block; margin: 1rem auto 0; padding: 0.45rem 1.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; color: #fff; border-radius: 12px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+    }
+    .settings-close:hover { opacity: 0.88; }
+
     /* === Hero === */
     .hero {
       position: relative; width: 100%; min-height: 280px;
@@ -81,23 +139,23 @@
       background: var(--hero-overlay);
       z-index: 1;
     }
-    .hero-content { position: relative; z-index: 2; max-width: 600px; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 680px; width: 100%; }
     .hero h1 {
       font-size: 2.2rem; font-weight: 700; margin-bottom: 1.2rem;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .search-box {
-      display: flex; max-width: 600px; margin: 0 auto; position: relative;
+      display: flex; max-width: 680px; margin: 0 auto; position: relative;
       background: var(--bg2); border: 1px solid var(--rule); border-radius: 50px; padding: 0.35rem;
       box-shadow: var(--search-shadow); transition: border-color 0.3s, box-shadow 0.3s, max-width 0.35s;
     }
     .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
-    .search-box.expanded { max-width: 760px; }
+    .search-box.expanded { max-width: 840px; }
     .search-box.tall { padding-top: 0.6rem; padding-bottom: 0.6rem; }
     .search-box.tall input { white-space: normal; }
     .search-box.multiline {
-      max-width: 760px; border-radius: 20px; flex-wrap: wrap;
+      max-width: 840px; border-radius: 20px; flex-wrap: wrap;
     }
     .search-box.multiline input {
       flex-basis: 100%; min-height: 3.6rem; white-space: normal; overflow-y: auto;
@@ -399,8 +457,8 @@
 
     /* === Responsive === */
     @media (min-width: 1024px) { .sidebar { display: block; } .card-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
-    @media (max-width: 1023px) { .hero h1 { font-size: 1.6rem; } .hero { min-height: 220px; padding: 2rem 1rem; } .page-wrapper { flex-direction: column; padding: 0 0.75rem 2rem; } .desktop-only { display: none !important; } .category-header h2 { font-size: 1.05rem; } .category-header img { width: 28px; height: 28px; } }
-    @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.4rem; } .search-box input { font-size: 0.85rem; padding: 0.5rem 0.7rem; } .search-box button { font-size: 0.8rem; padding: 0.5rem 1rem; } }
+    @media (max-width: 1023px) { .hero h1 { font-size: 1.6rem; } .hero { min-height: 220px; padding: 2rem 1rem; } .page-wrapper { flex-direction: column; padding: 0 0.75rem 2rem; } .desktop-only { display: none !important; } .category-header h2 { font-size: 1.05rem; } .category-header img { width: 28px; height: 28px; } .settings-btn { top: 0.5rem; left: 0.5rem; width: 32px; height: 32px; font-size: 0.95rem; } }
+    @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.4rem; } .search-box input { font-size: 0.85rem; padding: 0.5rem 0.7rem; } .search-box button { font-size: 0.8rem; padding: 0.5rem 1rem; } .settings-btn { width: 30px; height: 30px; font-size: 0.85rem; } }
   </style>
 </head>
 <body>
@@ -414,6 +472,7 @@
 
   <!-- Hero -->
   <section class="hero">
+    <button class="settings-btn" onclick="openSettings()" title="设置" aria-label="设置">⚙️</button>
     <button class="theme-toggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
     <div class="hero-bg"></div>
     <div class="hero-overlay"></div>
@@ -437,6 +496,15 @@
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="googlescholar">🔵谷歌学术</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="buaaebsco">🟠北航外文</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="baiduxueshu">🔴百度学术</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="douyin">🎵抖音</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="xiaohongshu">📕小红书</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="bilibili">📺哔哩哔哩</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="zhihu">🔷知乎</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="weibo">🔶微博</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="github">🐙GitHub</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="baidumap">🗺️百度地图</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="wikihow">📘WikiHow</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="scihub">📄Sci-Hub</label>
         <label class="engine-option engine-custom-btn" id="engineCustomBtn" onclick="openEngineModal(event)" title="自定义搜索引擎">⚙️自定义</label>
         <input type="radio" name="engine" value="custom" id="engineRadioCustom" style="display:none">
       </div>
@@ -600,9 +668,9 @@
             <div class="icon icon-red">A</div>
             <div class="info"><h3>arXiv</h3><p>预印本论文库，物理数学计算机</p><span class="url">arxiv.org</span></div>
           </a>
-          <a class="nav-card" href="https://sci-hub.st" target="_blank" rel="noopener">
+          <a class="nav-card" href="https://sci-hub.sh" target="_blank" rel="noopener">
             <div class="icon icon-green">S</div>
-            <div class="info"><h3>Sci-Hub</h3><p>免费获取学术论文全文</p><span class="url">sci-hub.st</span></div>
+            <div class="info"><h3>Sci-Hub</h3><p>免费获取学术论文全文</p><span class="url">sci-hub.sh</span></div>
           </a>
           <a class="nav-card" href="https://www.semanticscholar.org" target="_blank" rel="noopener">
             <div class="icon icon-blue">S</div>
@@ -1239,6 +1307,58 @@
     </div>
   </div>
 
+  <div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-panel">
+      <h3>⚙️ 设置</h3>
+
+      <div class="settings-section">
+        <h4>🖼️ 壁纸来源</h4>
+        <div class="settings-row">
+          <span class="settings-chip on" onclick="setWallpaper('bing',this)" id="setWpBing">在线风景壁纸</span>
+          <span class="settings-chip" onclick="setWallpaper('default',this)" id="setWpDefault">默认壁纸</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>🌓 主题模式</h4>
+        <div class="settings-row">
+          <span class="settings-chip on" onclick="setTheme('light',this)" id="setThemeLight">浅色模式</span>
+          <span class="settings-chip" onclick="setTheme('dark',this)" id="setThemeDark">深色模式</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>📐 导航折叠</h4>
+        <div class="settings-row">
+          <span class="settings-chip" onclick="setNavFold('show',this)" id="setNavShow">展开导航</span>
+          <span class="settings-chip" onclick="setNavFold('hide',this)" id="setNavHide">折叠导航</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>🔍 搜索引擎显示</h4>
+        <div class="settings-row" id="settingsEngineRow"></div>
+      </div>
+
+      <div class="settings-section">
+        <h4>⭐ 常用站点</h4>
+        <div class="settings-toggle" id="setFreqToggle" onclick="toggleFreqVisible()">
+          <div class="sw"></div> 显示常用站点
+        </div>
+        <div style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted);">
+          显示数量：<input type="number" class="settings-num" id="setFreqCount" value="6" min="1" max="12" onchange="saveFreqCount()">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>📂 分类显示</h4>
+        <div class="settings-row" id="settingsCatRow"></div>
+      </div>
+
+      <button class="settings-close" onclick="closeSettings()">关闭</button>
+    </div>
+  </div>
+
   <script>
     var engineUrls = {
       bing: 'https://cn.bing.com/search?q=',
@@ -1253,6 +1373,15 @@
       googlescholar: 'https://scholar.google.com/scholar?hl=zh-CN&q=',
       buaaebsco: 'https://research.ebsco.com/c/hmesay/search/results?q=',
       baiduxueshu: 'https://xueshu.baidu.com/s?wd=',
+      douyin: 'https://www.douyin.com/search/',
+      xiaohongshu: 'https://www.xiaohongshu.com/search_result?keyword=',
+      bilibili: 'https://search.bilibili.com/all?keyword=',
+      zhihu: 'https://www.zhihu.com/search?type=content&q=',
+      weibo: 'https://s.weibo.com/weibo?q=',
+      github: 'https://github.com/search?q=',
+      baidumap: 'https://map.baidu.com/search/@0,0,12z?querytype=s&wd=',
+      wikihow: 'https://zh.wikihow.com/Special:GoogSearch?q=',
+      scihub: 'https://sci-hub.sh/search?q=',
       custom: 'https://cn.bing.com/search?q='
     };
     var enginePlaceholders = {
@@ -1268,6 +1397,15 @@
       googlescholar: '输入关键词，谷歌学术搜索...',
       buaaebsco: '输入关键词，北航外文检索...',
       baiduxueshu: '输入关键词，百度学术搜索...',
+      douyin: '输入关键词，抖音搜索...',
+      xiaohongshu: '输入关键词，小红书搜索...',
+      bilibili: '输入关键词，B站搜索...',
+      zhihu: '输入关键词，知乎搜索...',
+      weibo: '输入关键词，微博搜索...',
+      github: '输入关键词，GitHub搜索...',
+      baidumap: '输入关键词，百度地图搜索...',
+      wikihow: '输入关键词，WikiHow搜索...',
+      scihub: '输入关键词，Sci-Hub搜索...',
       custom: '输入关键词，自定义搜索...'
     };
 
@@ -1468,6 +1606,21 @@
         return catOrder.indexOf(id) === -1;
       });
       remaining.forEach(function(id) { main.appendChild(map[id]); });
+      document.querySelectorAll('.category-section').forEach(function(sec) {
+        sec.style.display = hiddenCategories[sec.id] ? 'none' : '';
+      });
+      document.querySelectorAll('.sidebar a').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
+      document.querySelectorAll('.mobile-tab').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
     }
 
     function bumpCategory(id) {
@@ -1479,6 +1632,26 @@
     }
 
     loadCatOrder();
+
+    var freqVisible = true;
+    var freqCount = 6;
+    var hiddenEngines = {};
+    var hiddenCategories = {};
+
+    function loadSettings() {
+      try { freqVisible = localStorage.getItem('nav_freq_visible') !== '0'; } catch(e) {}
+      try { var c = parseInt(localStorage.getItem('nav_freq_count')); if (c >= 1 && c <= 12) freqCount = c; } catch(e) {}
+      try {
+        var rawEngines = JSON.parse(localStorage.getItem('nav_hidden_engines') || '{}');
+        hiddenEngines = {};
+        for (var k in rawEngines) { if (rawEngines.hasOwnProperty(k)) hiddenEngines[k] = rawEngines[k]; }
+        var newEngines = ['douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub'];
+        newEngines.forEach(function(k) { if (!(k in rawEngines)) hiddenEngines[k] = true; });
+      } catch(e) { hiddenEngines = {}; }
+      try { hiddenCategories = JSON.parse(localStorage.getItem('nav_hidden_cats') || '{}'); } catch(e) { hiddenCategories = {}; }
+    }
+
+    loadSettings();
 
     (function() {
       try { allHidden = localStorage.getItem('nav_all_hidden') === '1'; } catch(e) {}
@@ -1521,7 +1694,7 @@
         var section = card.closest('.category-section');
         if (text.includes(query)) {
           card.style.display = 'flex';
-          section.style.display = 'block';
+          if (!hiddenCategories[section.id]) section.style.display = 'block';
           if (!firstMatch) firstMatch = card;
           anyMatch = true;
         } else {
@@ -1596,7 +1769,9 @@
       var clearBtn = document.getElementById('searchClearBtn');
       if (!this.value.trim()) {
         document.querySelectorAll('.nav-card').forEach(function(c) { c.style.display = ''; });
-        document.querySelectorAll('.category-section').forEach(function(s) { s.style.display = ''; });
+        document.querySelectorAll('.category-section').forEach(function(s) {
+          s.style.display = hiddenCategories[s.id] ? 'none' : '';
+        });
         if (allHidden) document.body.classList.add('all-hidden');
         sb.classList.remove('expanded', 'tall', 'multiline');
         clearBtn.style.display = 'none';
@@ -1643,8 +1818,265 @@
       var isDark = document.body.classList.toggle('dark');
       var btn = document.querySelector('.theme-toggle');
       if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+      updateHeroBg();
       try { localStorage.setItem('nav_theme', isDark ? 'dark' : 'light'); } catch(e) {}
     }
+
+    var useBingWallpaper = true;
+    var bingWallpaperUrl = '';
+
+    var landscapePool = [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&q=80',
+      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1920&q=80',
+      'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80',
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80',
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80',
+      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1920&q=80',
+      'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80',
+      'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1920&q=80',
+      'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=1920&q=80',
+      'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80',
+      'https://images.unsplash.com/photo-1505144808419-1957a94ca61e?w=1920&q=80',
+      'https://images.unsplash.com/photo-1518173946687-a1e4e3e6a4b9?w=1920&q=80'
+    ];
+
+    function pickLandscape() {
+      var today = new Date().toDateString();
+      try {
+        var lastDate = localStorage.getItem('nav_landscape_date');
+        var lastIdx = parseInt(localStorage.getItem('nav_landscape_idx'));
+        if (lastDate === today && lastIdx >= 0 && lastIdx < landscapePool.length) {
+          return landscapePool[lastIdx];
+        }
+      } catch(e) {}
+      var idx = Math.floor(Math.random() * landscapePool.length);
+      try {
+        localStorage.setItem('nav_landscape_date', today);
+        localStorage.setItem('nav_landscape_idx', String(idx));
+      } catch(e) {}
+      return landscapePool[idx];
+    }
+
+    function fetchBingWallpaper() {
+      var url = pickLandscape();
+      if (url !== bingWallpaperUrl) {
+        bingWallpaperUrl = url;
+        try { localStorage.setItem('nav_bing_wp_url', url); } catch(e) {}
+        if (useBingWallpaper) applyHeroBg();
+      }
+    }
+
+    function updateHeroBg() {
+      var bg = document.querySelector('.hero-bg');
+      if (!bg) return;
+      if (useBingWallpaper && bingWallpaperUrl) {
+        bg.style.backgroundImage = 'url(' + bingWallpaperUrl + ')';
+        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.6';
+      } else if (useBingWallpaper) {
+        bg.style.backgroundImage = 'none';
+        bg.style.opacity = '0';
+      } else {
+        bg.style.backgroundImage = '';
+        bg.style.opacity = '';
+      }
+    }
+
+    function applyHeroBg() {
+      updateHeroBg();
+    }
+
+    function initWallpaper() {
+      try {
+        var saved = localStorage.getItem('nav_wallpaper');
+        if (saved === 'default') { useBingWallpaper = false; }
+        else { useBingWallpaper = true; }
+      } catch(e) {}
+      try {
+        var cached = localStorage.getItem('nav_bing_wp_url');
+        if (cached) { bingWallpaperUrl = cached; }
+      } catch(e) {}
+      if (useBingWallpaper) {
+        applyHeroBg();
+        fetchBingWallpaper();
+      }
+    }
+
+    initWallpaper();
+
+    function applySettings() {
+      document.querySelectorAll('.search-engines .engine-option').forEach(function(el) {
+        var radio = el.querySelector('input[type="radio"]');
+        if (!radio) return;
+        var val = radio.value;
+        if (val === 'custom') {
+          el.closest('.search-engines') && (el.style.display = hiddenEngines['custom'] ? 'none' : '');
+        } else {
+          el.style.display = hiddenEngines[val] ? 'none' : '';
+        }
+      });
+      setTimeout(function() {
+        document.querySelectorAll('.search-engines .engine-option').forEach(function(el) {
+          if (el.style.display === 'none') return;
+          el.style.display = '';
+        });
+      }, 0);
+      var freqSec = document.getElementById('frequentSection');
+      if (freqSec) {
+        if (freqVisible) { freqSec.classList.add('visible'); }
+        else { freqSec.classList.remove('visible'); }
+      }
+      document.querySelectorAll('.category-section').forEach(function(sec) {
+        sec.style.display = hiddenCategories[sec.id] ? 'none' : '';
+      });
+      document.querySelectorAll('.sidebar a').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
+      document.querySelectorAll('.mobile-tab').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
+    }
+
+    function openSettings() {
+      document.getElementById('settingsOverlay').classList.add('visible');
+      refreshSettingsUi();
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsOverlay').classList.remove('visible');
+    }
+
+    function refreshSettingsUi() {
+      document.getElementById('setWpBing').classList.toggle('on', useBingWallpaper);
+      document.getElementById('setWpDefault').classList.toggle('on', !useBingWallpaper);
+      var isDark = document.body.classList.contains('dark');
+      document.getElementById('setThemeLight').classList.toggle('on', !isDark);
+      document.getElementById('setThemeDark').classList.toggle('on', isDark);
+      document.getElementById('setNavShow').classList.toggle('on', !allHidden);
+      document.getElementById('setNavHide').classList.toggle('on', allHidden);
+      var toggle = document.getElementById('setFreqToggle');
+      toggle.classList.toggle('on', freqVisible);
+      document.getElementById('setFreqCount').value = freqCount;
+      renderSettingsEngines();
+      renderSettingsCategories();
+    }
+
+    function renderSettingsEngines() {
+      var row = document.getElementById('settingsEngineRow');
+      var engines = [
+        {val:'bing',label:'🔵 必应'},{val:'baidu',label:'🔴 百度'},{val:'google',label:'🟢 谷歌'},
+        {val:'sogou',label:'🟠 搜狗'},{val:'sogouweixin',label:'🟢 搜狗微信'},{val:'sogouzhihu',label:'🔵 搜狗知乎'},
+        {val:'yandex',label:'🔴 Yandex'},{val:'gscholar2',label:'🟣 谷歌学术②'},{val:'xmol',label:'🟢 XMOL'},
+        {val:'googlescholar',label:'🔵 谷歌学术'},{val:'buaaebsco',label:'🟠 北航外文'},{val:'baiduxueshu',label:'🔴 百度学术'},
+        {val:'douyin',label:'🎵 抖音'},{val:'xiaohongshu',label:'📕 小红书'},{val:'bilibili',label:'📺 B站'},
+        {val:'zhihu',label:'🔷 知乎'},{val:'weibo',label:'🔶 微博'},{val:'github',label:'🐙 GitHub'},
+        {val:'baidumap',label:'🗺️ 百度地图'},{val:'wikihow',label:'📘 WikiHow'},{val:'scihub',label:'📄 Sci-Hub'},
+        {val:'custom',label:'⚙️ 自定义'}
+      ];
+      row.innerHTML = engines.map(function(e) {
+        var on = !hiddenEngines[e.val];
+        return '<span class="settings-chip' + (on ? ' on' : '') + '" onclick="toggleEngine(\'' + e.val + '\',this)">' + e.label + '</span>';
+      }).join('');
+    }
+
+    function renderSettingsCategories() {
+      var row = document.getElementById('settingsCatRow');
+      var cats = [
+        {id:'cat-general',label:'综合导航'},{id:'cat-academic',label:'学术检索'},{id:'cat-ai',label:'AI大模型'},
+        {id:'cat-buaa',label:'北航网站'},{id:'cat-translate',label:'翻译工具'},{id:'cat-tech',label:'技术与交流'},
+        {id:'cat-learn',label:'学习提升'},{id:'cat-efficiency',label:'效率提升'},{id:'cat-tool',label:'效率工具'},
+        {id:'cat-map',label:'地图天气'},{id:'cat-entertainment',label:'影音娱乐'},{id:'cat-tutorial',label:'学习教程'},
+        {id:'cat-aero',label:'航空与科普'},{id:'cat-mirror',label:'镜像网站'},{id:'cat-cloud',label:'云服务器'}
+      ];
+      row.innerHTML = cats.map(function(c) {
+        var on = !hiddenCategories[c.id];
+        return '<span class="settings-chip' + (on ? ' on' : '') + '" onclick="toggleCategoryVis(\'' + c.id + '\',this)">' + c.label + '</span>';
+      }).join('');
+    }
+
+    function toggleEngine(val, el) {
+      if (hiddenEngines[val]) { hiddenEngines[val] = false; el.classList.add('on'); }
+      else { hiddenEngines[val] = true; el.classList.remove('on'); }
+      try { localStorage.setItem('nav_hidden_engines', JSON.stringify(hiddenEngines)); } catch(e) {}
+      applySettings();
+    }
+
+    function toggleCategoryVis(id, el) {
+      if (hiddenCategories[id]) { delete hiddenCategories[id]; el.classList.add('on'); }
+      else { hiddenCategories[id] = true; el.classList.remove('on'); }
+      try { localStorage.setItem('nav_hidden_cats', JSON.stringify(hiddenCategories)); } catch(e) {}
+      applySettings();
+    }
+
+    function setWallpaper(type, el) {
+      useBingWallpaper = (type === 'bing');
+      document.getElementById('setWpBing').classList.toggle('on', useBingWallpaper);
+      document.getElementById('setWpDefault').classList.toggle('on', !useBingWallpaper);
+      applyHeroBg();
+      if (useBingWallpaper && !bingWallpaperUrl) { fetchBingWallpaper(); }
+      try { localStorage.setItem('nav_wallpaper', useBingWallpaper ? 'bing' : 'default'); } catch(e) {}
+    }
+
+    function setTheme(mode, el) {
+      var isDark = (mode === 'dark');
+      document.body.classList.toggle('dark', isDark);
+      var btn = document.querySelector('.theme-toggle');
+      if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('setThemeLight').classList.toggle('on', !isDark);
+      document.getElementById('setThemeDark').classList.toggle('on', isDark);
+      updateHeroBg();
+      try { localStorage.setItem('nav_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+    }
+
+    function setNavFold(state, el) {
+      allHidden = (state === 'hide');
+      if (allHidden) { document.body.classList.add('all-hidden'); }
+      else { document.body.classList.remove('all-hidden'); }
+      document.getElementById('setNavShow').classList.toggle('on', !allHidden);
+      document.getElementById('setNavHide').classList.toggle('on', allHidden);
+      updateToggleUi();
+      try { localStorage.setItem('nav_all_hidden', allHidden ? '1' : '0'); } catch(e) {}
+    }
+
+    function toggleFreqVisible() {
+      freqVisible = !freqVisible;
+      document.getElementById('setFreqToggle').classList.toggle('on', freqVisible);
+      var fs = document.getElementById('frequentSection');
+      if (fs) { if (freqVisible) { fs.classList.add('visible'); } else { fs.classList.remove('visible'); } }
+      try { localStorage.setItem('nav_freq_visible', freqVisible ? '1' : '0'); } catch(e) {}
+    }
+
+    function saveFreqCount() {
+      var val = parseInt(document.getElementById('setFreqCount').value);
+      if (val >= 1 && val <= 12) { freqCount = val; }
+      else { document.getElementById('setFreqCount').value = freqCount; }
+      try { localStorage.setItem('nav_freq_count', String(freqCount)); } catch(e) {}
+    }
+
+    applySettings();
+
+    setTimeout(function() {
+      document.querySelectorAll('.category-section').forEach(function(sec) {
+        sec.style.display = hiddenCategories[sec.id] ? 'none' : '';
+      });
+      document.querySelectorAll('.sidebar a').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
+      document.querySelectorAll('.mobile-tab').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var id = href.replace('#', '');
+        a.style.display = hiddenCategories[id] ? 'none' : '';
+      });
+    }, 50);
 
     (function() {
       var saved = null;
@@ -1654,6 +2086,7 @@
         var btn = document.querySelector('.theme-toggle');
         if (btn) btn.textContent = '☀️';
       }
+      if (useBingWallpaper) updateHeroBg();
     })();
 
     function toggleSidebar() {
@@ -1710,10 +2143,10 @@
           var current = JSON.parse(localStorage.getItem('nav_clicks') || '{}');
           var hrefs = current._hrefs || {};
           delete current._hrefs;
-          var maxFreq = window.innerWidth <= 640 ? 3 : 6;
+          var maxFreq = freqCount;
           var sorted = Object.keys(current).sort(function(a,b){ return current[b] - current[a]; }).slice(0, maxFreq);
           if (sorted.length === 0) return;
-          section.classList.add('visible');
+          if (freqVisible) section.classList.add('visible');
           grid.innerHTML = sorted.map(function(name) {
             return '<a class="frequent-chip" href="' + (hrefs[name] || '#') + '" target="_blank" rel="noopener">' + name + '</a>';
           }).join('');
@@ -1721,7 +2154,7 @@
       } catch(e) {}
     })();
 
-    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','custom'];
+    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','custom'];
 
     document.addEventListener('keydown', function(e) {
       if (e.key === ' ' && e.ctrlKey) {
