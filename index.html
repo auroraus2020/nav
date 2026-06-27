@@ -1838,20 +1838,51 @@
     var useBingWallpaper = true;
     var bingWallpaperUrl = '';
 
-    var landscapePool = [
-      'assets/wp_01.jpg',
-      'assets/wp_02.jpg',
-      'assets/wp_03.jpg',
-      'assets/wp_04.jpg',
-      'assets/wp_05.jpg',
-      'assets/wp_06.jpg',
-      'assets/wp_07.jpg',
-      'assets/wp_08.jpg',
-      'assets/wp_09.jpg',
-      'assets/wp_10.jpg',
-      'assets/wp_11.jpg',
-      'assets/wp_12.jpg'
-    ];
+    var landscapePool = ['assets/wp_01.jpg','assets/wp_02.jpg','assets/wp_03.jpg','assets/wp_04.jpg','assets/wp_05.jpg','assets/wp_06.jpg','assets/wp_07.jpg','assets/wp_08.jpg','assets/wp_09.jpg','assets/wp_10.jpg','assets/wp_11.jpg','assets/wp_12.jpg'];
+    var wpScanDone = false;
+
+    function scanWpAssets(callback) {
+      var lastScan = localStorage.getItem('nav_wp_last_scan') || '';
+      if (lastScan === new Date().toDateString() && wpScanDone) { callback(); return; }
+      var known = parseInt(localStorage.getItem('nav_wp_max') || '12');
+      if (lastScan === new Date().toDateString()) {
+        landscapePool = [];
+        for (var i = 1; i <= known; i++) {
+          var num = i < 10 ? '0' + i : '' + i;
+          landscapePool.push('assets/wp_' + num + '.jpg');
+        }
+        wpScanDone = true;
+        callback();
+        return;
+      }
+      var start = known + 1;
+      var foundNew = false;
+
+      function testNext(idx) {
+        if (idx > 999) {
+          try { localStorage.setItem('nav_wp_last_scan', new Date().toDateString()); } catch(e) {}
+          try { localStorage.setItem('nav_wp_max', String(landscapePool.length)); } catch(e) {}
+          wpScanDone = true;
+          callback();
+          return;
+        }
+        var num = idx < 10 ? '0' + idx : '' + idx;
+        var img = new Image();
+        img.onload = function() {
+          landscapePool.push('assets/wp_' + num + '.jpg');
+          foundNew = true;
+          testNext(idx + 1);
+        };
+        img.onerror = function() {
+          try { localStorage.setItem('nav_wp_last_scan', new Date().toDateString()); } catch(e) {}
+          try { localStorage.setItem('nav_wp_max', String(landscapePool.length)); } catch(e) {}
+          wpScanDone = true;
+          callback();
+        };
+        img.src = 'assets/wp_' + num + '.jpg';
+      }
+      testNext(start);
+    }
 
     function pickLandscape() {
       var today = new Date().toDateString();
@@ -1871,12 +1902,14 @@
     }
 
     function fetchBingWallpaper() {
-      var url = pickLandscape();
-      if (url !== bingWallpaperUrl) {
-        bingWallpaperUrl = url;
-        try { localStorage.setItem('nav_bing_wp_url', url); } catch(e) {}
-        if (useBingWallpaper) applyHeroBg();
-      }
+      scanWpAssets(function() {
+        var url = pickLandscape();
+        if (url !== bingWallpaperUrl) {
+          bingWallpaperUrl = url;
+          try { localStorage.setItem('nav_bing_wp_url', url); } catch(e) {}
+          if (useBingWallpaper) applyHeroBg();
+        }
+      });
     }
 
     function updateHeroBg() {
