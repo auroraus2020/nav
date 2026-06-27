@@ -141,6 +141,8 @@
       background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
       border-color: var(--accent); color: var(--accent); font-weight: 600;
     }
+    .engine-option.engine-custom-btn { cursor: pointer; }
+    .engine-option.engine-custom-btn.active { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .engine-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
 
     /* === Frequent Sites === */
@@ -212,7 +214,7 @@
     .mobile-tab img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; }
 
     /* === Category === */
-    .category-section { margin-bottom: 2.5rem; scroll-margin-top: 20px; }
+    .category-section { margin-bottom: 2.5rem; scroll-margin-top: 80px; }
     .category-header {
       display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.1rem;
       padding-bottom: 0.7rem; border-bottom: 2px solid var(--rule);
@@ -288,6 +290,50 @@
       transition: all 0.2s;
     }
     .modal-close-btn:hover { background: var(--rule); color: var(--ink); }
+
+    /* === Custom Engine Modal === */
+    .engine-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 210;
+      background: rgba(0,0,0,0.4); align-items: center; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .engine-modal-overlay.visible { display: flex; }
+    .engine-modal-box {
+      background: var(--bg2); border: 1px solid var(--rule); border-radius: 16px;
+      padding: 1.5rem; max-width: 440px; width: 92%; text-align: left;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15); animation: modalIn 0.25s ease;
+    }
+    .engine-modal-box h3 { font-size: 1.05rem; color: var(--ink); margin-bottom: 0.8rem; }
+    .engine-modal-box label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .engine-modal-box .eng-input {
+      width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--rule);
+      border-radius: 10px; background: var(--bg); color: var(--ink);
+      font-size: 0.85rem; font-family: var(--font); margin-bottom: 0.8rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .engine-modal-box .eng-input:focus { border-color: var(--accent); }
+    .engine-modal-box .eng-hint {
+      font-size: 0.73rem; color: var(--muted); margin-bottom: 0.9rem;
+      padding: 0.45rem 0.65rem; background: var(--bg3); border-radius: 8px;
+    }
+    .engine-modal-box .eng-hint code { color: var(--accent); font-weight: 600; }
+    .engine-modal-btns { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .eng-save-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; color: #fff; padding: 0.45rem 1.2rem; border-radius: 10px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+    }
+    .eng-save-btn:hover { opacity: 0.88; }
+    .eng-cancel-btn {
+      background: var(--bg3); border: none; color: var(--muted); padding: 0.45rem 1rem;
+      border-radius: 10px; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;
+    }
+    .eng-cancel-btn:hover { background: var(--rule); color: var(--ink); }
+    .eng-delete-btn {
+      background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 0.4rem 0.9rem;
+      border-radius: 10px; font-size: 0.8rem; cursor: pointer; margin-right: auto; transition: all 0.2s;
+    }
+    .eng-delete-btn:hover { background: rgba(239,68,68,0.08); }
 
     /* === Sticky Search === */
     .sticky-search {
@@ -391,6 +437,8 @@
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="googlescholar">🔵谷歌学术</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="buaaebsco">🟠北航外文</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="baiduxueshu">🔴百度学术</label>
+        <label class="engine-option engine-custom-btn" id="engineCustomBtn" onclick="openEngineModal(event)" title="自定义搜索引擎">⚙️自定义</label>
+        <input type="radio" name="engine" value="custom" id="engineRadioCustom" style="display:none">
       </div>
       <button class="hero-toggle-btn" onclick="toggleAllContent()" id="heroToggleBtn" title="收起/展开全部导航内容">
         <span class="toggle-icon">▲</span> 收起导航
@@ -1165,6 +1213,22 @@
 
   <button class="feedback-link" onclick="openFeedbackModal()" title="意见反馈" aria-label="反馈">💬</button>
 
+  <div class="engine-modal-overlay" id="engineModal" onclick="if(event.target===this)closeEngineModal()">
+    <div class="engine-modal-box">
+      <h3>⚙️ 自定义搜索引擎</h3>
+      <label>引擎名称</label>
+      <input type="text" class="eng-input" id="engNameInput" placeholder="例如：必应搜索">
+      <label>搜索URL（用 %s 代替检索词）</label>
+      <input type="text" class="eng-input" id="engUrlInput" placeholder="例如：https://cn.bing.com/search?q=%s">
+      <div class="eng-hint">检索词将被自动替换到 <code>%s</code> 的位置</div>
+      <div class="engine-modal-btns">
+        <button class="eng-delete-btn" id="engDeleteBtn" style="display:none" onclick="deleteCustomEngine()">删除</button>
+        <button class="eng-cancel-btn" onclick="closeEngineModal()">取消</button>
+        <button class="eng-save-btn" onclick="saveCustomEngine()">保存</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="feedbackModal" onclick="if(event.target===this)closeFeedbackModal()">
     <div class="modal-box">
       <h3>💬 意见与反馈</h3>
@@ -1188,7 +1252,8 @@
       xmol: 'https://www.x-mol.com/paper/search/q?option=',
       googlescholar: 'https://scholar.google.com/scholar?hl=zh-CN&q=',
       buaaebsco: 'https://research.ebsco.com/c/hmesay/search/results?q=',
-      baiduxueshu: 'https://xueshu.baidu.com/s?wd='
+      baiduxueshu: 'https://xueshu.baidu.com/s?wd=',
+      custom: 'https://cn.bing.com/search?q='
     };
     var enginePlaceholders = {
       bing: '输入关键词，必应搜索...',
@@ -1202,7 +1267,8 @@
       xmol: '输入关键词，XMOL学术搜索...',
       googlescholar: '输入关键词，谷歌学术搜索...',
       buaaebsco: '输入关键词，北航外文检索...',
-      baiduxueshu: '输入关键词，百度学术搜索...'
+      baiduxueshu: '输入关键词，百度学术搜索...',
+      custom: '输入关键词，自定义搜索...'
     };
 
     function getSelectedEngine() {
@@ -1214,10 +1280,107 @@
       var query = document.getElementById('searchInput').value.trim();
       if (!query) return;
       var engine = getSelectedEngine();
-      window.open(engineUrls[engine] + encodeURIComponent(query), '_blank');
+      var url = engineUrls[engine] + encodeURIComponent(query);
+      if (engine === 'custom') {
+        url = engineUrls['custom'].replace(/%s/g, encodeURIComponent(query));
+      }
+      window.open(url, '_blank');
     }
 
     var allHidden = false;
+
+    var customEngineName = '';
+    var customEngineUrl = '';
+
+    function loadCustomEngine() {
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_custom_engine') || '{}');
+        customEngineName = saved.name || '';
+        customEngineUrl = saved.url || '';
+        if (customEngineUrl) {
+          engineUrls['custom'] = customEngineUrl;
+          enginePlaceholders['custom'] = '输入关键词，' + customEngineName + '...';
+          updateCustomBtnLabel();
+          document.getElementById('engineRadioCustom').value = 'custom';
+        }
+      } catch(e) {}
+    }
+
+    function updateCustomBtnLabel() {
+      var btn = document.getElementById('engineCustomBtn');
+      if (btn && customEngineName) {
+        btn.textContent = '⚙️' + customEngineName;
+      }
+    }
+
+    function openEngineModal(e) {
+      e.stopPropagation();
+      if (customEngineUrl) {
+        document.getElementById('engNameInput').value = customEngineName;
+        document.getElementById('engUrlInput').value = customEngineUrl;
+        document.getElementById('engDeleteBtn').style.display = '';
+      } else {
+        document.getElementById('engNameInput').value = '';
+        document.getElementById('engUrlInput').value = 'https://cn.bing.com/search?q=%s';
+        document.getElementById('engDeleteBtn').style.display = 'none';
+      }
+      document.getElementById('engineModal').classList.add('visible');
+      document.getElementById('engNameInput').focus();
+    }
+
+    function closeEngineModal() {
+      document.getElementById('engineModal').classList.remove('visible');
+    }
+
+    function saveCustomEngine() {
+      var name = document.getElementById('engNameInput').value.trim();
+      var url = document.getElementById('engUrlInput').value.trim();
+      if (!url) return;
+      if (!url.includes('%s')) {
+        url = url.replace(/([?&]q=|[?&]query=|[?&]wd=|[?&]text=|[?&]search=)/, function(m) { return m + '%s'; });
+        if (!url.includes('%s')) url += '%s';
+      }
+      customEngineName = name || url.replace(/https?:\/\//, '').split('/')[0];
+      customEngineUrl = url;
+      engineUrls['custom'] = url;
+      enginePlaceholders['custom'] = '输入关键词，' + customEngineName + '...';
+      var radio = document.getElementById('engineRadioCustom');
+      radio.value = 'custom';
+      radio.checked = true;
+      updateCustomBtnLabel();
+      document.getElementById('engineCustomBtn').classList.add('active');
+      document.querySelectorAll('.engine-option:not(.engine-custom-btn)').forEach(function(l) { l.classList.remove('active'); });
+      document.getElementById('searchInput').placeholder = enginePlaceholders['custom'];
+      saveEnginePref('custom');
+      updateStickyEngineLabel();
+      document.getElementById('searchInput').focus();
+      try { localStorage.setItem('nav_custom_engine', JSON.stringify({name: customEngineName, url: customEngineUrl})); } catch(e) {}
+      closeEngineModal();
+    }
+
+    function deleteCustomEngine() {
+      customEngineName = '';
+      customEngineUrl = '';
+      delete engineUrls['custom'];
+      engineUrls['custom'] = 'https://cn.bing.com/search?q=';
+      enginePlaceholders['custom'] = '输入关键词，自定义搜索...';
+      document.getElementById('engineCustomBtn').textContent = '⚙️自定义';
+      document.getElementById('engineCustomBtn').classList.remove('active');
+      document.getElementById('engineRadioCustom').value = '';
+      if (getSelectedEngine() === 'custom') {
+        applyEngine('bing');
+        saveEnginePref('bing');
+        updateStickyEngineLabel();
+      }
+      try {
+        localStorage.removeItem('nav_custom_engine');
+        var pref = localStorage.getItem('nav_engine');
+        if (pref === 'custom') localStorage.setItem('nav_engine', 'bing');
+      } catch(e) {}
+      closeEngineModal();
+    }
+
+    loadCustomEngine();
 
     function toggleAllContent() {
       allHidden = !allHidden;
@@ -1243,29 +1406,100 @@
       }
     }
 
+    var catCollapsePrefs = {};
+
+    function loadCatPrefs() {
+      try {
+        var ver = localStorage.getItem('nav_catpref_ver');
+        if (ver !== '2') {
+          localStorage.removeItem('nav_cat_collapse');
+          localStorage.setItem('nav_catpref_ver', '2');
+          catCollapsePrefs = {};
+          return;
+        }
+        catCollapsePrefs = JSON.parse(localStorage.getItem('nav_cat_collapse') || '{}');
+      } catch(e) { catCollapsePrefs = {}; }
+    }
+
+    function saveCatPrefs() {
+      try { localStorage.setItem('nav_cat_collapse', JSON.stringify(catCollapsePrefs)); } catch(e) {}
+    }
+
+    function applyCatStates(isMobile) {
+      var allIds = [];
+      document.querySelectorAll('.category-section').forEach(function(sec) { allIds.push(sec.id); });
+      allIds.forEach(function(id) {
+        var sec = document.getElementById(id);
+        if (!sec) return;
+        var saved = catCollapsePrefs[id];
+        if (saved === undefined) {
+          if (isMobile) { sec.classList.add('collapsed'); } else { sec.classList.remove('collapsed'); }
+        } else {
+          if (saved) { sec.classList.add('collapsed'); } else { sec.classList.remove('collapsed'); }
+        }
+      });
+    }
+
+    loadCatPrefs();
+
+    var catOrder = [];
+
+    function loadCatOrder() {
+      try { catOrder = JSON.parse(localStorage.getItem('nav_cat_order') || '[]'); } catch(e) { catOrder = []; }
+    }
+
+    function saveCatOrder() {
+      try { localStorage.setItem('nav_cat_order', JSON.stringify(catOrder)); } catch(e) {}
+    }
+
+    function applyCatOrder() {
+      var main = document.querySelector('.main-content');
+      if (!main) return;
+      var sections = main.querySelectorAll('.category-section');
+      var map = {};
+      sections.forEach(function(sec) { map[sec.id] = sec; });
+      catOrder.forEach(function(id) {
+        if (map[id]) {
+          main.appendChild(map[id]);
+          delete map[id];
+        }
+      });
+      var remaining = Object.keys(map).filter(function(id) {
+        return catOrder.indexOf(id) === -1;
+      });
+      remaining.forEach(function(id) { main.appendChild(map[id]); });
+    }
+
+    function bumpCategory(id) {
+      catOrder = catOrder.filter(function(x) { return x !== id; });
+      catOrder.unshift(id);
+      saveCatOrder();
+      applyCatOrder();
+      applyCatStates(window.innerWidth <= 1023);
+    }
+
+    loadCatOrder();
+
     (function() {
       try { allHidden = localStorage.getItem('nav_all_hidden') === '1'; } catch(e) {}
       if (allHidden) {
         document.body.classList.add('all-hidden');
         updateToggleUi();
       }
-      if (window.innerWidth <= 1023) {
-        document.querySelectorAll('.category-section').forEach(function(s) { s.classList.add('collapsed'); });
-      }
+      applyCatOrder();
+      applyCatStates(window.innerWidth <= 1023);
     })();
 
     window.addEventListener('resize', function() {
-      var sections = document.querySelectorAll('.category-section');
-      if (window.innerWidth <= 1023) {
-        sections.forEach(function(s) { s.classList.add('collapsed'); });
-      } else {
-        sections.forEach(function(s) { s.classList.remove('collapsed'); });
-      }
+      applyCatStates(window.innerWidth <= 1023);
     });
 
     function toggleCategory(header) {
       var section = header.closest('.category-section');
       section.classList.toggle('collapsed');
+      var id = section.id;
+      catCollapsePrefs[id] = section.classList.contains('collapsed');
+      saveCatPrefs();
     }
 
     function clearSearchInput() {
@@ -1306,9 +1540,16 @@
       document.querySelectorAll('.sidebar a').forEach(function(a) { a.classList.remove('active'); });
       document.querySelectorAll('.mobile-tab').forEach(function(a) { a.classList.remove('active'); });
       var href = el.getAttribute('href');
+      var id = href.replace('#', '');
       document.querySelectorAll('.sidebar a, .mobile-tab').forEach(function(a) {
         if (a.getAttribute('href') === href) a.classList.add('active');
       });
+      bumpCategory(id);
+      var section = document.getElementById(id);
+      if (section) {
+        section.classList.remove('collapsed');
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
 
     function saveEnginePref(engine) {
@@ -1325,18 +1566,23 @@
       radio.checked = true;
       document.querySelectorAll('.engine-option').forEach(function(l) { l.classList.remove('active'); });
       var label = radio.closest('.engine-option');
-      if (label) label.classList.add('active');
+      if (label) { label.classList.add('active'); }
+      if (engine === 'custom') {
+        document.getElementById('engineCustomBtn').classList.add('active');
+      }
       document.getElementById('searchInput').placeholder = enginePlaceholders[engine] || enginePlaceholders.bing;
     }
 
     document.querySelectorAll('.engine-option').forEach(function(label) {
       label.addEventListener('click', function() {
         var radio = this.querySelector('input[type="radio"]');
+        if (!radio) return;
         radio.checked = true;
         document.querySelectorAll('.engine-option').forEach(function(l) { l.classList.remove('active'); });
         this.classList.add('active');
         document.getElementById('searchInput').placeholder = enginePlaceholders[radio.value];
         saveEnginePref(radio.value);
+        updateStickyEngineLabel();
       });
     });
 
@@ -1445,6 +1691,17 @@
             renderFrequent();
           });
         });
+        document.getElementById('frequentGrid').addEventListener('click', function(e) {
+          var chip = e.target.closest('.frequent-chip');
+          if (!chip) return;
+          var name = chip.textContent;
+          if (!name) return;
+          clicks[name] = (clicks[name] || 0) + 1;
+          clicks._hrefs = clicks._hrefs || {};
+          if (!clicks._hrefs[name]) clicks._hrefs[name] = chip.getAttribute('href');
+          localStorage.setItem('nav_clicks', JSON.stringify(clicks));
+          renderFrequent();
+        });
         renderFrequent();
         function renderFrequent() {
           var grid = document.getElementById('frequentGrid');
@@ -1464,7 +1721,7 @@
       } catch(e) {}
     })();
 
-    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu'];
+    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','custom'];
 
     document.addEventListener('keydown', function(e) {
       if (e.key === ' ' && e.ctrlKey) {
@@ -1542,7 +1799,11 @@
     function updateStickyEngineLabel() {
       var engine = getSelectedEngine();
       var labels = {bing:'必应',baidu:'百度',google:'谷歌',sogou:'搜狗',sogouweixin:'搜狗微信',sogouzhihu:'搜狗知乎',yandex:'Yandex',gscholar2:'谷歌学术②',xmol:'XMOL',googlescholar:'谷歌学术',buaaebsco:'北航外文',baiduxueshu:'百度学术'};
-      stickyEngine.textContent = labels[engine] || engine;
+      if (engine === 'custom') {
+        stickyEngine.textContent = customEngineName || '自定义';
+      } else {
+        stickyEngine.textContent = labels[engine] || engine;
+      }
     }
     updateStickyEngineLabel();
 
