@@ -32,7 +32,7 @@
       --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
       --max: 1400px;
       --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
-      --hero-overlay: linear-gradient(180deg, rgba(241,245,249,0.02) 0%, rgba(241,245,249,0.55) 100%);
+      --hero-overlay: linear-gradient(180deg, rgba(241,245,249,0.05) 0%, rgba(241,245,249,0.70) 100%);
       --search-shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
     body.dark {
@@ -43,7 +43,7 @@
       --muted: #94a3b8;
       --rule: #374151;
       --card-shadow: 0 4px 16px rgba(0,0,0,0.35);
-      --hero-overlay: linear-gradient(180deg, rgba(7,14,26,0.02) 0%, rgba(7,14,26,0.60) 100%);
+      --hero-overlay: linear-gradient(180deg, rgba(7,14,26,0.05) 0%, rgba(7,14,26,0.72) 100%);
       --search-shadow: 0 2px 12px rgba(0,0,0,0.4);
     }
     body.dark .hero-bg { opacity: 0.25; }
@@ -135,7 +135,7 @@
     .hero-bg {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       background: url('assets/hero_bg_light.jpg') center/cover no-repeat;
-      opacity: 0.65; z-index: 0;
+      opacity: 0.50; z-index: 0;
     }
     .hero-overlay {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -517,6 +517,8 @@
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="baidumap">🗺️百度地图</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="wikihow">📘WikiHow</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="scihub">📄Sci-Hub</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="kiphub">📖KipHub</label>
+        <label class="engine-option desktop-only"><input type="radio" name="engine" value="msacademic">🟣微软学术</label>
         <label class="engine-option engine-custom-btn" id="engineCustomBtn" onclick="openEngineModal(event)" title="自定义搜索引擎">⚙️自定义</label>
         <input type="radio" name="engine" value="custom" id="engineRadioCustom" style="display:none">
       </div>
@@ -630,7 +632,7 @@
         <div class="category-header" onclick="toggleCategory(this)">
           <img src="assets/icon_academic.jpg" alt="">
           <h2>学术检索</h2>
-          <span class="count">18个站点</span>
+          <span class="count">21个站点</span>
           <span class="toggle-arrow">▼</span>
         </div>
         <div class="card-grid">
@@ -705,6 +707,18 @@
           <a class="nav-card" href="https://consensus.app/" target="_blank" rel="noopener">
             <div class="icon icon-indigo">C</div>
             <div class="info"><h3>Consensus</h3><p>AI辅助的学术搜索引擎</p><span class="url">consensus.app</span></div>
+          </a>
+          <a class="nav-card" href="https://www.kiphub.com" target="_blank" rel="noopener">
+            <div class="icon icon-teal">K</div>
+            <div class="info"><h3>KipHub</h3><p>学术论文检索与知识发现平台</p><span class="url">kiphub.com</span></div>
+          </a>
+          <a class="nav-card" href="https://www.proquest.com" target="_blank" rel="noopener">
+            <div class="icon icon-blue">P</div>
+            <div class="info"><h3>ProQuest</h3><p>全球学位论文与学术数据库</p><span class="url">proquest.com</span></div>
+          </a>
+          <a class="nav-card" href="https://academic.microsoft.com" target="_blank" rel="noopener">
+            <div class="icon icon-purple">M</div>
+            <div class="info"><h3>微软学术</h3><p>微软学术搜索与知识图谱</p><span class="url">academic.microsoft.com</span></div>
           </a>
         </div>
       </section>
@@ -1480,6 +1494,8 @@
       baidumap: 'https://map.baidu.com/search/@0,0,12z?querytype=s&wd=',
       wikihow: 'https://zh.wikihow.com/wikiHowTo?search=',
       scihub: 'https://sci-hub.sh/search?q=',
+      kiphub: 'https://www.kiphub.com/search?wd=',
+      msacademic: 'https://cn.bing.com/academic/search?q=',
       custom: 'https://cn.bing.com/search?q='
     };
     var enginePlaceholders = {
@@ -1504,6 +1520,8 @@
       baidumap: '输入关键词，百度地图搜索...',
       wikihow: '输入关键词，WikiHow搜索...',
       scihub: '输入关键词，Sci-Hub搜索...',
+      kiphub: '输入关键词，KipHub搜索...',
+      msacademic: '输入关键词，微软学术搜索...',
       custom: '输入关键词，自定义搜索...'
     };
 
@@ -1743,7 +1761,7 @@
         var rawEngines = JSON.parse(localStorage.getItem('nav_hidden_engines') || '{}');
         hiddenEngines = {};
         for (var k in rawEngines) { if (rawEngines.hasOwnProperty(k)) hiddenEngines[k] = rawEngines[k]; }
-        var newEngines = ['douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub'];
+        var newEngines = ['douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','kiphub','msacademic'];
         newEngines.forEach(function(k) { if (!(k in rawEngines)) hiddenEngines[k] = true; });
       } catch(e) { hiddenEngines = {}; }
       try { hiddenCategories = JSON.parse(localStorage.getItem('nav_hidden_cats') || '{}'); } catch(e) { hiddenCategories = {}; }
@@ -2002,7 +2020,7 @@
       if (!bg) return;
       if (useBingWallpaper && bingWallpaperUrl) {
         bg.style.backgroundImage = 'url(' + bingWallpaperUrl + ')';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.40' : '0.70';
+        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.60';
       } else if (useBingWallpaper) {
         bg.style.backgroundImage = 'none';
         bg.style.opacity = '0';
@@ -2034,7 +2052,7 @@
 
     initWallpaper();
 
-    var desktopOnlyEngines = ['google','sogouweixin','sogouzhihu','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub'];
+    var desktopOnlyEngines = ['google','sogouweixin','sogouzhihu','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','kiphub','msacademic'];
 
     function hiddenEnginesSetter(val, hidden) {
       hiddenEngines[val] = hidden;
@@ -2120,6 +2138,7 @@
         {val:'douyin',label:'🎵 抖音'},{val:'xiaohongshu',label:'📕 小红书'},{val:'bilibili',label:'📺 B站'},
         {val:'zhihu',label:'🔷 知乎'},{val:'weibo',label:'🔶 微博'},{val:'github',label:'🐙 GitHub'},
         {val:'baidumap',label:'🗺️ 百度地图'},{val:'wikihow',label:'📘 WikiHow'},{val:'scihub',label:'📄 Sci-Hub'},
+        {val:'kiphub',label:'📖 KipHub'},{val:'msacademic',label:'🟣 微软学术'},
         {val:'custom',label:'⚙️ 自定义'}
       ];
       row.innerHTML = engines.map(function(e) {
@@ -2298,7 +2317,7 @@
       } catch(e) {}
     })();
 
-    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','custom'];
+    var engineKeys = ['bing','baidu','google','sogou','sogouweixin','sogouzhihu','yandex','gscholar2','xmol','googlescholar','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','kiphub','msacademic','custom'];
 
     document.addEventListener('keydown', function(e) {
       if (e.key === ' ' && e.ctrlKey) {
@@ -2375,7 +2394,7 @@
 
     function updateStickyEngineLabel() {
       var engine = getSelectedEngine();
-      var labels = {bing:'必应',baidu:'百度',google:'谷歌',sogou:'搜狗',sogouweixin:'搜狗微信',sogouzhihu:'搜狗知乎',yandex:'Yandex',gscholar2:'谷歌学术②',xmol:'XMOL',googlescholar:'谷歌学术',buaaebsco:'北航外文',baiduxueshu:'百度学术'};
+      var labels = {bing:'必应',baidu:'百度',google:'谷歌',sogou:'搜狗',sogouweixin:'搜狗微信',sogouzhihu:'搜狗知乎',yandex:'Yandex',gscholar2:'谷歌学术②',xmol:'XMOL',googlescholar:'谷歌学术',buaaebsco:'北航外文',baiduxueshu:'百度学术',kiphub:'KipHub',msacademic:'微软学术'};
       if (engine === 'custom') {
         stickyEngine.textContent = customEngineName || '自定义';
       } else {
