@@ -12,43 +12,42 @@
 
   <style>
     :root {
-      --bg: #f8fafc;
+      --bg: #f1f5f9;
       --bg2: #ffffff;
-      --bg3: #f1f5f9;
-      --ink: #1e293b;
-      --muted: #64748b;
-      --rule: #e2e8f0;
-      --accent: #3b82f6;
-      --accent2: #8b5cf6;
-      --accent3: #10b981;
-      --accent4: #ec4899;
-      --accent5: #f59e0b;
-      --accent6: #f97316;
-      --accent7: #a78bfa;
-      --accent8: #ef4444;
-      --accent9: #14b8a6;
-      --accent10: #c084fc;
+      --bg3: #e2e8f0;
+      --ink: #0f172a;
+      --muted: #475569;
+      --rule: #cbd5e1;
+      --accent: #2563eb;
+      --accent2: #7c3aed;
+      --accent3: #059669;
+      --accent4: #db2777;
+      --accent5: #d97706;
+      --accent6: #ea580c;
+      --accent7: #7c3aed;
+      --accent8: #dc2626;
+      --accent9: #0d9488;
+      --accent10: #9333ea;
       --sidebar-w: 220px;
       --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
       --max: 1400px;
-      --card-shadow: 0 4px 16px rgba(0,0,0,0.05);
-      --hero-overlay: linear-gradient(180deg, rgba(248,250,252,0.2) 0%, rgba(248,250,252,0.9) 100%);
-      --search-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      --hero-overlay: linear-gradient(180deg, rgba(241,245,249,0.02) 0%, rgba(241,245,249,0.55) 100%);
+      --search-shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
     body.dark {
-      --bg: #0f172a;
-      --bg2: #1e293b;
-      --bg3: #334155;
-      --ink: #e2e8f0;
+      --bg: #070e1a;
+      --bg2: #111827;
+      --bg3: #1e293b;
+      --ink: #f1f5f9;
       --muted: #94a3b8;
-      --rule: #334155;
-      --card-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      --hero-overlay: linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.95) 100%);
-      --search-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      --rule: #374151;
+      --card-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      --hero-overlay: linear-gradient(180deg, rgba(7,14,26,0.02) 0%, rgba(7,14,26,0.60) 100%);
+      --search-shadow: 0 2px 12px rgba(0,0,0,0.4);
     }
     body.dark .hero-bg { opacity: 0.25; }
     body.dark .hero-overlay { background: var(--hero-overlay); }
-    body.dark .search-box input::placeholder { color: #64748b; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 16px; scroll-behavior: smooth; }
     body {
@@ -136,7 +135,7 @@
     .hero-bg {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       background: url('assets/hero_bg_light.jpg') center/cover no-repeat;
-      opacity: 0.5; z-index: 0;
+      opacity: 0.65; z-index: 0;
     }
     .hero-overlay {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -173,7 +172,7 @@
       flex: 1; background: transparent; border: none; outline: none;
       color: var(--ink); font-size: 1rem; padding: 0.55rem 1.2rem;
     }
-    .search-box input::placeholder { color: #94a3b8; }
+    .search-box input::placeholder { color: var(--muted); }
     .search-box button {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       border: none; color: #fff; padding: 0.55rem 1.6rem; border-radius: 50px;
@@ -292,7 +291,7 @@
       background: var(--bg2); border: 1px solid var(--rule); border-radius: 12px;
       padding: 0.9rem 1rem; text-decoration: none; color: inherit; transition: all 0.25s; cursor: pointer;
     }
-    .nav-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .nav-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
     .nav-card .icon {
       width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center;
       justify-content: center; font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
@@ -300,7 +299,7 @@
     .nav-card .info { flex: 1; min-width: 0; }
     .nav-card .info h3 { font-size: 0.92rem; font-weight: 600; color: var(--ink); margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nav-card .info p { font-size: 0.76rem; color: var(--muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .nav-card .info .url { font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem; font-family: 'Segoe UI', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-card .info .url { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; font-family: 'Segoe UI', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* === Icon Colors === */
     .icon-teal { background: rgba(20,184,166,0.12); color: #0d9488; }
@@ -2003,7 +2002,7 @@
       if (!bg) return;
       if (useBingWallpaper && bingWallpaperUrl) {
         bg.style.backgroundImage = 'url(' + bingWallpaperUrl + ')';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.6';
+        bg.style.opacity = document.body.classList.contains('dark') ? '0.40' : '0.70';
       } else if (useBingWallpaper) {
         bg.style.backgroundImage = 'none';
         bg.style.opacity = '0';
