@@ -1,0 +1,85 @@
+{
+  "categories": [
+    {
+      "id": "cat-mytools",
+      "name": "我的工具",
+      "icon": "assets/icon_tool.jpg",
+      "sites": [
+        {"name": "GitHub", "url": "https://github.com", "desc": "全球最大代码托管平台", "icon": "G", "iconColor": "blue"},
+        {"name": "Stack Overflow", "url": "https://stackoverflow.com", "desc": "程序员问答社区", "icon": "S", "iconColor": "orange"},
+        {"name": "DevDocs", "url": "https://devdocs.io", "desc": "开发者文档速查", "icon": "D", "iconColor": "green"}
+      ]
+    },
+    {
+      "id": "cat-design",
+      "name": "设计资源",
+      "icon": "assets/icon_entertainment.jpg",
+      "sites": [
+        {"name": "Dribbble", "url": "https://dribbble.com", "desc": "全球设计师作品社区", "icon": "D", "iconColor": "pink"},
+        {"name": "Pinterest", "url": "https://www.pinterest.com", "desc": "图片灵感分享平台", "icon": "P", "iconColor": "red"},
+        {"name": "Behance", "url": "https://www.behance.net", "desc": "Adobe旗下设计社区", "icon": "B", "iconColor": "blue"},
+        {"name": "Unsplash", "url": "https://unsplash.com", "desc": "免费高清图片素材", "icon": "U", "iconColor": "green"}
+      ]
+    }
+  ],
+  "engines": [
+    {"id": "npmjs", "name": "npm搜索", "url": "https://www.npmjs.com/search?q=", "label": "📦 npm"},
+    {"id": "stackoverflow", "name": "Stack Overflow", "url": "https://stackoverflow.com/search?q=", "label": "🟠 Stack Overflow"}
+  ],
+  "settings": {
+    "theme": "light",
+    "wallpaper": "custom",
+    "customWallpaper": "https://media.giphy.com/media/xT9DPldJHzZKtORo3C/giphy.gif",
+    "freqVisible": true,
+    "freqCount": 8,
+    "navFold": "show",
+    "hiddenCategories": {
+      "cat-general": false,
+      "cat-academic": false,
+      "cat-ai": false,
+      "cat-buaa": false,
+      "cat-navweb": false,
+      "cat-translate": false,
+      "cat-tech": false,
+      "cat-learn": false,
+      "cat-efficiency": false,
+      "cat-tool": false,
+      "cat-map": false,
+      "cat-entertainment": false,
+      "cat-tutorial": false,
+      "cat-aero": true,
+      "cat-mirror": false,
+      "cat-cloud": true,
+      "cat-mytools": false,
+      "cat-design": false
+    },
+    "hiddenEngines": {
+      "bing": false,
+      "baidu": false,
+      "google": false,
+      "sogou": false,
+      "sogouweixin": false,
+      "sogouzhihu": false,
+      "yandex": false,
+      "gscholar2": false,
+      "xmol": false,
+      "googlescholar": false,
+      "buaaebsco": false,
+      "baiduxueshu": false,
+      "douyin": false,
+      "xiaohongshu": false,
+      "bilibili": false,
+      "zhihu": false,
+      "weibo": false,
+      "github": false,
+      "baidumap": false,
+      "wikihow": false,
+      "scihub": false,
+      "kiphub": false,
+      "msacademic": false,
+      "custom": false,
+      "npmjs": false,
+      "stackoverflow": true
+    }
+  }
+}
