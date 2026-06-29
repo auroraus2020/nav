@@ -40,7 +40,9 @@
       var cat = { id: dc.id, name: dc.name, icon: dc.icon, isDefault: true, sites: [] };
       var rmSet = removedSites[dc.id] || [];
       dc.sites.forEach(function(s) {
-        if (rmSet.indexOf(s.name) === -1) cat.sites.push(deepClone(s));
+        var site = deepClone(s);
+        site._removed = rmSet.indexOf(s.name) >= 0;
+        cat.sites.push(site);
       });
       var adds = addedSites[dc.id] || [];
       adds.forEach(function(s) { cat.sites.push(deepClone(s)); });
@@ -145,8 +147,13 @@
   function renderCatContent(contentEl) {
     var cat = getCatById(activeCatId);
     if (!cat) { contentEl.innerHTML = '<p style="color:var(--muted);padding:1rem">请选择一个分类</p>'; return; }
-    var htm = '<h4>' + cat.name + ' <span class="count">' + cat.sites.length + '个站点</span></h4>';
-    var rmSet = removedSites[cat.id] || [];
+    var visibleCount = 0;
+    if (cat.isDefault) {
+      cat.sites.forEach(function(s) { if (!s._removed) visibleCount++; });
+    } else {
+      visibleCount = cat.sites.length;
+    }
+    var htm = '<h4>' + cat.name + ' <span class="count">' + cat.sites.length + '个站点' + (cat.isDefault ? '（' + visibleCount + ' 个可见）' : '') + '</span></h4>';
     htm += '<table class="site-table"><thead><tr>' +
       '<th class="col-show">显示</th><th class="col-name">名称</th><th class="col-url">URL</th>' +
       '<th class="col-desc">描述</th><th class="col-icon">图标</th><th class="col-color">颜色</th>' +
@@ -157,8 +164,7 @@
         var adds = addedSites[cat.id] || [];
         isNew = adds.some(function(a) { return a.name === site.name; });
       }
-      var isRemoved = false;
-      if (cat.isDefault) isRemoved = rmSet.indexOf(site.name) >= 0;
+      var isRemoved = cat.isDefault ? site._removed : false;
       var rowCls = 'site-row' + (isRemoved ? ' removed' : '') + (isNew ? ' added' : '');
       htm += '<tr class="' + rowCls + '" data-idx="' + idx + '">' +
         '<td class="col-show"><input type="checkbox" ' + (isRemoved ? '' : 'checked') + ' onchange="toggleSite(\'' + cat.id + '\',\'' + escHtml(site.name) + '\',this.checked)" title="显示/隐藏"></td>' +
