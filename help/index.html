@@ -3,438 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>使用帮助 - AURORAUS导航</title>
+  <title>使用帮助 - AuroraUs导航</title>
   <style>
     :root {
-      --bg: #f1f5f9;
-      --bg2: #ffffff;
-      --bg3: #e2e8f0;
-      --ink: #0f172a;
-      --muted: #475569;
-      --rule: #cbd5e1;
-      --accent: #2563eb;
-      --accent2: #7c3aed;
-      --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --bg: #f1f5f9; --bg2: #ffffff; --bg3: #e2e8f0;
+      --ink: #0f172a; --muted: #475569; --rule: #cbd5e1;
+      --accent: #2563eb; --accent2: #7c3aed;
+      --font: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
     }
-    body.dark {
-      --bg: #070e1a;
-      --bg2: #111827;
-      --bg3: #1e293b;
-      --ink: #f1f5f9;
-      --muted: #94a3b8;
-      --rule: #374151;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 16px; scroll-behavior: smooth; }
-    body {
-      font-family: var(--font); color: var(--ink); background: var(--bg);
-      line-height: 1.7; min-height: 100vh; transition: background 0.3s, color 0.3s;
-    }
-    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-    header {
-      text-align: center; padding: 3rem 1rem 2rem;
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      color: #fff; border-radius: 0 0 20px 20px;
-    }
-    header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    header p { opacity: 0.85; font-size: 1rem; }
-    .back-link {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      color: #fff; text-decoration: none; font-size: 0.9rem;
-      margin-bottom: 1rem; opacity: 0.8; transition: opacity 0.2s;
-    }
-    .back-link:hover { opacity: 1; }
-    .theme-toggle {
-      position: fixed; top: 1rem; right: 1rem;
-      width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3);
-      background: rgba(0,0,0,0.2); color: #fff; font-size: 1.2rem; cursor: pointer;
-      z-index: 10; transition: all 0.3s; display: flex; align-items: center; justify-content: center;
-    }
-    .theme-toggle:hover { background: rgba(0,0,0,0.35); }
-    body.dark .theme-toggle { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
-
-    h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--accent); border-bottom: 2px solid var(--rule); padding-bottom: 0.4rem; }
-    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.6rem; }
-    .card {
-      background: var(--bg2); border: 1px solid var(--rule); border-radius: 12px;
-      padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
-    }
-    .card h4 { margin-bottom: 0.5rem; color: var(--accent2); }
-    code {
-      background: var(--bg3); padding: 0.15rem 0.4rem; border-radius: 4px;
-      font-family: Consolas, monospace; font-size: 0.88em; word-break: break-all;
-    }
-    pre {
-      background: var(--bg3); padding: 1rem 1.2rem; border-radius: 8px;
-      overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 0.8rem 0;
-    }
-    pre code { background: none; padding: 0; }
-    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
-    li { margin-bottom: 0.4rem; }
-    .step { background: rgba(37,99,235,0.06); border-left: 3px solid var(--accent); padding: 0.6rem 1rem; margin: 0.6rem 0; border-radius: 0 8px 8px 0; }
-    .tip { background: rgba(124,58,237,0.06); border-left: 3px solid var(--accent2); padding: 0.6rem 1rem; margin: 0.6rem 0; border-radius: 0 8px 8px 0; }
-    .warn { background: rgba(220,38,38,0.06); border-left: 3px solid #dc2626; padding: 0.6rem 1rem; margin: 0.6rem 0; border-radius: 0 8px 8px 0; }
-    .download-btn {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      padding: 0.5rem 1.2rem; background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; text-decoration: none; border-radius: 8px;
-      font-size: 0.9rem; font-weight: 600; transition: opacity 0.2s;
-    }
-    .download-btn:hover { opacity: 0.85; }
-    table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; }
-    th, td { border: 1px solid var(--rule); padding: 0.5rem 0.7rem; text-align: left; font-size: 0.88rem; }
-    th { background: var(--bg3); font-weight: 600; }
-    a { color: var(--accent); }
-    .toc {
-      background: var(--bg2); border: 1px solid var(--rule); border-radius: 12px;
-      padding: 1rem 1.5rem; margin: 1.5rem 0; columns: 2;
-    }
-    .toc a { display: block; padding: 0.2rem 0; break-inside: avoid; }
-    .toc strong { column-span: all; }
-    .kbd {
-      display: inline-block; padding: 0.15rem 0.5rem; background: var(--bg3);
-      border: 1px solid var(--rule); border-radius: 4px; font-family: Consolas, monospace;
-      font-size: 0.85em; margin: 0 0.15rem;
-    }
-    @media (max-width: 640px) { header h1 { font-size: 1.5rem; } .card { padding: 1rem; } pre { font-size: 0.78rem; padding: 0.7rem; } .toc { columns: 1; } }
-    .img-placeholder {
-      background: var(--bg3); border: 1px dashed var(--rule); border-radius: 8px;
-      padding: 1rem; text-align: center; color: var(--muted); font-size: 0.85rem; margin: 0.8rem 0;
-    }
+    body.dark { --bg:#070e1a; --bg2:#111827; --bg3:#1e293b; --ink:#f1f5f9; --muted:#94a3b8; --rule:#374151; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { font-size:16px; scroll-behavior:smooth; }
+    body { font-family:var(--font); color:var(--ink); background:var(--bg); line-height:1.7; min-height:100vh; transition:background 0.3s,color 0.3s; }
+    .container { max-width:900px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+    header { text-align:center; padding:3rem 1rem 2rem; background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#fff; border-radius:0 0 20px 20px; }
+    header h1 { font-size:2rem; margin-bottom:0.5rem; }
+    header p { opacity:0.85; font-size:1rem; }
+    .back-link { display:inline-flex; align-items:center; gap:0.3rem; color:#fff; text-decoration:none; font-size:0.9rem; margin-bottom:1rem; opacity:0.8; transition:opacity 0.2s; }
+    .back-link:hover { opacity:1; }
+    .theme-toggle { position:fixed; top:1rem; right:1rem; width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.3); background:rgba(0,0,0,0.2); color:#fff; font-size:1.2rem; cursor:pointer; z-index:10; transition:all 0.3s; display:flex; align-items:center; justify-content:center; }
+    .theme-toggle:hover { background:rgba(0,0,0,0.35); }
+    body.dark .theme-toggle { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.3); }
+    h2 { font-size:1.4rem; margin:2.5rem 0 1rem; color:var(--accent); border-bottom:2px solid var(--rule); padding-bottom:0.4rem; }
+    h3 { font-size:1.1rem; margin:1.5rem 0 0.6rem; }
+    .card { background:var(--bg2); border:1px solid var(--rule); border-radius:12px; padding:1.2rem 1.5rem; margin-bottom:1.5rem; }
+    .card h4 { margin-bottom:0.5rem; color:var(--accent2); }
+    code { background:var(--bg3); padding:0.15rem 0.4rem; border-radius:4px; font-family:Consolas,monospace; font-size:0.88em; word-break:break-all; }
+    pre { background:var(--bg3); padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:0.85rem; line-height:1.6; margin:0.8rem 0; }
+    pre code { background:none; padding:0; }
+    ul, ol { padding-left:1.5rem; margin:0.5rem 0; }
+    li { margin-bottom:0.4rem; }
+    .step { background:rgba(37,99,235,0.06); border-left:3px solid var(--accent); padding:0.6rem 1rem; margin:0.6rem 0; border-radius:0 8px 8px 0; }
+    .tip { background:rgba(124,58,237,0.06); border-left:3px solid var(--accent2); padding:0.6rem 1rem; margin:0.6rem 0; border-radius:0 8px 8px 0; }
+    .warn { background:rgba(220,38,38,0.06); border-left:3px solid #dc2626; padding:0.6rem 1rem; margin:0.6rem 0; border-radius:0 8px 8px 0; }
+    .download-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 1.2rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; text-decoration:none; border-radius:8px; font-size:0.9rem; font-weight:600; transition:opacity 0.2s; }
+    .download-btn:hover { opacity:0.85; }
+    table { width:100%; border-collapse:collapse; margin:0.8rem 0; }
+    th, td { border:1px solid var(--rule); padding:0.5rem 0.7rem; text-align:left; font-size:0.88rem; }
+    th { background:var(--bg3); font-weight:600; }
+    a { color:var(--accent); }
+    .toc { background:var(--bg2); border:1px solid var(--rule); border-radius:12px; padding:1rem 1.5rem; margin:1.5rem 0; columns:2; }
+    .toc a { display:block; padding:0.2rem 0; break-inside:avoid; }
+    .toc strong { column-span:all; }
+    .kbd { display:inline-block; padding:0.15rem 0.5rem; background:var(--bg3); border:1px solid var(--rule); border-radius:4px; font-family:Consolas,monospace; font-size:0.85em; margin:0 0.15rem; }
+    @media (max-width:640px) { header h1 { font-size:1.5rem; } .card { padding:1rem; } pre { font-size:0.78rem; padding:0.7rem; } .toc { columns:1; } }
   </style>
 </head>
 <body>
   <button class="theme-toggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</button>
   <header>
-    <a href=".." class="back-link">← 返回导航首页</a>
-    <h1>❓ AURORAUS 导航使用帮助</h1>
-    <p>从零开始，轻松掌握导航页的全部功能</p>
+    <a href="../index.html" class="back-link">← 返回导航首页</a>
+    <h1>❓ AuroraUs 导航使用帮助</h1>
+    <p>从零开始，手把手教你玩转导航页的每一项功能</p>
   </header>
 
   <div class="container">
 
     <div class="toc">
       <strong>📖 目录</strong>
-      <a href="#basic">一、基本使用</a>
-      <a href="#search">二、搜索引擎使用</a>
+      <a href="#basic">一、打开网站的第一眼</a>
+      <a href="#search">二、搜索引擎怎么用</a>
       <a href="#shortcuts">三、键盘快捷键</a>
-      <a href="#settings">四、设置面板详解</a>
-      <a href="#wallpaper">五、壁纸设置</a>
-      <a href="#import-export">六、JSON导入/导出</a>
-      <a href="#json-format">七、JSON配置格式</a>
-      <a href="#download-config">八、推荐配置下载</a>
-      <a href="#faq">九、常见问题</a>
+      <a href="#settings">四、设置面板（必看）</a>
+      <a href="#wallpaper">五、四种壁纸模式</a>
+      <a href="#homepage">六、设为浏览器首页</a>
+      <a href="#import-export">七、JSON导入/导出配置</a>
+      <a href="#add-remove">八、用编辑器管理站点</a>
+      <a href="#save-sync">九、编辑器同步原理</a>
+      <a href="#json-add-remove">十、通过JSON增删站点</a>
+      <a href="#base64">十一、导出本地壁纸</a>
+      <a href="#json-format">十二、JSON格式参考</a>
+      <a href="#download">十三、推荐配置下载</a>
+      <a href="#community">十四、交流与反馈</a>
+      <a href="#faq">十五、常见问题</a>
     </div>
 
-    <!-- ===== 一、基本使用 ===== -->
-    <h2 id="basic">一、基本使用</h2>
+    <!-- 一 -->
+    <h2 id="basic">一、打开网站的第一眼</h2>
     <div class="card">
-      <p>打开 AuroraUs 导航页面，你会看到：</p>
+      <p>在浏览器打开 <strong>https://nav.auroraus.cn</strong>，你会看到：</p>
       <ul>
-        <li><strong>顶部搜索区</strong> — 一个大搜索框和下方一整排搜索引擎按钮</li>
-        <li><strong>常用站点区</strong> — 搜索框下方，显示你点击最多的几个网站</li>
-        <li><strong>分类导航区</strong> — 按类别（综合导航、学术检索、AI大模型等）组织的网站卡片</li>
-        <li><strong>左侧侧边栏</strong>（电脑端）或 <strong>底部Tab栏</strong>（手机端）— 快速跳转到每个分类</li>
+        <li><strong>大搜索框</strong> — 页面正中间，输入关键词就能搜</li>
+        <li><strong>搜索引擎选择栏</strong> — 搜索框下面一排按钮，每个按钮代表一个搜索引擎</li>
+        <li><strong>常用站点</strong> — 你点得最多的网站，会自动出现在搜索框下面</li>
+        <li><strong>分类导航卡片</strong> — 按"综合导航""学术检索""AI大模型"等分类排列的网站卡片</li>
+        <li><strong>左侧侧边栏</strong>（电脑）或 <strong>底部Tab栏</strong>（手机）— 快速跳转到不同分类</li>
       </ul>
 
       <div class="step">
-        <strong>🖱️ 打开一个网站：</strong>点击任意一张卡片，网站会在新标签页中打开。
+        <strong>🖱️ 打开一个网站：</strong>直接点任意卡片，网站在新标签页打开，本页保持不变。
       </div>
       <div class="step">
-        <strong>📂 折叠/展开分类：</strong>点击分类标题（如"学术检索"），该分类下的所有卡片会收起或展开。
+        <strong>📂 收起/展开一个分类：</strong>点分类标题（比如"学术检索"），下面所有卡片会收起或展开。鼠标点一下就行。
       </div>
       <div class="step">
-        <strong>🔍 搜索导航网站：</strong>在搜索框输入关键词（比如"知乎"），页面只显示名称或描述中包含该词的卡片。想恢复全部显示，按 <span class="kbd">Esc</span> 或清空搜索框即可。
+        <strong>🔍 搜索本页的网站：</strong>在搜索框输入关键词（比如输入"知乎"），页面会只保留名称或描述包含"知乎"的卡片。按 <span class="kbd">Esc</span> 键或手动清空搜索框恢复到全部显示。
       </div>
-
       <div class="tip">
-        <strong>💡 常用站点自动记录：</strong>你点击某个网站卡片时，系统会自动记录点击次数。点击最多的前几个网站会出现在搜索框下方的"常用站点"区域，方便快速访问。
+        <strong>💡 常用站点区：</strong>你每点一个网站卡片，系统就记一次数。点得最多的几个会自动出现在"常用站点"区。不需要你特意收藏。
       </div>
     </div>
 
-    <!-- ===== 二、搜索引擎 ===== -->
-    <h2 id="search">二、搜索引擎使用</h2>
+    <!-- 二 -->
+    <h2 id="search">二、搜索引擎怎么用</h2>
     <div class="card">
-      <p>搜索框里的内容不仅仅用来过滤导航卡片——它更是一个<strong>聚合搜索引擎</strong>，支持在多个搜索引擎之间快速切换并搜索。</p>
+      <p>搜索框不只是用来过滤导航卡片的——它更是一个能切换多种搜索引擎的<strong>搜索聚合器</strong>。</p>
 
-      <h4>🔀 切换搜索引擎</h4>
-      <div class="step">
-        <strong>方法一：鼠标点击</strong> — 直接点击搜索框下方的引擎名称（如"🔵 必应"、"🔴 百度"），当前选中的引擎会高亮。
-      </div>
-      <div class="step">
-        <strong>方法二：键盘按 <span class="kbd">Ctrl</span>（单独按一下）</strong> — 按搜索框下方显示的顺序，依次切换到下一个可见的搜索引擎。
-      </div>
-      <div class="step">
-        <strong>方法三：功能键 <span class="kbd">F1</span> ~ <span class="kbd">F12</span></strong> — 按 F1 选第1个可见引擎，F2 选第2个……依此类推（按搜索框下方的显示顺序）。
-      </div>
+      <h4>🔀 切换搜索引擎（三种方式）</h4>
+      <div class="step"><strong>方式一：鼠标点</strong> — 点搜索框下面你想用的引擎就行了，选中的会高亮。</div>
+      <div class="step"><strong>方式二：按 <span class="kbd">Ctrl</span> 键</strong> — 单独按一下 Ctrl（不要同时按别的），引擎会按搜索框下面的<strong>显示顺序</strong>挨个切换。只会在你开启的那些引擎之间循环。</div>
+      <div class="step"><strong>方式三：按 <span class="kbd">F1</span> ~ <span class="kbd">F12</span></strong> — F1 选搜索框下面第一个可用引擎，F2 选第二个……也是按<strong>显示顺序</strong>。</div>
 
       <h4>🔎 执行搜索</h4>
-      <p>在搜索框输入关键词后，<strong>按回车键</strong>或点击右边"搜索"按钮，会在新标签页用当前选中的引擎进行搜索。</p>
-      <p>页面往下滚动后，顶部会出现一个<strong>悬浮搜索条</strong>，显示当前搜索引擎的名称，方便随时搜索，不用滚回顶部。</p>
+      <p>在搜索框里打好你要搜的关键词 → 按 <strong>回车键</strong> 或点旁边的"搜索"按钮 → 浏览器开新标签页用你选的引擎搜索。</p>
+      <p>网页往下滚一段距离后，页面顶部会浮出一个<strong>悬浮搜索条</strong>，显示当前选中的搜索引擎名字，随时可以搜，不用滚回顶部。</p>
 
-      <div class="tip">
-        <strong>💡 引擎显示/隐藏：</strong>默认有些搜索引擎是隐藏的（如抖音、B站等）。在设置面板的"搜索引擎显示"里点击对应的 chip 可以随时开关。
-      </div>
+      <div class="tip"><strong>💡 怎么让某个引擎出现/消失：</strong>去设置面板 → "搜索引擎显示"，点它对应的圆角按钮。蓝色 = 显示，灰色 = 隐藏。新导入的自定义引擎默认是隐藏的，记得去打开。</div>
     </div>
 
-    <!-- ===== 三、键盘快捷键 ===== -->
+    <!-- 三 -->
     <h2 id="shortcuts">三、键盘快捷键</h2>
     <div class="card">
       <table>
-        <tr><th>快捷键</th><th>功能</th><th>说明</th></tr>
-        <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">K</span></td><td>聚焦搜索框</td><td>光标跳到搜索框</td></tr>
-        <tr><td><span class="kbd">Alt</span> + <span class="kbd">S</span></td><td>聚焦并全选搜索框</td><td>方便快速输入新内容</td></tr>
-        <tr><td><span class="kbd">Esc</span></td><td>清空搜索框</td><td>恢复显示所有导航卡片</td></tr>
-        <tr><td><span class="kbd">Ctrl</span>（单独按）</td><td>切换到下一个可见引擎</td><td>按搜索框下方的显示顺序依次切换</td></tr>
-        <tr><td><span class="kbd">F1</span> ~ <span class="kbd">F12</span></td><td>快速选择搜索引擎</td><td>F1=第1个可见引擎，F2=第2个……</td></tr>
+        <tr><th>按键</th><th>功能</th></tr>
+        <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">K</span></td><td>光标跳到搜索框</td></tr>
+        <tr><td><span class="kbd">Alt</span> + <span class="kbd">S</span></td><td>光标跳到搜索框并全选（方便直接打字替换）</td></tr>
+        <tr><td><span class="kbd">Esc</span></td><td>清空搜索框，恢复显示全部导航卡片</td></tr>
+        <tr><td>单独按 <span class="kbd">Ctrl</span></td><td>按显示顺序切到下一个可用搜索引擎</td></tr>
+        <tr><td><span class="kbd">F1</span> ~ <span class="kbd">F12</span></td><td>按显示顺序选择第1~第12个可用搜索引擎</td></tr>
       </table>
-      <div class="warn">
-        <strong>⚠️ 注意：</strong>F1~F12 在某些浏览器中可能被系统占用。如果无效，请尝试同时按住 <span class="kbd">Fn</span> 键。
-      </div>
+      <div class="warn"><strong>⚠️ 笔记本用户注意：</strong>有些笔记本的 F1~F12 默认是调亮度/音量，需要同时按住 <span class="kbd">Fn</span> 键才行。或者在系统设置里改为"标准F1-F12"。</div>
     </div>
 
-    <!-- ===== 四、设置面板 ===== -->
-    <h2 id="settings">四、设置面板详解</h2>
+    <!-- 四 -->
+    <h2 id="settings">四、设置面板（必看）</h2>
     <div class="card">
-      <div class="step">
-        <strong>🔧 打开设置：</strong>点击页面左上角的 <strong>⚙️ 齿轮图标</strong>（电脑端在左上角，手机端也在左上角）。设置面板会从左侧滑出。
-      </div>
+      <div class="step"><strong>怎么打开设置：</strong>点页面左上角的 <strong>⚙️ 齿轮图标</strong>，设置面板会从左边滑出来。点面板外的灰色遮罩区就能关闭。</div>
 
-      <h4>🖼️ 壁纸来源（4种模式）</h4>
-      <ul>
-        <li><strong>在线风景壁纸</strong> — 每天从本地风景池随机选取一张。</li>
-        <li><strong>默认壁纸</strong> — 使用导航页自带的默认背景图。</li>
-        <li><strong>自定义网络壁纸</strong> — 贴入网络图片URL。支持 JPG / PNG / GIF 动图。</li>
-        <li><strong>本地图片壁纸</strong> — 从你的电脑/手机选择图片文件，存在浏览器中。</li>
-      </ul>
-      <p>选择"本地图片壁纸"后，点击 📁 <strong>选择本地图片</strong> 按钮即可从本机选图。</p>
-
+      <p>设置面板里有这些东西：</p>
+      <h4>🖼️ 壁纸来源</h4>
+      <p>四种模式切换（详见下一节）。</p>
       <h4>🌓 主题模式</h4>
-      <p>切换<strong>浅色模式</strong>和<strong>深色模式</strong>。深色模式适合夜间使用，减少眼睛疲劳。</p>
-
+      <p>浅色 / 深色。深色适合晚上或暗光环境。</p>
       <h4>📐 导航折叠</h4>
-      <p>一键<strong>展开</strong>或<strong>折叠</strong>全部导航分类。折叠后页面只显示搜索区域，更简洁。</p>
-
+      <p>点"折叠导航"，整个导航区域收起来，只留搜索框。再点"展开导航"恢复。</p>
       <h4>🔍 搜索引擎显示</h4>
-      <p>点击每个引擎的 chip 来<strong>开关</strong>其是否显示在搜索框下方。<span style="color:var(--accent)">蓝色</span> = 显示，灰色 = 隐藏。</p>
-
+      <p>一些不常用的搜索引擎默认是关的。点灰色圆角按钮就变蓝（显示），点蓝色变灰（隐藏）。</p>
       <h4>⭐ 常用站点</h4>
-      <p>开关常用站点区域的显示，以及设置<strong>显示数量</strong>（1~12个）。</p>
-
+      <p>开关显示 + 设置数量（1~12）。如果你不想让别人看到你常点的网站，可以关掉。</p>
       <h4>📂 分类显示</h4>
-      <p>点击每个分类的 chip 来开关该分类是否在主页面显示。</p>
-
+      <p>每一个分类都可以开关。比如你不需要"影音娱乐"，点灰它就从页面和侧边栏消失。</p>
       <h4>📥 导入/导出自定义</h4>
-      <p><strong>📂 导入</strong> — 选择 JSON 配置文件，一键导入自定义分类、导航站点和搜索引擎。</p>
-      <p><strong>📤 导出</strong> — 将当前配置（含设置）下载为 JSON 文件，可以分享给朋友。</p>
-      <p><strong>🔄 恢复默认</strong> — 清除所有自定义数据和设置，恢复到初始状态。</p>
-    </div>
-
-    <!-- ===== 五、壁纸 ===== -->
-    <h2 id="wallpaper">五、壁纸设置</h2>
-    <div class="card">
-      <h4>在线风景壁纸</h4>
-      <p>导航页会自动扫描 <code>assets/</code> 文件夹中以 <code>wp_</code> 开头的图片文件。支持的格式：</p>
+      <p>三个按钮：</p>
       <ul>
-        <li><code>assets/wp_01.jpg</code> ··· <code>assets/wp_99.jpg</code>（传统风景壁纸）</li>
-        <li><code>assets/wp_01.gif</code> ··· <code>assets/wp_99.gif</code>（动图壁纸，支持动画效果）</li>
+        <li><strong>📂 导入配置文件</strong> — 选一个 .json 文件，一键导入配置</li>
+        <li><strong>📤 导出配置</strong> — 把当前全部配置下载为 .json 文件，可以发给朋友</li>
+        <li><strong>🔄 恢复默认导航</strong> — 清空一切，回到最初的样子（不可撤销，建议先导出备份）</li>
       </ul>
-      <p>把下载的风景图按编号命名放进 <code>assets/</code> 文件夹，刷新页面就会自动收录。</p>
-      <p>每天会随机选一张，同一张图当天不会变。</p>
-
-      <div class="tip">
-        <strong>💡 动图壁纸：</strong>放入 <code>wp_13.gif</code> 等文件，扫描器会先尝试 <code>.jpg</code>，找不到再试 <code>.gif</code>。
-      </div>
-
-      <h4>自定义网络壁纸</h4>
-      <p>在设置中切换到"自定义网络壁纸"，然后输入图片的网络地址（URL），按回车或点击输入框外就生效了。支持GIF动画。</p>
-      <p>这个URL会随配置 JSON 导出，所以收到你配置文件的朋友也能看到同一张壁纸。</p>
-
-      <h4>本地图片壁纸</h4>
-      <p>点击 📁 <strong>选择本地图片</strong>，从你的电脑选一张图。图片以 base64 编码存储在浏览器中，<strong>不会</strong>随 JSON 导出（导出时壁纸地址留空），保护你的隐私。</p>
-
-      <div class="warn">
-        <strong>⚠️ 注意：</strong>本地图片存储大小有限制（通常约5MB）。太大的图片可能无法存储。
-      </div>
+      <h4>🏠 设为首页</h4>
+      <p>点这个按钮会出现一个弹窗，告诉你不同浏览器怎么把导航页设为启动页。复制地址按提示操作即可。</p>
+      <h4>❓ 帮助</h4>
+      <p>点这个打开本帮助页面。</p>
+      <h4>💬 交流</h4>
+      <p>点这个跳转到交流社区（B站专栏），可以提意见、报bug、看更新动态。</p>
     </div>
 
-    <!-- ===== 六、JSON导入导出 ===== -->
-    <h2 id="import-export">六、JSON 导入/导出配置</h2>
+    <!-- 五 -->
+    <h2 id="wallpaper">五、四种壁纸模式</h2>
     <div class="card">
-      <h4>📥 导入配置步骤</h4>
-      <div class="step">
-        <strong>第1步：</strong>打开设置面板（⚙️齿轮）。<br>
-        <strong>第2步：</strong>点击 <strong>📂 导入配置文件</strong> 按钮。<br>
-        <strong>第3步：</strong>在弹出的文件选择框中，选择你的 <code>.json</code> 配置文件。<br>
-        <strong>第4步：</strong>系统提示"导入成功"，页面自动刷新，新配置生效！
-      </div>
+      <table>
+        <tr><th>模式</th><th>说明</th></tr>
+        <tr><td><strong>在线风景壁纸</strong></td><td>每天从你放在 <code>assets/</code> 文件夹里的风景图里随机选一张。支持 <code>.jpg</code> 和 <code>.gif</code> 动图。把图片按 <code>wp_01.jpg</code>、<code>wp_13.gif</code> 这样命名放进去就行。</td></tr>
+        <tr><td><strong>默认壁纸</strong></td><td>用导航页自带的那张背景图。不用管。</td></tr>
+        <tr><td><strong>自定义网络壁纸</strong></td><td>在输入框里贴一个图片的网络地址（URL），网页背景就换成那张图。支持 JPG、PNG、GIF动图。这个地址会随 JSON 导出分享给朋友。</td></tr>
+        <tr><td><strong>本地图片壁纸</strong></td><td>点 📁 <strong>选择本地图片</strong>，从你电脑/手机里选一张图。图片存在你的浏览器里，别人看不到。如果想把本地壁纸也分享出去，勾选下面的"导出JSON时包含本地壁纸"复选框即可。</td></tr>
+      </table>
+    </div>
 
-      <h4>📤 导出配置步骤</h4>
-      <div class="step">
-        <strong>第1步：</strong>打开设置面板。<br>
-        <strong>第2步：</strong>点击 <strong>📤 导出配置</strong> 按钮。<br>
-        <strong>第3步：</strong>浏览器自动下载一个 <code>auroraus_config_日期.json</code> 文件。<br>
-        <strong>第4步：</strong>把这个文件发给朋友，他们导入后就有和你一样的导航配置！
-      </div>
-
-      <div class="tip">
-        <strong>💡 适用场景：</strong>
+    <!-- 六 -->
+    <h2 id="homepage">六、怎么把导航页设为浏览器首页</h2>
+    <div class="card">
+      <p>有两种方式：</p>
+      <div class="step"><strong>方法一（推荐）：</strong>打开设置面板 → 点 <strong>🏠 设为首页</strong> 按钮 → 弹窗里会显示详细说明和网址，按你用的浏览器操作。</div>
+      <div class="step"><strong>方法二：</strong>
         <ul>
-          <li>换了电脑或浏览器，导出配置再导入，一键恢复</li>
-          <li>团队共享一套导航配置（内部工具、常用资源）</li>
-          <li>备份自己的配置，防止浏览器数据被清理</li>
+          <li><strong>Chrome/Edge：</strong>点右上角三个点 → 设置 → 启动时 → 打开特定网页 → 添加新网页 → 输入 <code>https://nav.auroraus.cn</code></li>
+          <li><strong>Firefox：</strong>右上角三条杠 → 设置 → 主页 → 主页和新窗口 → 自定义网址 → 输入 <code>https://nav.auroraus.cn</code></li>
+          <li><strong>Safari：</strong>Safari菜单 → 设置 → 通用 → 主页 → 输入 <code>https://nav.auroraus.cn</code></li>
         </ul>
       </div>
-
-      <h4>🔄 恢复默认</h4>
-      <p>点击后弹出确认框，确认后清除<strong>所有</strong>自定义数据（包括设置、壁纸、分类显示偏好等），页面恢复到出厂状态。</p>
-      <div class="warn"><strong>⚠️ 此操作不可撤销！</strong>建议先导出配置备份再执行。</div>
     </div>
 
-    <!-- ===== 七、JSON格式 ===== -->
-    <h2 id="json-format">七、JSON 配置格式（完整参考）</h2>
+    <!-- 七 -->
+    <h2 id="import-export">七、JSON 导入/导出——共享配置的神器</h2>
     <div class="card">
-      <h4>完整 JSON 结构</h4>
-      <pre><code>{
-  "categories": [                         // 自定义分类（可选）
-    {
-      "id": "cat-mytools",               // 唯一ID，必填，建议 "cat-xxx" 格式
-      "name": "我的工具",                 // 分类名称，必填
-      "icon": "assets/icon_tool.jpg",    // 图标路径，可选，可用 assets/ 下的图
-      "sites": [                         // 该分类下的站点列表
-        {
-          "name": "GitHub",             // 站点名称，必填
-          "url": "https://github.com",  // 站点链接，必填（完整URL）
-          "desc": "代码托管平台",        // 简短描述，可选
-          "icon": "G",                  // 图标显示字母，可选，默认取name首字母
-          "iconColor": "blue"           // 图标颜色，可选，见下方颜色表
-        }
-      ]
-    }
-  ],
-  "engines": [                            // 自定义搜索引擎（可选）
-    {
-      "id": "npmjs",                     // 引擎唯一标识，必填（英文、数字）
-      "name": "npm搜索",                  // 引擎名称，必填
-      "url": "https://npmjs.com/search?q=", // 搜索URL，必填，用 ?q= 或 ?keyword= 等
-      "label": "📦 npm"                  // 在引擎列表中显示的标签，可选（含emoji）
-    }
-  ],
-  "settings": {                           // 页面设置（所有字段都可选，不传则用默认值）
-    "theme": "dark",                      // 主题：light（浅色）| dark（深色）
-    "wallpaper": "custom",                // 壁纸：bing | default | custom
-    "customWallpaper": "https://图片地址", // 自定义壁纸URL（wallpaper=custom时有效）
-    "freqVisible": true,                 // 常用站点：true=显示 | false=隐藏
-    "freqCount": 8,                      // 常用站点数量：1-12
-    "navFold": "show",                   // 导航折叠：show=展开 | hide=折叠
-    "hiddenCategories": {                // 分类显隐控制
-      "cat-general": false,              // false=显示，true=隐藏
-      "cat-academic": false
-    },
-    "hiddenEngines": {                   // 搜索引擎显隐控制
-      "bing": false,                     // false=显示，true=隐藏
-      "baidu": false
-    }
-  }
-}</code></pre>
-
-      <h4>🎨 图标颜色可选值</h4>
-      <table>
-        <tr><td><code>blue</code></td><td>蓝色</td><td><code>red</code></td><td>红色</td></tr>
-        <tr><td><code>green</code></td><td>绿色</td><td><code>orange</code></td><td>橙色</td></tr>
-        <tr><td><code>purple</code></td><td>紫色</td><td><code>cyan</code></td><td>青色</td></tr>
-        <tr><td><code>teal</code></td><td>蓝绿</td><td><code>pink</code></td><td>粉色</td></tr>
-        <tr><td><code>indigo</code></td><td>靛蓝</td><td></td><td></td></tr>
-      </table>
-
-      <h4>📂 内置分类 ID 完整列表</h4>
-      <p>用于 <code>settings.hiddenCategories</code> 控制显示/隐藏：</p>
-      <pre><code>cat-general（综合导航）       cat-academic（学术检索）
-cat-ai（AI大模型）            cat-buaa（北航网站）
-cat-navweb（导航网站）         cat-translate（翻译工具）
-cat-tech（技术与交流）         cat-learn（学习提升）
-cat-efficiency（效率提升）     cat-tool（效率工具）
-cat-map（地图天气）            cat-entertainment（影音娱乐）
-cat-tutorial（学习教程）       cat-aero（航空与科普）
-cat-mirror（镜像网站）         cat-cloud（云服务器）</code></pre>
-
-      <h4>🔍 内置搜索引擎 ID 完整列表</h4>
-      <p>用于 <code>settings.hiddenEngines</code> 控制显示/隐藏：</p>
-      <pre><code>bing（必应）         baidu（百度）         google（谷歌）
-sogou（搜狗）        sogouweixin（搜狗微信）  sogouzhihu（搜狗知乎）
-yandex（Yandex）     gscholar2（谷歌学术②）  xmol（XMOL）
-googlescholar（谷歌学术） buaaebsco（北航外文） baiduxueshu（百度学术）
-douyin（抖音）        xiaohongshu（小红书）    bilibili（B站）
-zhihu（知乎）         weibo（微博）           github（GitHub）
-baidumap（百度地图）   wikihow（WikiHow）     scihub（Sci-Hub）
-kiphub（KipHub）      msacademic（微软学术）    custom（自定义）</code></pre>
-    </div>
-
-    <!-- ===== 八、推荐配置下载 ===== -->
-    <h2 id="download-config">八、推荐配置下载</h2>
-    <div class="card">
-      <p>以下是官方推荐的默认配置文件，下载后通过设置面板"📂 导入配置文件"即可快速体验自定义功能：</p>
-
-      <div style="text-align:center;margin:1.2rem 0;">
-        <a class="download-btn" href="../configs/default_recommended.json" download>
-          📥 下载推荐配置（default_recommended.json）
-        </a>
+      <h4>📥 导入别人给的配置</h4>
+      <div class="step">
+        <strong>第1步：</strong>打开设置（⚙️齿轮）<br>
+        <strong>第2步：</strong>点 <strong>📂 导入配置文件</strong><br>
+        <strong>第3步：</strong>在弹出的文件选择框里选那个 <code>.json</code> 文件<br>
+        <strong>第4步：</strong>看到"导入成功"提示 → 页面自动刷新 → 新配置生效
       </div>
 
-      <p>这个配置文件包含：</p>
+      <h4>📤 导出你自己的配置给别人</h4>
+      <div class="step">
+        <strong>第1步：</strong>打开设置<br>
+        <strong>第2步：</strong>点 <strong>📤 导出配置</strong><br>
+        <strong>第3步：</strong>浏览器自动下载一个 <code>auroraus_config_日期.json</code> 文件<br>
+        <strong>第4步：</strong>把这个文件发给同学/同事 → 他们导入后就和你一样的导航
+      </div>
+
+      <div class="tip"><strong>💡 适用场景：</strong>换电脑恢复配置、团队共享一套导航、备份自己的设置。</div>
+    </div>
+
+    <!-- 八 -->
+    <h2 id="add-remove">八、用编辑器管理站点（推荐⭐）</h2>
+    <div class="card">
+      <p>不需要写 JSON！打开 <strong>🖊️ 可视化配置编辑器</strong>，像操作表格一样管理所有站点：</p>
+
+      <div class="step">
+        <strong>怎么打开：</strong>设置面板 → 点 <strong>🖊️ 编辑器</strong> 按钮（紫色高亮），或直接访问 <code>https://nav.auroraus.cn/config-editor/</code>
+      </div>
+
+      <h4>📂 分类与站点 标签页</h4>
       <ul>
-        <li><strong>2个自定义分类</strong>（我的工具 + 设计资源），共7个站点</li>
-        <li><strong>2个自定义搜索引擎</strong>（npm搜索 + Stack Overflow搜索）</li>
-        <li><strong>深色主题</strong> + <strong>动图壁纸</strong>（GIF风景动画效果）</li>
-        <li><strong>8个常用站点</strong> + 全部导航分类展开</li>
+        <li><strong>左侧选分类</strong> → 右侧显示该分类下全部站点表格</li>
+        <li><strong>☑️ 勾选框</strong> — 取消勾选某个站点，该站点在主页上就会消失（行变灰+删除线）</li>
+        <li><strong>直接编辑</strong> — 点名称/描述/网址/图标字母/颜色的输入框就能改，改完立即生效</li>
+        <li><strong>+ 添加新站点</strong> — 在当前分类末尾新增一个站点行（绿色左边框标记）</li>
+        <li><strong>+ 添加分类</strong> — 在侧边栏底部创建全新的自定义分类</li>
+        <li><strong>✕ 删除</strong> — 自定义分类和其中的站点可以随时删掉</li>
       </ul>
 
-      <div class="tip">
-        <strong>💡 更多配置文件：</strong>后续我们会在 <code>configs/</code> 文件夹中持续更新更多主题和场景的预设配置，敬请关注。
+      <h4>🔍 搜索引擎 标签页</h4>
+      <p>每个引擎一行，可以勾选显示/隐藏、直接改标签和搜索URL、底部表单添加新的自定义搜索引擎。</p>
+
+      <h4>🎛️ 页面设置 标签页</h4>
+      <p>可视化调节主题深浅、壁纸来源、常用站点开关和数量、导航折叠、每个分类的显示隐藏。</p>
+
+      <div class="step">
+        <strong>🔁 怎么让改动生效：</strong>
+        <br>第1步：在编辑器里改完 → 点 <strong>💾 保存</strong>
+        <br>第2步：回到主页 <code>https://nav.auroraus.cn/</code> → 刷新页面
+        <br>第3步：所有改动就出现在主页上了！
       </div>
 
-      <p>你也可以基于这个文件修改其中的站点列表、搜索引擎、设置参数等，创建属于自己的专属配置。</p>
+      <div class="tip">
+        <strong>💡 为什么不用写JSON？</strong>编辑器用浏览器 localStorage 来存储配置，和主页共享同一份数据。就像在 Excel 里编辑表格一样直观——不需要懂任何代码。
+      </div>
+      <div class="tip">
+        <strong>💡 高级功能：</strong>编辑器也支持 📤 导出JSON 和 📂 导入JSON，可以把你选好的配置导出给其他人一键导入。
+      </div>
     </div>
 
-    <!-- ===== 九、常见问题 ===== -->
-    <h2 id="faq">九、常见问题（FAQ）</h2>
+    <!-- 九 -->
+    <h2 id="save-sync">九、编辑器怎么和主页同步？</h2>
     <div class="card">
-      <h4>❓ 导入配置后，自定义分类为什么看不到？</h4>
-      <p>请检查设置面板 → 分类显示，确保自定义分类的 chip 是蓝色（显示状态）。如果是灰色，点击一下即可开启。</p>
+      <p>很多用户问：这是静态页面，编辑器改的东西怎么跑到主页上去的？</p>
+      <p>答：通过浏览器的 <strong>localStorage</strong>（本地存储）。</p>
+      <ul>
+        <li>编辑器保存时 → 把配置写入浏览器的 localStorage</li>
+        <li>主页加载时 → 从浏览器 localStorage 读取配置并渲染</li>
+        <li>因为是<strong>同一个域名</strong>（nav.auroraus.cn），两个页面<strong>共享</strong>同一份 localStorage</li>
+        <li>不需要服务器、不需要数据库、不需要API — 纯前端就搞定了</li>
+      </ul>
+      <div class="step">
+        <strong>操作流程：</strong>编辑器改 → 💾保存 → 打开主页刷新 → 生效 ✅
+      </div>
+      <div class="warn">
+        <strong>⚠️ 注意：</strong>如果你清除了浏览器的"网站数据"，配置会丢失。建议定期点 📤 导出JSON 做备份。
+      </div>
+    </div>
 
-      <h4>❓ 导入的搜索引擎为什么选不了？</h4>
-      <p>自定义搜索引擎默认是隐藏的。请在设置面板 → 搜索引擎显示中，点击对应的 chip 把它变成蓝色（显示状态），然后就能在搜索框下方看到并使用了。</p>
+    <!-- 十 -->
+    <h2 id="json-add-remove">十、通过JSON给已有分类增删站点</h2>
+    <div class="card">
+      <p>不需要改网页代码！只要在 JSON 配置文件里加两个字段：</p>
 
-      <h4>❓ 我的设置会保存在哪里？</h4>
-      <p>所有设置（主题、壁纸、引擎显隐、分类显隐、常用站点等）都保存在浏览器的 <strong>localStorage</strong> 中。只要你不在浏览器中清除网站数据，设置会一直保留。</p>
+      <h4>✚ 往已有分类里添加站点</h4>
+      <p>在 JSON 文件里加一个 <code>addSites</code> 字段，格式是 <code>{ "分类ID": [站点信息...] }</code>。</p>
+      <p>比如，在"综合导航"分类里加两个新网站，JSON 文件这样写：</p>
+      <pre><code>{
+  "addSites": {
+    "cat-general": [
+      {"name":"V2EX","url":"https://www.v2ex.com","desc":"创意工作者社区","icon":"V","iconColor":"blue"},
+      {"name":"Product Hunt","url":"https://www.producthunt.com","desc":"新产品发现平台","icon":"P","iconColor":"orange"}
+    ]
+  }
+}</code></pre>
+      <p>导入后，这两个新卡片就会直接出现在"综合导航"分类的末尾。再次导入同一个 JSON 不会重复添加。</p>
 
-      <h4>❓ 换了浏览器或电脑，设置还在吗？</h4>
-      <p>不会自动同步。建议定期使用"📤 导出配置"功能备份，换设备后通过"📂 导入配置文件"恢复。</p>
+      <h4>✖ 从已有分类里移除站点</h4>
+      <p>在 JSON 文件里加 <code>removeSites</code> 字段，填上分类ID和要移除的站点名称列表。</p>
+      <p>比如，把"技术交流"分类里的"V2EX"和"掘金"两个站点隐藏掉：</p>
+      <pre><code>{
+  "removeSites": {
+    "cat-tech": ["V2EX", "掘金"]
+  }
+}</code></pre>
+      <p>站点名称必须和页面上显示的完全一致（区分大小写）。</p>
 
-      <h4>❓ 动图壁纸不流畅怎么办？</h4>
-      <p>GIF 文件过大可能导致加载缓慢和卡顿。建议使用压缩过的 GIF（5MB以内），或使用 Wallpaper Engine 等工具生成的高质量动图。</p>
+      <div class="tip"><strong>💡 addSites 和 removeSites 可以和 categories、engines、settings 写在同一个 JSON 文件里，一次导入全部生效。</strong>导出时这些信息也会一并导出。</div>
 
-      <h4>❓ F1~F12 快捷键没反应？</h4>
-      <p>部分笔记本电脑的 F1~F12 默认是功能键（亮度、音量等），需要同时按住 <span class="kbd">Fn</span> 键使用。<br>或者在BIOS/系统设置中将功能键行为改为"标准F1-F12"。</p>
+      <h4>内置分类 ID 列表（用于 addSites/removeSites）</h4>
+      <pre><code>cat-general     综合导航      cat-academic    学术检索
+cat-ai          AI大模型      cat-buaa        北航网站
+cat-navweb      导航网站      cat-translate    翻译工具
+cat-tech        技术交流      cat-learn        学习提升
+cat-efficiency  效率提升      cat-tool         效率工具
+cat-map         地图天气      cat-entertainment 影音娱乐
+cat-tutorial    学习教程      cat-aero         航空科普
+cat-mirror      镜像网站      cat-cloud        云服务器</code></pre>
+    </div>
 
-      <h4>❓ 怎样只保留我需要的分类？</h4>
-      <p>设置面板 → 分类显示 → 把不想看到的分类 chip 点灰即可。被隐藏的分类在侧边栏和移动端Tab中也会消失。</p>
+    <!-- 十一 -->
+    <h2 id="base64">十一、导出本地壁纸（含 base64）</h2>
+    <div class="card">
+      <p>如果你用了本地图片作为壁纸，默认情况下<strong>不会</strong>导出，保护你的隐私。</p>
+      <p>但如果你想把这个壁纸一起分享给朋友，可以这样做：</p>
+      <div class="step">
+        <strong>第1步：</strong>设置面板 → 壁纸来源 → 选"本地图片壁纸"<br>
+        <strong>第2步：</strong>下面会冒出来一个复选框 ☑️ <strong>"导出JSON时包含本地壁纸（base64格式，放在文件末尾）"</strong><br>
+        <strong>第3步：</strong>勾选它<br>
+        <strong>第4步：</strong>点 📤 导出配置
+      </div>
+      <p>导出的 JSON 文件末尾会多一个 <code>_base64Wallpaper</code> 字段，包含壁纸的 base64 编码数据。<strong>这个字段在最末尾</strong>，不影响你查看和修改前面其他配置内容。</p>
+      <p>朋友导入这个 JSON 后，本地壁纸也会自动恢复。</p>
+      <div class="warn"><strong>⚠️ base64 数据可能非常大（几MB），文件会比较大。</strong>建议只在需要分享壁纸时才勾选。</div>
+    </div>
+
+    <!-- 十二 -->
+    <h2 id="json-format">十二、JSON 配置文件完整格式</h2>
+    <div class="card">
+      <pre><code>{
+  "categories": [ ... ],         // 自定义新分类（可选）
+  "engines": [ ... ],           // 自定义新搜索引擎（可选）
+  "addSites": {                 // 添加站点到已有分类（可选）
+    "分类ID": [{name,url,desc,icon,iconColor}, ...]
+  },
+  "removeSites": {              // 从已有分类移除站点（可选）
+    "分类ID": ["站点名称1", "站点名称2"]
+  },
+  "settings": {                 // 页面设置（可选）
+    "theme": "dark",             // light | dark
+    "wallpaper": "bing",         // bing | default | custom | local
+    "customWallpaper": "url",    // 自定义壁纸URL
+    "freqVisible": true,         // 是否显示常用站点
+    "freqCount": 8,              // 常用站点数量(1-12)
+    "navFold": "show",           // show | hide
+    "hiddenCategories": { "id": true },  // 分类显隐
+    "hiddenEngines": { "id": true }      // 引擎显隐
+  },
+  "_base64Wallpaper": "data:image/..."  // 本地壁纸base64（可选，放末尾）
+}</code></pre>
+
+      <h4>图标颜色可选：</h4>
+      <p><code>blue</code> <code>red</code> <code>green</code> <code>orange</code> <code>purple</code> <code>cyan</code> <code>teal</code> <code>pink</code> <code>indigo</code></p>
+
+      <h4>搜索引擎ID列表：</h4>
+      <pre><code>bing baidu google sogou sogouweixin sogouzhihu yandex
+gscholar2 xmol googlescholar buaaebsco baiduxueshu
+douyin xiaohongshu bilibili zhihu weibo github
+baidumap wikihow scihub kiphub msacademic custom</code></pre>
+    </div>
+
+    <!-- 十三 -->
+    <h2 id="download">十三、推荐配置下载</h2>
+    <div class="card">
+      <div style="text-align:center;margin:1.2rem 0;">
+        <a class="download-btn" href="../configs/default_recommended.json" download>
+          📥 下载推荐配置
+        </a>
+      </div>
+      <p>包含2个自定义分类+7个站点、2个自定义搜索引擎、深色主题、GIF动图壁纸。下载后直接导入就能体验所有功能。</p>
+    </div>
+
+    <!-- 十四 -->
+    <h2 id="community">十四、交流与反馈</h2>
+    <div class="card">
+      <p>有问题、有建议、想报bug、想看更新——任选以下方式：</p>
+      <ul>
+        <li>💬 打开设置面板 → 点 <strong>💬 交流</strong> → 跳转到 B站交流区留言</li>
+        <li>📧 发邮件到 <a href="mailto:auroraus2020@outlook.com">auroraus2020@outlook.com</a></li>
+      </ul>
+    </div>
+
+    <!-- 十五 -->
+    <h2 id="faq">十五、常见问题</h2>
+    <div class="card">
+      <h4>❓ 编辑器改完保存了，主页刷新没变化？</h4>
+      <p>试试硬刷新（<span class="kbd">Ctrl</span> + <span class="kbd">F5</span>），或者先关掉主页标签页再重新打开。如果还不生效，检查一下是不是在浏览器隐身模式下操作（隐身窗口的 localStorage 是隔离的）。</p>
+
+      <h4>❓ 导入JSON后新加的搜索引擎看不到？</h4>
+      <p>自定义搜索引擎<strong>默认是隐藏的</strong>。去设置 → 搜索引擎显示，找到它的灰色按钮点一下变蓝就出来了。</p>
+
+      <h4>❓ 导入后自定义分类消失？</h4>
+      <p>去设置 → 分类显示，看它的按钮是不是灰色的。点蓝就显示。</p>
+
+      <h4>❓ 怎么只保留我需要的几个分类？</h4>
+      <p>设置 → 分类显示 → 把不要的分类按钮点成灰色，页面和侧边栏就都看不到了。</p>
+
+      <h4>❓ 我的设置存在哪？</h4>
+      <p>存在浏览器的 localStorage 里。只要不清浏览器数据就一直保留。</p>
+
+      <h4>❓ 怎么把导航页放到手机桌面？</h4>
+      <p>用手机浏览器打开 https://nav.auroraus.cn → 浏览器菜单 → "添加到主屏幕"/"添加到桌面"。</p>
+
+      <h4>❓ F1~F12 不灵？</h4>
+      <p>同时按住 <span class="kbd">Fn</span>，或者在BIOS里把功能键设为标准F1-F12。</p>
     </div>
 
     <p style="text-align:center;margin-top:3rem;color:var(--muted);font-size:0.85rem;">
-      如有问题或建议，欢迎发送邮件至 <a href="mailto:auroraus2020@outlook.com">auroraus2020@outlook.com</a> 💌
+      有问题欢迎随时交流 💌 <a href="mailto:auroraus2020@outlook.com">auroraus2020@outlook.com</a>
     </p>
   </div>
 
   <script>
-    var saved = localStorage.getItem('nav_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (saved === 'dark') document.body.classList.add('dark');
-    document.querySelector('.theme-toggle').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-
+    var s = localStorage.getItem('nav_theme') || (window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+    if (s==='dark') document.body.classList.add('dark');
+    document.querySelector('.theme-toggle').textContent = document.body.classList.contains('dark')?'☀️':'🌙';
     function toggleTheme() {
-      var isDark = document.body.classList.toggle('dark');
-      document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
-      localStorage.setItem('nav_theme', isDark ? 'dark' : 'light');
+      var d = document.body.classList.toggle('dark');
+      document.querySelector('.theme-toggle').textContent = d?'☀️':'🌙';
+      localStorage.setItem('nav_theme',d?'dark':'light');
     }
   </script>
 </body>

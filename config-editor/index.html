@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>配置编辑器 - AuroraUs</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<div class="topbar"><h2>⚙️ 配置编辑器</h2><div class="topbar-actions">
+<a href=".." class="btn">← 返回导航</a><button class="btn primary" onclick="saveAll()">💾 保存</button>
+<button class="btn" onclick="exportJson()">📤 导出JSON</button>
+<button class="btn" onclick="importJson()">📂 导入JSON</button>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+<button class="btn danger" onclick="resetAll()">🔄 恢复默认</button></div></div>
+<div id="msg" class="msg"></div>
+<div class="tabs"><div class="tab active" onclick="switchTab('categories',this)">📂 分类与站点</div><div class="tab" onclick="switchTab('engines',this)">🔍 搜索引擎</div><div class="tab" onclick="switchTab('settings',this)">🎛️ 页面设置</div></div>
+<div id="main" class="main">
+<div class="panel active" id="tab-categories"><div class="cat-sidebar" id="catSidebar"></div><div class="cat-content" id="catContent"></div></div>
+<div class="panel" id="tab-engines"><div class="card" id="engineContent" style="max-width:100%;flex:1;"></div></div>
+<div class="panel" id="tab-settings"><div class="card" id="settingsContent" style="max-width:100%;flex:1;"></div></div>
+</div>
+<script src="data.js"></script>
+<script src="editor.js"></script>
+</body></html>

@@ -820,7 +820,7 @@
         <div class="category-header" onclick="toggleCategory(this)">
           <img src="assets/icon_buaa.jpg" alt="">
           <h2>北航网站</h2>
-          <span class="count">6个站点</span>
+          <span class="count">9个站点</span>
           <span class="toggle-arrow">▼</span>
         </div>
         <div class="card-grid">
@@ -847,6 +847,18 @@
           <a class="nav-card" href="https://career.buaa.edu.cn" target="_blank" rel="noopener">
             <div class="icon icon-purple">C</div>
             <div class="info"><h3>北航就业</h3><p>就业信息与招聘平台</p><span class="url">career.buaa.edu.cn</span></div>
+          </a>
+          <a class="nav-card" href="https://s.buaa.edu.cn" target="_blank" rel="noopener">
+            <div class="icon icon-green">S</div>
+            <div class="info"><h3>北航正版软件</h3><p>校园正版软件下载平台</p><span class="url">s.buaa.edu.cn</span></div>
+          </a>
+          <a class="nav-card" href="https://gw.buaa.edu.cn" target="_blank" rel="noopener">
+            <div class="icon icon-teal">G</div>
+            <div class="info"><h3>北航网络管理</h3><p>校园网络管理服务平台</p><span class="url">gw.buaa.edu.cn</span></div>
+          </a>
+          <a class="nav-card" href="https://it.buaa.edu.cn/html/websites/index.html" target="_blank" rel="noopener">
+            <div class="icon icon-blue">I</div>
+            <div class="info"><h3>北航网址导航</h3><p>北航校内网址快速导航</p><span class="url">it.buaa.edu.cn</span></div>
           </a>
         </div>
       </section>
@@ -1112,7 +1124,7 @@
         <div class="category-header" onclick="toggleCategory(this)">
           <img src="assets/icon_tool.jpg" alt="">
           <h2>效率工具</h2>
-          <span class="count">8个站点</span>
+          <span class="count">10个站点</span>
           <span class="toggle-arrow">▼</span>
         </div>
         <div class="card-grid">
@@ -1147,6 +1159,14 @@
           <a class="nav-card" href="https://markdown.com.cn/editor/" target="_blank" rel="noopener">
             <div class="icon icon-blue">M</div>
             <div class="info"><h3>Markdown编辑</h3><p>在线Markdown编辑器，实时预览</p><span class="url">markdown.com.cn</span></div>
+          </a>
+          <a class="nav-card" href="https://app.diagrams.net" target="_blank" rel="noopener">
+            <div class="icon icon-orange">D</div>
+            <div class="info"><h3>draw.io</h3><p>免费在线流程图与图表绘制工具</p><span class="url">app.diagrams.net</span></div>
+          </a>
+          <a class="nav-card" href="https://www.photopea.com" target="_blank" rel="noopener">
+            <div class="icon icon-teal">P</div>
+            <div class="info"><h3>在线免费PS</h3><p>Photopea在线图片编辑器，媲美PS</p><span class="url">photopea.com</span></div>
           </a>
         </div>
       </section>
@@ -1443,7 +1463,12 @@
     <div class="settings-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
         <h3 style="margin:0;">⚙️ 设置</h3>
-        <a href="help/" target="_blank" class="settings-help-link" title="使用帮助">❓ 使用帮助</a>
+        <div style="display:flex;gap:0.4rem;">
+          <a href="help/" target="_blank" class="settings-help-link" title="使用帮助">❓ 帮助</a>
+          <a href="config-editor/" target="_blank" class="settings-help-link" title="可视化配置编辑器" style="color:var(--accent2);border-color:var(--accent2);">🖊️ 编辑器</a>
+          <a href="https://www.bilibili.com/opus/1219266229527642119" target="_blank" class="settings-help-link" title="交流讨论">💬 交流</a>
+          <button class="settings-action-btn" onclick="setAsHomepage()" title="将本页设为浏览器首页">🏠 设为首页</button>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -1458,6 +1483,11 @@
           <input type="text" id="customWpInput" class="settings-input" placeholder="输入网络图片URL..." oninput="saveCustomWp()" style="flex:1;">
           <input type="file" id="localWpInput" accept="image/*" style="display:none" onchange="handleLocalWp(event)">
           <button class="settings-action-btn" onclick="document.getElementById('localWpInput').click()">📁 选择本地图片</button>
+        </div>
+        <div class="settings-row" style="margin-top:0.3rem;" id="wpExportRow" onchange="saveWpExport()">
+          <label style="font-size:0.78rem;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+            <input type="checkbox" id="wpExportCheckbox"> 导出JSON时包含本地壁纸（base64格式，放在文件末尾）
+          </label>
         </div>
         <p class="settings-hint" id="wpStatusHint">网络图片URL用于导入/导出配置；本地图片仅存在本机浏览器中</p>
       </div>
@@ -2209,6 +2239,10 @@
       if (wallpaperType === 'custom') {
         document.getElementById('customWpInput').value = customWallpaperUrl;
       }
+      try {
+        document.getElementById('wpExportCheckbox').checked = localStorage.getItem('nav_wp_export') === '1';
+      } catch(e) {}
+      document.getElementById('wpExportRow').style.display = (wallpaperType === 'local') ? '' : 'none';
       var isDark = document.body.classList.contains('dark');
       document.getElementById('setThemeLight').classList.toggle('on', !isDark);
       document.getElementById('setThemeDark').classList.toggle('on', isDark);
@@ -2288,6 +2322,7 @@
       document.getElementById('setWpLocal').classList.toggle('on', type === 'local');
       document.getElementById('customWpInput').style.display = (type === 'custom') ? '' : 'none';
       document.getElementById('localWpInput').nextElementSibling.style.display = (type === 'local') ? '' : 'none';
+      document.getElementById('wpExportRow').style.display = (type === 'local') ? '' : 'none';
       if (type === 'local') {
         document.getElementById('wpStatusHint').textContent = '本地图片仅存在本机浏览器存储中，导出配置时会留空';
       } else if (type === 'custom') {
@@ -2381,12 +2416,50 @@
           localStorage.setItem('nav_custom_cats', JSON.stringify(customCats));
           localStorage.setItem('nav_custom_engines', JSON.stringify(customEngines));
 
+          var addSites = data.addSites;
+          if (addSites && typeof addSites === 'object') {
+            try {
+              var existingAdded = JSON.parse(localStorage.getItem('nav_added_sites') || '{}');
+              Object.keys(addSites).forEach(function(catId) {
+                if (!existingAdded[catId]) existingAdded[catId] = [];
+                var newSites = addSites[catId];
+                if (Array.isArray(newSites)) {
+                  newSites.forEach(function(s) {
+                    var exists = existingAdded[catId].some(function(x) { return x.name === s.name; });
+                    if (!exists) existingAdded[catId].push(s);
+                  });
+                }
+              });
+              localStorage.setItem('nav_added_sites', JSON.stringify(existingAdded));
+            } catch(e) {}
+          }
+
+          var removeSites = data.removeSites;
+          if (removeSites && typeof removeSites === 'object') {
+            try {
+              var existingRemoved = JSON.parse(localStorage.getItem('nav_removed_sites') || '{}');
+              Object.keys(removeSites).forEach(function(catId) {
+                if (!existingRemoved[catId]) existingRemoved[catId] = [];
+                var names = removeSites[catId];
+                if (Array.isArray(names)) {
+                  names.forEach(function(name) {
+                    if (existingRemoved[catId].indexOf(name) < 0) existingRemoved[catId].push(name);
+                  });
+                }
+              });
+              localStorage.setItem('nav_removed_sites', JSON.stringify(existingRemoved));
+            } catch(e) {}
+          }
+
+          if (typeof data._base64Wallpaper === 'string' && data._base64Wallpaper.length > 100) {
+            try { localStorage.setItem('nav_local_wp', data._base64Wallpaper); } catch(e) {}
+          }
           var settings = data.settings;
           if (settings && typeof settings === 'object') {
             if (settings.theme && (settings.theme === 'light' || settings.theme === 'dark')) {
               localStorage.setItem('nav_theme', settings.theme);
             }
-            if (settings.wallpaper && (settings.wallpaper === 'bing' || settings.wallpaper === 'default')) {
+            if (settings.wallpaper && (settings.wallpaper === 'bing' || settings.wallpaper === 'default' || settings.wallpaper === 'custom' || settings.wallpaper === 'local')) {
               localStorage.setItem('nav_wallpaper', settings.wallpaper);
             }
             if (typeof settings.customWallpaper === 'string' && settings.customWallpaper.length > 0) {
@@ -2412,6 +2485,8 @@
           var msgParts = [];
           msgParts.push(customCats.length + ' 个分类');
           msgParts.push(Object.keys(customEngines).length + ' 个搜索引擎');
+          if (addSites) { var c = 0; Object.keys(addSites).forEach(function(k) { c += addSites[k].length; }); if (c) msgParts.push('添加 ' + c + ' 个站点到已有分类'); }
+          if (removeSites) { var c = 0; Object.keys(removeSites).forEach(function(k) { c += removeSites[k].length; }); if (c) msgParts.push('移除 ' + c + ' 个站点'); }
           if (settings) msgParts.push('设置项已应用');
           alert('导入成功！共 ' + msgParts.join('、') + '。页面将刷新以应用配置。');
           location.reload();
@@ -2425,7 +2500,7 @@
 
     function restoreDefaults() {
       if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-      var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max'];
+      var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
@@ -2433,6 +2508,14 @@
 
     function exportConfig() {
       var data = {};
+      try {
+        var addedSites = JSON.parse(localStorage.getItem('nav_added_sites') || '{}');
+        if (Object.keys(addedSites).length) data.addSites = addedSites;
+      } catch(e) {}
+      try {
+        var removedSites = JSON.parse(localStorage.getItem('nav_removed_sites') || '{}');
+        if (Object.keys(removedSites).length) data.removeSites = removedSites;
+      } catch(e) {}
       try {
         var cats = JSON.parse(localStorage.getItem('nav_custom_cats') || '[]');
         if (cats.length) data.categories = cats;
@@ -2469,6 +2552,15 @@
       } catch(e) {}
       if (Object.keys(settings).length) data.settings = settings;
 
+      var includeBase64 = false;
+      try { includeBase64 = localStorage.getItem('nav_wp_export') === '1'; } catch(e) {}
+      if (includeBase64) {
+        try {
+          var lwp = localStorage.getItem('nav_local_wp');
+          if (lwp && lwp.length > 100) data._base64Wallpaper = lwp;
+        } catch(e) {}
+      }
+
       var json = JSON.stringify(data, null, 2);
       var blob = new Blob([json], {type: 'application/json'});
       var url = URL.createObjectURL(blob);
@@ -2480,6 +2572,26 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       alert('配置导出成功！已下载 auroraus_config_' + new Date().toISOString().slice(0,10) + '.json');
+    }
+
+    function saveWpExport() {
+      var checked = document.getElementById('wpExportCheckbox').checked;
+      try { localStorage.setItem('nav_wp_export', checked ? '1' : '0'); } catch(e) {}
+    }
+
+    function setAsHomepage() {
+      var url = window.location.href;
+      if (url.indexOf('?') < 0) url += '?from=homepage';
+      if (document.body.style.setProperty) {
+        try {
+          var e = document.createElement('a');
+          e.href = url;
+          e.setAttribute('rel', 'sidebar');
+          e.setAttribute('title', 'AuroraUs导航');
+          e.click();
+        } catch(ex) {}
+      }
+      alert('不同浏览器设置首页的方式不同：\n\n🖥️ Chrome/Edge：点击地址栏右侧 ⭐ 收藏 → 右键收藏的网站 → "更多" → "添加到桌面"或设置为启动页\n🖥️ FireFox：拖动本页地址到工具栏"主页"图标上\n\n或者直接复制以下地址粘贴到浏览器设置的"启动时"选项中：\n' + url);
     }
 
     var iconColorMap = {blue:'icon-blue',red:'icon-red',green:'icon-green',orange:'icon-orange',purple:'icon-purple',cyan:'icon-cyan',teal:'icon-teal',pink:'icon-pink',indigo:'icon-indigo'};
@@ -2691,6 +2803,7 @@
 
     renderCustomCategories();
     registerCustomEngines();
+    applyDefaultCatMods();
     applySettings();
 
     setTimeout(function() {
@@ -2704,6 +2817,55 @@
         a.style.display = hiddenCategories[id] ? 'none' : '';
       });
     }, 50);
+
+    function applyDefaultCatMods() {
+      try {
+        var addedSites = JSON.parse(localStorage.getItem('nav_added_sites') || '{}');
+        var removedSites = JSON.parse(localStorage.getItem('nav_removed_sites') || '{}');
+        var allCatIds = Object.keys(addedSites).concat(Object.keys(removedSites));
+        allCatIds = allCatIds.filter(function(v, i, a) { return a.indexOf(v) === i; });
+        allCatIds.forEach(function(catId) {
+          var section = document.getElementById(catId);
+          if (!section) return;
+          var grid = section.querySelector('.card-grid');
+          if (!grid) return;
+          var countEl = section.querySelector('.count');
+          var rmNames = removedSites[catId] || [];
+          var addList = addedSites[catId] || [];
+          var cards = grid.querySelectorAll('.nav-card');
+          var totalCount = cards.length;
+          if (rmNames.length) {
+            cards.forEach(function(card) {
+              var h3 = card.querySelector('h3');
+              if (h3 && rmNames.indexOf(h3.textContent.trim()) >= 0) {
+                card.remove();
+                totalCount--;
+              }
+            });
+          }
+          if (addList.length) {
+            addList.forEach(function(s) {
+              var exists = false;
+              grid.querySelectorAll('h3').forEach(function(h3) {
+                if (h3.textContent.trim() === s.name) exists = true;
+              });
+              if (exists) return;
+              var cls = iconColorMap[s.iconColor] || 'icon-blue';
+              var div = document.createElement('a');
+              div.className = 'nav-card';
+              div.href = s.url;
+              div.target = '_blank';
+              div.rel = 'noopener';
+              div.innerHTML = '<div class="icon ' + cls + '">' + (s.icon || s.name.charAt(0)) + '</div>' +
+                '<div class="info"><h3>' + s.name + '</h3><p>' + (s.desc || '') + '</p><span class="url">' + (s.url.replace(/^https?:\/\//,'')) + '</span></div>';
+              grid.appendChild(div);
+              totalCount++;
+            });
+          }
+          if (countEl) countEl.textContent = totalCount + '个站点';
+        });
+      } catch(e) {}
+    }
 
     function getVisibleEngineKeys() {
       var labels = document.querySelectorAll('.search-engines .engine-option');
