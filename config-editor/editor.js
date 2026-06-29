@@ -27,6 +27,7 @@
   var freqVisible = getLS('nav_freq_visible', '1') !== '0';
   var freqCount = parseInt(getLS('nav_freq_count', '8')) || 8;
   var navAllHidden = getLS('nav_all_hidden', '0') === '1';
+  var catOrder = getLSJ('nav_cat_order', null);
 
   function catDisplayId(cat) {
     var idx = defaultCatIds.indexOf(cat.id);
@@ -51,6 +52,15 @@
     customCats.forEach(function(cc) {
       cats.push({ id: cc.id, name: cc.name, icon: cc.icon, isDefault: false, sites: deepClone(cc.sites || []) });
     });
+    if (catOrder && catOrder.length) {
+      var orderMap = {};
+      catOrder.forEach(function(id, i) { orderMap[id] = i; });
+      cats.sort(function(a, b) {
+        var oa = (a.id in orderMap) ? orderMap[a.id] : 9999;
+        var ob = (b.id in orderMap) ? orderMap[b.id] : 9999;
+        return oa - ob;
+      });
+    }
     return cats;
   }
 
@@ -123,19 +133,22 @@
     }
   };
 
+  var dragSrcId = null;
+
   function renderCategories() {
     var sidebar = document.getElementById('catSidebar');
     var content = document.getElementById('catContent');
 
-    var html = '<h4>分类列表</h4>';
+    var html = '<h4>分类列表 <span style="font-weight:400;font-size:0.7rem;color:var(--muted);">（可拖拽排序）</span></h4>';
     editingCats.forEach(function(cat) {
       var cls = 'cat-item' + (cat.id === activeCatId ? ' active' : '') + (cat.isDefault ? '' : ' custom');
       var delBtn = '';
       if (!cat.isDefault) {
         delBtn = '<span class="del-cat" onclick="event.stopPropagation();deleteCategory(\'' + cat.id + '\')" title="删除分类">✕</span>';
       }
-      html += '<div class="' + cls + '" onclick="selectCategory(\'' + cat.id + '\')">' +
-        '<span>' + cat.name + ' <span class="badge">' + cat.sites.length + '</span></span>' + delBtn + '</div>';
+      html += '<div class="' + cls + '" draggable="true" data-cat-id="' + cat.id + '" onclick="selectCategory(\'' + cat.id + '\')" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">' +
+        '<span class="drag-handle" style="cursor:grab;margin-right:0.3rem;opacity:0.4;">⋮⋮</span>' +
+        '<span style="flex:1;">' + cat.name + ' <span class="badge">' + cat.sites.length + '</span></span>' + delBtn + '</div>';
     });
     html += '<div style="padding:.5rem"><button class="btn primary small" onclick="showAddCategoryForm()" style="width:100%">+ 新建分类</button></div>';
     sidebar.innerHTML = html;
@@ -143,6 +156,49 @@
     if (!activeCatId && editingCats.length > 0) activeCatId = editingCats[0].id;
     renderCatContent(content);
   }
+
+  window.handleDragStart = function(e) {
+    dragSrcId = e.currentTarget.getAttribute('data-cat-id');
+    e.currentTarget.style.opacity = '0.5';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrcId);
+  };
+
+  window.handleDragOver = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  };
+
+  window.handleDragLeave = function(e) {
+    e.currentTarget.classList.remove('drag-over');
+  };
+
+  window.handleDrop = function(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    var targetId = e.currentTarget.getAttribute('data-cat-id');
+    if (!dragSrcId || dragSrcId === targetId) return;
+
+    var srcIdx = -1, tgtIdx = -1;
+    for (var i = 0; i < editingCats.length; i++) {
+      if (editingCats[i].id === dragSrcId) srcIdx = i;
+      if (editingCats[i].id === targetId) tgtIdx = i;
+    }
+    if (srcIdx < 0 || tgtIdx < 0) return;
+
+    var moved = editingCats.splice(srcIdx, 1)[0];
+    editingCats.splice(tgtIdx, 0, moved);
+
+    catOrder = editingCats.map(function(c) { return c.id; });
+    renderCategories();
+  };
+
+  window.handleDragEnd = function(e) {
+    e.currentTarget.style.opacity = '1';
+    document.querySelectorAll('.cat-item').forEach(function(el) { el.classList.remove('drag-over'); });
+    dragSrcId = null;
+  };
 
   function renderCatContent(contentEl) {
     var cat = getCatById(activeCatId);
@@ -341,6 +397,8 @@
     if (!name) { showMsg('分类名称不能为空', true); return; }
     var newId = 'custom-' + Date.now();
     customCats.push({ id: newId, name: name, icon: icon, sites: [] });
+    if (!catOrder) catOrder = editingCats.map(function(c) { return c.id; });
+    catOrder.push(newId);
     editingCats = buildEditingCats();
     activeCatId = newId;
     renderCategories();
@@ -350,6 +408,7 @@
   window.deleteCategory = function(catId) {
     if (!confirm('确定要删除这个自定义分类吗？所有站点将丢失。')) return;
     customCats = customCats.filter(function(c) { return c.id !== catId; });
+    if (catOrder) catOrder = catOrder.filter(function(id) { return id !== catId; });
     editingCats = buildEditingCats();
     if (activeCatId === catId) activeCatId = editingCats.length > 0 ? editingCats[0].id : null;
     if (hiddenCats[catId]) delete hiddenCats[catId];
@@ -524,6 +583,7 @@
     try { localStorage.setItem('nav_freq_visible', freqVisible ? '1' : '0'); } catch(e) {}
     try { localStorage.setItem('nav_freq_count', String(freqCount)); } catch(e) {}
     try { localStorage.setItem('nav_all_hidden', navAllHidden ? '1' : '0'); } catch(e) {}
+    try { localStorage.setItem('nav_cat_order', JSON.stringify(catOrder || editingCats.map(function(c){return c.id;}))); } catch(e) {}
     showMsg('✅ 配置已保存！回到导航首页刷新即可看到变化');
   };
 
@@ -540,6 +600,7 @@
     s.theme=theme;s.wallpaper=wallpaper;
     if(customWallpaper)s.customWallpaper=customWallpaper;
     s.freqVisible=!!freqVisible;s.freqCount=parseInt(freqCount)||6;s.navFold=navAllHidden?'hide':'show';
+    if (catOrder && catOrder.length) s.catOrder = catOrder;
     var allCatIds=defaultCatIds.slice();
     cc.forEach(function(c){allCatIds.push(c.id);});
     var fhc={};allCatIds.forEach(function(id){fhc[id]=!!hiddenCats[id];});
@@ -587,6 +648,7 @@
           if (s.navFold) navAllHidden = s.navFold === 'hide';
           if (s.hiddenCategories) hiddenCats = s.hiddenCategories;
           if (s.hiddenEngines) hiddenEngines = s.hiddenEngines;
+          if (s.catOrder && Array.isArray(s.catOrder)) catOrder = s.catOrder;
         }
         // Legacy flat format
         if (data.nav_added_sites) addedSites = data.nav_added_sites;
@@ -631,9 +693,10 @@
     localStorage.removeItem('nav_freq_count');
     localStorage.removeItem('nav_fold');
     localStorage.removeItem('nav_all_hidden');
+    localStorage.removeItem('nav_cat_order');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
     hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'bing';
-    customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false;
+    customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;
     document.body.className = '';
     editingCats = buildEditingCats();
     activeCatId = editingCats.length > 0 ? editingCats[0].id : null;

@@ -26,6 +26,7 @@ a{color:var(--accent);text-decoration:none}
 .cat-sidebar h4{padding:.6rem .8rem;font-size:.8rem;color:var(--muted);border-bottom:1px solid var(--rule);margin:0}
 .cat-item{padding:.5rem .8rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--rule);transition:all .12s;display:flex;justify-content:space-between;align-items:center;gap:.3rem}
 .cat-item:hover{background:rgba(37,99,235,.04)}
+.cat-item.drag-over{background:rgba(59,130,246,.12);border-color:var(--accent);outline:2px dashed var(--accent);outline-offset:-2px}
 .cat-item.active{background:rgba(37,99,235,.08);color:var(--accent);font-weight:600}
 .cat-item .badge{font-size:.7rem;color:var(--muted)}
 .cat-item.custom{font-style:italic}

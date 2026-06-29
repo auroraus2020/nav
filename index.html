@@ -147,6 +147,15 @@
     }
     .settings-close:hover { opacity: 0.88; }
 
+    /* === Right Quick Links === */
+    /* Edge icon bar */
+    .rt-edge { position:fixed; right:0; top:50%; transform:translateY(-50%); z-index:180; display:flex; flex-direction:column; gap:2px; }
+    .rt-tab { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:var(--bg2); border:1px solid var(--rule); border-right:none; border-radius:6px 0 0 6px; cursor:pointer; font-size:.9rem; color:var(--ink); transition:all .15s; position:relative; }
+    .rt-tab:hover { background:rgba(37,99,235,.08); color:var(--accent); border-color:var(--accent); }
+    .rt-tab .rt-label { display:none; }
+    .rt-tab:hover .rt-label { display:block; position:absolute; right:40px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.78); color:#fff; font-size:.65rem; padding:.15rem .5rem; border-radius:4px; white-space:nowrap; pointer-events:none; }
+    @media (max-width:1023px) { .rt-edge { display:none !important; } }
+
     /* === Hero === */
     .hero {
       position: relative; width: 100%; min-height: 280px;
@@ -574,6 +583,7 @@
   </nav>
 
   <!-- Desktop: Sidebar + Content -->
+  <div class="body-flex" id="bodyFlex">
   <div class="page-wrapper">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-title">
@@ -1425,6 +1435,17 @@
       </section>
 
     </main>
+    </div>
+  </div>
+
+  <!-- === Right Quick Links === -->
+  <div class="rt-edge" id="rtEdge">
+    <div class="rt-tab" onclick="rtGo('https://filehelper.weixin.qq.com/')" title="微信文件传输助手">💬<span class="rt-label">微信传输</span></div>
+    <div class="rt-tab" onclick="rtGo('https://markdown.com.cn/editor/')" title="在线Markdown编辑器">📝<span class="rt-label">记事本</span></div>
+    <div class="rt-tab" onclick="rtGo('https://www.desmos.com/scientific?lang=zh-CN')" title="科学计算器">🔢<span class="rt-label">计算器</span></div>
+    <div class="rt-tab" onclick="rtGo('https://app.diagrams.net/')" title="在线画图 draw.io">✏️<span class="rt-label">画图</span></div>
+    <div class="rt-tab" onclick="rtGo('https://txttool.cn/')" title="在线工具箱">🧰<span class="rt-label">工具箱</span></div>
+    <div class="rt-tab" onclick="rtGoCustom()" title="自定义网址" id="rtCustomTab">🔗<span class="rt-label">自定义</span></div>
   </div>
 
   <footer>
@@ -1478,6 +1499,7 @@
           <span class="settings-chip" onclick="setWallpaper('default',this)" id="setWpDefault">默认壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('custom',this)" id="setWpCustom">自定义网络壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('local',this)" id="setWpLocal">本地图片壁纸</span>
+          <button class="settings-action-btn" id="randomWpBtn" style="font-size:0.72rem;padding:0.25rem 0.6rem;" onclick="randomPickWp()" title="从assets库中随机切换一张壁纸">🎲 换一张</button>
         </div>
         <div class="settings-row" style="margin-top:0.4rem;gap:0.4rem;align-items:center;">
           <input type="text" id="customWpInput" class="settings-input" placeholder="输入网络图片URL..." oninput="saveCustomWp()" style="flex:1;">
@@ -1498,6 +1520,14 @@
           <span class="settings-chip on" onclick="setTheme('light',this)" id="setThemeLight">浅色模式</span>
           <span class="settings-chip" onclick="setTheme('dark',this)" id="setThemeDark">深色模式</span>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>🔗 快捷工具 - 自定义网址</h4>
+        <div class="settings-row" style="gap:0.4rem;align-items:center;">
+          <input type="text" id="setRtCustomUrl" class="settings-input" placeholder="输入自定义网址 https://..." oninput="saveRtCustomUrl()" style="flex:1;">
+        </div>
+        <p class="settings-hint">设置后点击右侧边栏 🔗 图标即可跳转</p>
       </div>
 
       <div class="settings-section">
@@ -1794,6 +1824,28 @@
         return catOrder.indexOf(id) === -1;
       });
       remaining.forEach(function(id) { main.appendChild(map[id]); });
+      // Reorder sidebar links
+      var sidebar = document.getElementById('sidebar');
+      if (sidebar) {
+        var sLinks = sidebar.querySelectorAll('a[href^="#cat-"]');
+        var sMap = {};
+        sLinks.forEach(function(a) { sMap[a.getAttribute('href').replace('#','')] = a; });
+        catOrder.forEach(function(id) {
+          if (sMap[id]) { sidebar.appendChild(sMap[id]); delete sMap[id]; }
+        });
+        Object.keys(sMap).forEach(function(id) { sidebar.appendChild(sMap[id]); });
+      }
+      // Reorder mobile tabs
+      var mTabs = document.querySelector('.mobile-tabs');
+      if (mTabs) {
+        var mList = mTabs.querySelectorAll('a[href^="#cat-"]');
+        var mMap = {};
+        mList.forEach(function(a) { mMap[a.getAttribute('href').replace('#','')] = a; });
+        catOrder.forEach(function(id) {
+          if (mMap[id]) { mTabs.appendChild(mMap[id]); delete mMap[id]; }
+        });
+        Object.keys(mMap).forEach(function(id) { mTabs.appendChild(mMap[id]); });
+      }
       document.querySelectorAll('.category-section').forEach(function(sec) {
         sec.style.display = hiddenCategories[sec.id] ? 'none' : '';
       });
@@ -2115,6 +2167,44 @@
       });
     }
 
+    function randomPickWp() {
+      var max = parseInt(localStorage.getItem('nav_wp_max')) || landscapePool.length || 12;
+      var tries = 0;
+      function tryPick() {
+        if (tries++ > 50) { showMsg('未找到可用壁纸', true); return; }
+        var idx = Math.floor(Math.random() * max) + 1;
+        var num = idx < 10 ? '0' + idx : '' + idx;
+        var img = new Image();
+        img.onload = function() {
+          var url = this.src;
+          bingWallpaperUrl = url;
+          try {
+            localStorage.setItem('nav_landscape_date', new Date().toDateString());
+            localStorage.setItem('nav_landscape_idx', String(idx - 1));
+            localStorage.setItem('nav_bing_wp_url', url);
+          } catch(e) {}
+          updateHeroBg();
+        };
+        img.onerror = function() {
+          var gifImg = new Image();
+          gifImg.onload = function() {
+            var url = this.src;
+            bingWallpaperUrl = url;
+            try {
+              localStorage.setItem('nav_landscape_date', new Date().toDateString());
+              localStorage.setItem('nav_landscape_idx', String(idx - 1));
+              localStorage.setItem('nav_bing_wp_url', url);
+            } catch(e) {}
+            updateHeroBg();
+          };
+          gifImg.onerror = function() { tryPick(); };
+          gifImg.src = 'assets/wp_' + num + '.gif';
+        };
+        img.src = 'assets/wp_' + num + '.jpg';
+      }
+      tryPick();
+    }
+
     function updateHeroBg() {
       var bg = document.querySelector('.hero-bg');
       if (!bg) return;
@@ -2229,11 +2319,18 @@
       document.getElementById('settingsOverlay').classList.remove('visible');
     }
 
+    function saveRtCustomUrl() {
+      var val = document.getElementById('setRtCustomUrl').value.trim();
+      try { localStorage.setItem('nav_rt_custom_url', val); } catch(e) {}
+    }
+
     function refreshSettingsUi() {
       document.getElementById('setWpBing').classList.toggle('on', wallpaperType === 'bing');
       document.getElementById('setWpDefault').classList.toggle('on', wallpaperType === 'default');
       document.getElementById('setWpCustom').classList.toggle('on', wallpaperType === 'custom');
       document.getElementById('setWpLocal').classList.toggle('on', wallpaperType === 'local');
+      document.getElementById('randomWpBtn').style.display = (wallpaperType === 'bing') ? '' : 'none';
+      try { document.getElementById('setRtCustomUrl').value = localStorage.getItem('nav_rt_custom_url') || ''; } catch(e) {}
       document.getElementById('customWpInput').style.display = (wallpaperType === 'custom') ? '' : 'none';
       document.getElementById('localWpInput').nextElementSibling.style.display = (wallpaperType === 'local') ? '' : 'none';
       if (wallpaperType === 'custom') {
@@ -2323,6 +2420,7 @@
       document.getElementById('customWpInput').style.display = (type === 'custom') ? '' : 'none';
       document.getElementById('localWpInput').nextElementSibling.style.display = (type === 'local') ? '' : 'none';
       document.getElementById('wpExportRow').style.display = (type === 'local') ? '' : 'none';
+      document.getElementById('randomWpBtn').style.display = (type === 'bing') ? '' : 'none';
       if (type === 'local') {
         document.getElementById('wpStatusHint').textContent = '本地图片仅存在本机浏览器存储中，导出配置时会留空';
       } else if (type === 'custom') {
@@ -2480,6 +2578,9 @@
             if (settings.hiddenEngines && typeof settings.hiddenEngines === 'object') {
               localStorage.setItem('nav_hidden_engines', JSON.stringify(settings.hiddenEngines));
             }
+            if (settings.catOrder && Array.isArray(settings.catOrder)) {
+              localStorage.setItem('nav_cat_order', JSON.stringify(settings.catOrder));
+            }
           }
 
           var msgParts = [];
@@ -2500,7 +2601,7 @@
 
     function restoreDefaults() {
       if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-      var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden'];
+      var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_url'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
@@ -2532,6 +2633,10 @@
       try { var fv = localStorage.getItem('nav_freq_visible'); if (fv !== null) settings.freqVisible = fv !== '0'; } catch(e) {}
       try { var fc = parseInt(localStorage.getItem('nav_freq_count')); if (fc) settings.freqCount = fc; } catch(e) {}
       try { var nf = localStorage.getItem('nav_all_hidden'); if (nf) settings.navFold = nf === '1' ? 'hide' : 'show'; } catch(e) {}
+      try {
+        var co = localStorage.getItem('nav_cat_order');
+        if (co) settings.catOrder = JSON.parse(co);
+      } catch(e) {}
       try {
         var allCatIds = ['cat-general','cat-academic','cat-ai','cat-buaa','cat-navweb','cat-translate','cat-tech','cat-learn','cat-efficiency','cat-tool','cat-map','cat-entertainment','cat-tutorial','cat-aero','cat-mirror','cat-cloud'];
         var hc = JSON.parse(localStorage.getItem('nav_hidden_cats') || '{}');
@@ -2803,6 +2908,7 @@
 
     renderCustomCategories();
     registerCustomEngines();
+    applyCatOrder();
     applyDefaultCatMods();
     applySettings();
 
@@ -3009,6 +3115,17 @@
     }
     window.addEventListener('scroll', updateStickyVisibility, { passive: true });
     updateStickyVisibility();
+
+    // === Right Quick Links ===
+    function rtGo(url) {
+      window.open(url, '_blank', 'noopener');
+    }
+    function rtGoCustom() {
+      var url = '';
+      try { url = localStorage.getItem('nav_rt_custom_url') || ''; } catch(e) {}
+      if (url) { rtGo(url); }
+      else { alert('请在设置中配置自定义网址'); }
+    }
 
     document.getElementById('searchInput').focus();
   </script>
