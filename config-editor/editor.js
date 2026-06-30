@@ -28,6 +28,8 @@
   var freqCount = parseInt(getLS('nav_freq_count', '8')) || 8;
   var navAllHidden = getLS('nav_all_hidden', '0') === '1';
   var catOrder = getLSJ('nav_cat_order', null);
+  var rtCustom = getLSJ('nav_rt_custom_tools', []);
+  var rtEnabled = getLS('nav_rt_enabled', '1') !== '0';
 
   function catDisplayId(cat) {
     var idx = defaultCatIds.indexOf(cat.id);
@@ -130,6 +132,9 @@
     } else if (name === 'settings') {
       document.getElementById('tab-settings').classList.add('active');
       renderSettings();
+    } else if (name === 'rttools') {
+      document.getElementById('tab-rttools').classList.add('active');
+      renderRtTools();
     }
   };
 
@@ -550,6 +555,77 @@
     renderSettings();
   };
 
+  // --- Quick Tools ---
+  function renderRtTools() {
+    var el = document.getElementById('rtToolsContent');
+    var htm = '<h4 style="margin-bottom:.8rem">快捷工具</h4>';
+    htm += '<div class="setting-card"><h4>全局开关</h4><div class="setting-row">' +
+      '<span class="chip' + (rtEnabled ? ' on' : '') + '" onclick="setRtSetting(\'enabled\',true)">✅ 启用所有</span>' +
+      '<span class="chip' + (!rtEnabled ? ' on' : '') + '" onclick="setRtSetting(\'enabled\',false)">⛔ 禁用所有</span>' +
+      '</div><p class="hint">禁用后右侧边栏所有快捷图标都会消失</p></div>';
+
+    htm += '<div class="setting-card"><h4>自定义工具 (' + rtCustom.length + ' 个)</h4>';
+    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th><th>启用</th><th>操作</th></tr></thead><tbody>';
+    rtCustom.forEach(function(t, i) {
+      htm += '<tr>';
+      htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.icon||'🔗') + '" onchange="setRtSetting(\'icon\',' + i + ',this.value)" style="width:48px;text-align:center;font-size:1rem;"></td>';
+      htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.name||'') + '" onchange="setRtSetting(\'name\',' + i + ',this.value)" placeholder="名称"></td>';
+      htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.url||'') + '" onchange="setRtSetting(\'url\',' + i + ',this.value)" placeholder="https://..."></td>';
+      htm += '<td><span class="chip' + (t.enabled !== false ? ' on' : '') + '" onclick="setRtSetting(\'toggle\',' + i + ')">' + (t.enabled !== false ? '是' : '否') + '</span></td>';
+      htm += '<td><button class="btn danger" onclick="setRtSetting(\'del\',' + i + ')" style="font-size:.7rem;padding:0.15rem 0.5rem;">✕</button></td>';
+      htm += '</tr>';
+    });
+    htm += '</tbody></table>';
+    htm += '<div class="setting-row" style="margin-top:.5rem;">' +
+      '<button class="btn primary" onclick="setRtSetting(\'add\')">➕ 添加工具</button>' +
+      '<button class="btn danger" onclick="setRtSetting(\'reset\')" style="font-size:.72rem;">↺ 清空</button>' +
+      '</div>';
+    htm += '</div>';
+
+    htm += '<div class="setting-card"><h4>内置工具</h4><p class="hint">这些是系统内置的快捷入口。如需管理内置工具，请在主页设置中操作（导出/导入配置）。</p>';
+    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th></tr></thead><tbody>';
+    var builtins = [
+      {icon:'💬',name:'微信传输',url:'https://filehelper.weixin.qq.com/'},
+      {icon:'📝',name:'记事本',url:'https://markdown.com.cn/editor/'},
+      {icon:'🔢',name:'计算器',url:'https://www.desmos.com/scientific?lang=zh-CN'},
+      {icon:'✏️',name:'画图',url:'https://app.diagrams.net/'},
+      {icon:'🧰',name:'工具箱',url:'https://txttool.cn/'}
+    ];
+    builtins.forEach(function(t) {
+      htm += '<tr><td style="font-size:1.2rem;">' + t.icon + '</td><td>' + t.name + '</td><td><code style="word-break:break-all;">' + t.url + '</code></td></tr>';
+    });
+    htm += '</tbody></table></div>';
+
+    el.innerHTML = htm;
+  }
+
+  window.setRtSetting = function(key, idx, val) {
+    if (key === 'enabled') {
+      rtEnabled = val;
+    } else if (key === 'add') {
+      rtCustom.push({icon:'🔗', name:'', url:'', enabled:true});
+    } else if (key === 'reset') {
+      if (!confirm('确定清空所有自定义快捷工具？')) return;
+      rtCustom = [];
+    } else if (key === 'del') {
+      if (idx < 0 || idx >= rtCustom.length) return;
+      rtCustom.splice(idx, 1);
+    } else if (key === 'toggle') {
+      if (idx < 0 || idx >= rtCustom.length) return;
+      rtCustom[idx].enabled = rtCustom[idx].enabled === false ? true : false;
+    } else if (key === 'icon') {
+      if (idx < 0 || idx >= rtCustom.length) return;
+      rtCustom[idx].icon = val || '🔗';
+    } else if (key === 'name') {
+      if (idx < 0 || idx >= rtCustom.length) return;
+      rtCustom[idx].name = val;
+    } else if (key === 'url') {
+      if (idx < 0 || idx >= rtCustom.length) return;
+      rtCustom[idx].url = val;
+    }
+    renderRtTools();
+  };
+
   function rebuildAddedSitesFromEditing() {
     var newAdded = {};
     DEFAULT_CATEGORIES.forEach(function(dc) {
@@ -584,6 +660,8 @@
     try { localStorage.setItem('nav_freq_count', String(freqCount)); } catch(e) {}
     try { localStorage.setItem('nav_all_hidden', navAllHidden ? '1' : '0'); } catch(e) {}
     try { localStorage.setItem('nav_cat_order', JSON.stringify(catOrder || editingCats.map(function(c){return c.id;}))); } catch(e) {}
+    try { localStorage.setItem('nav_rt_enabled', rtEnabled ? '1' : '0'); } catch(e) {}
+    try { localStorage.setItem('nav_rt_custom_tools', JSON.stringify(rtCustom)); } catch(e) {}
     showMsg('✅ 配置已保存！回到导航首页刷新即可看到变化');
   };
 
@@ -609,7 +687,9 @@
     Object.keys(customEngines).forEach(function(k){allEngIds.push(k);});
     var fhe={};allEngIds.forEach(function(id){fhe[id]=!!hiddenEngines[id];});
     s.hiddenEngines=fhe;
+    s.rtEnabled = !!rtEnabled;
     data.settings=s;
+    if (rtCustom.length) data.rtTools = rtCustom;
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
@@ -649,7 +729,9 @@
           if (s.hiddenCategories) hiddenCats = s.hiddenCategories;
           if (s.hiddenEngines) hiddenEngines = s.hiddenEngines;
           if (s.catOrder && Array.isArray(s.catOrder)) catOrder = s.catOrder;
+          if (typeof s.rtEnabled === 'boolean') rtEnabled = s.rtEnabled;
         }
+        if (data.rtTools && Array.isArray(data.rtTools)) rtCustom = data.rtTools;
         // Legacy flat format
         if (data.nav_added_sites) addedSites = data.nav_added_sites;
         if (data.nav_removed_sites) removedSites = data.nav_removed_sites;
@@ -669,6 +751,7 @@
         if (activeTab === 'categories') renderCategories();
         else if (activeTab === 'engines') renderEngines();
         else if (activeTab === 'settings') renderSettings();
+        else if (activeTab === 'rttools') renderRtTools();
         showMsg('📂 已导入配置并保存！');
       } catch(err) {
         showMsg('导入失败：JSON 格式错误', true);
@@ -691,12 +774,14 @@
     localStorage.removeItem('nav_custom_wp');
     localStorage.removeItem('nav_freq_visible');
     localStorage.removeItem('nav_freq_count');
-    localStorage.removeItem('nav_fold');
     localStorage.removeItem('nav_all_hidden');
+    localStorage.removeItem('nav_rt_enabled');
+    localStorage.removeItem('nav_rt_custom_tools');
     localStorage.removeItem('nav_cat_order');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
     hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'bing';
     customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;
+    rtEnabled = true; rtCustom = [];
     document.body.className = '';
     editingCats = buildEditingCats();
     activeCatId = editingCats.length > 0 ? editingCats[0].id : null;

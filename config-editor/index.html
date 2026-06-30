@@ -11,11 +11,12 @@
 <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
 <button class="btn danger" onclick="resetAll()">🔄 恢复默认</button></div></div>
 <div id="msg" class="msg"></div>
-<div class="tabs"><div class="tab active" onclick="switchTab('categories',this)">📂 分类与站点</div><div class="tab" onclick="switchTab('engines',this)">🔍 搜索引擎</div><div class="tab" onclick="switchTab('settings',this)">🎛️ 页面设置</div></div>
+<div class="tabs"><div class="tab active" onclick="switchTab('categories',this)">📂 分类与站点</div><div class="tab" onclick="switchTab('engines',this)">🔍 搜索引擎</div><div class="tab" onclick="switchTab('settings',this)">🎛️ 页面设置</div><div class="tab" onclick="switchTab('rttools',this)">🔗 快捷工具</div></div>
 <div id="main" class="main">
 <div class="panel active" id="tab-categories"><div class="cat-sidebar" id="catSidebar"></div><div class="cat-content" id="catContent"></div></div>
 <div class="panel" id="tab-engines"><div class="card" id="engineContent" style="max-width:100%;flex:1;"></div></div>
 <div class="panel" id="tab-settings"><div class="card" id="settingsContent" style="max-width:100%;flex:1;"></div></div>
+<div class="panel" id="tab-rttools"><div class="card" id="rtToolsContent" style="max-width:100%;flex:1;"></div></div>
 </div>
 <script src="data.js"></script>
 <script src="editor.js"></script>
