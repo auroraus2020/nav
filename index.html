@@ -762,7 +762,7 @@
         <div class="category-header" onclick="toggleCategory(this)">
           <img src="assets/icon_ai.jpg" alt="">
           <h2>AI大模型</h2>
-          <span class="count">15个站点</span>
+          <span class="count">17个站点</span>
           <span class="toggle-arrow">▼</span>
         </div>
         <div class="card-grid">
@@ -825,6 +825,14 @@
           <a class="nav-card" href="https://ollama.com" target="_blank" rel="noopener">
             <div class="icon icon-green">O</div>
             <div class="info"><h3>Ollama</h3><p>本地运行大语言模型</p><span class="url">ollama.com</span></div>
+          </a>
+          <a class="nav-card" href="https://mimo.xiaomi.com" target="_blank" rel="noopener">
+            <div class="icon icon-orange">M</div>
+            <div class="info"><h3>小米MiMo</h3><p>小米出品，超拟人智能助手</p><span class="url">mimo.xiaomi.com</span></div>
+          </a>
+          <a class="nav-card" href="https://bigmodel.cn" target="_blank" rel="noopener">
+            <div class="icon icon-purple">G</div>
+            <div class="info"><h3>GLM</h3><p>智谱AI，中英双语大模型</p><span class="url">bigmodel.cn</span></div>
           </a>
         </div>
       </section>
@@ -1494,11 +1502,12 @@
         <h4>📥 导入/导出</h4>
         <div class="settings-row" style="flex-wrap:wrap;gap:0.5rem;">
           <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
-          <button class="settings-action-btn" onclick="document.getElementById('importFileInput').click()">📂 导入配置文件</button>
+          <button class="settings-action-btn" onclick="document.getElementById('importFileInput').click()">📂 导入本地文件</button>
+          <button class="settings-action-btn" onclick="importFromUrl()">🌐 导入网络文件</button>
           <button class="settings-action-btn danger" onclick="restoreDefaults()">🔄 恢复默认导航</button>
           <button class="settings-action-btn" onclick="exportConfig()">📤 导出配置</button>
         </div>
-        <p class="settings-hint">支持JSON格式导入/导出自定义分类、导航网址、搜索引擎和全部设置（含快捷工具）</p>
+        <p class="settings-hint">支持通过本地JSON文件或网络URL导入/导出全部配置（含快捷工具）</p>
       </div>
 
       <div class="settings-section wide">
@@ -1889,8 +1898,14 @@
       try { allHidden = localStorage.getItem('nav_all_hidden') === '1'; } catch(e) {}
       if (allHidden) {
         document.body.classList.add('all-hidden');
-        updateToggleUi();
+      } else {
+        document.body.classList.remove('all-hidden');
       }
+      updateToggleUi();
+      var showChip = document.getElementById('setNavShow');
+      var hideChip = document.getElementById('setNavHide');
+      if (showChip) showChip.classList.toggle('on', !allHidden);
+      if (hideChip) hideChip.classList.toggle('on', allHidden);
       applyCatOrder();
       applyCatStates(window.innerWidth <= 1023);
     })();
@@ -2521,11 +2536,42 @@
       if (!file) return;
       var reader = new FileReader();
       reader.onload = function(ev) {
-        try {
-          var data = JSON.parse(ev.target.result);
-          if (!data || typeof data !== 'object') { alert('JSON格式不正确'); return; }
-          var customCats = [];
-          if (data.categories && Array.isArray(data.categories)) {
+        processImportJson(ev.target.result);
+      };
+      reader.readAsText(file, 'UTF-8');
+      e.target.value = '';
+    }
+
+    function importFromUrl() {
+      var url = prompt('请输入JSON配置文件的网络地址（URL）：', '');
+      if (!url || !url.trim()) return;
+      url = url.trim();
+      if (!/^https?:\/\//.test(url)) { alert('请输入以 http:// 或 https:// 开头的合法网址'); return; }
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 15000;
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            processImportJson(xhr.responseText);
+          } else {
+            alert('获取网络文件失败：HTTP ' + xhr.status);
+          }
+        };
+        xhr.onerror = function() { alert('网络请求失败，请检查网址是否正确、是否允许跨域访问'); };
+        xhr.ontimeout = function() { alert('请求超时，请检查网络连接'); };
+        xhr.send();
+      } catch(err) {
+        alert('请求发送失败：' + err.message);
+      }
+    }
+
+    function processImportJson(raw) {
+      try {
+        var data = JSON.parse(raw);
+        if (!data || typeof data !== 'object') { alert('JSON格式不正确'); return; }
+        var customCats = [];
+        if (data.categories && Array.isArray(data.categories)) {
             data.categories.forEach(function(cat) {
               if (cat.id && cat.name) {
                 customCats.push({
@@ -2647,14 +2693,11 @@
         } catch(err) {
           alert('JSON解析失败：' + err.message);
         }
-      };
-      reader.readAsText(file, 'UTF-8');
-      e.target.value = '';
-    }
+      }
 
-    function restoreDefaults() {
-      if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-      var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled'];
+      function restoreDefaults() {
+        if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();

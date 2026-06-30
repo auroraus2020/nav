@@ -177,9 +177,10 @@
 
       <p>设置面板里有这些东西：</p>
       <h4>📥 导入/导出</h4>
-      <p>三个按钮放在最顶部方便操作：</p>
+      <p>四个按钮放在最顶部方便操作：</p>
       <ul>
-        <li><strong>📂 导入配置文件</strong> — 选一个 .json 文件，一键导入配置（含分类、站点、引擎、快捷工具等所有设置）</li>
+        <li><strong>📂 导入本地文件</strong> — 选一个 .json 文件，一键导入配置（含分类、站点、引擎、快捷工具等所有设置）</li>
+        <li><strong>🌐 导入网络文件</strong> — 输入一个JSON文件的网络地址（URL），页面会自动抓取并导入配置。适合团队共享：把配置文件放在服务器或云盘上，大家通过URL一键同步</li>
         <li><strong>🔄 恢复默认导航</strong> — 清空一切，回到最初的样子</li>
         <li><strong>📤 导出配置</strong> — 把当前全部配置下载为 .json 文件</li>
       </ul>
@@ -230,13 +231,22 @@
     <!-- 八 -->
     <h2 id="import-export">八、JSON 导入/导出</h2>
     <div class="card">
-      <h4>📥 导入别人给的配置</h4>
+      <h4>📂 从本地文件导入</h4>
       <div class="step">
         <strong>第1步：</strong>打开设置（⚙️齿轮）<br>
-        <strong>第2步：</strong>点 <strong>📂 导入配置文件</strong><br>
+        <strong>第2步：</strong>点 <strong>📂 导入本地文件</strong><br>
         <strong>第3步：</strong>在弹出的文件选择框里选那个 <code>.json</code> 文件<br>
         <strong>第4步：</strong>看到"导入成功"提示 → 页面自动刷新 → 新配置生效
       </div>
+
+      <h4>🌐 从网络URL导入（团队共享神器）</h4>
+      <div class="step">
+        <strong>第1步：</strong>打开设置（⚙️齿轮）<br>
+        <strong>第2步：</strong>点 <strong>🌐 导入网络文件</strong><br>
+        <strong>第3步：</strong>在弹窗中输入JSON文件的网址（如放在GitHub、云盘、或自己服务器上的配置文件链接）<br>
+        <strong>第4步：</strong>页面自动下载并导入，看到"导入成功"提示后自动刷新生效
+      </div>
+      <div class="tip"><strong>💡 团队共享场景：</strong>把导出的配置文件上传到服务器/GitHub/Gitee等公开地址，告诉同事那个URL，大家点"🌐 导入网络文件"输入同一个网址即可一键同步配置。你更新配置上传后，同事重新导入一次就同步了。</div>
 
       <h4>📤 导出你自己的配置给别人</h4>
       <div class="step">
