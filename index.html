@@ -1924,11 +1924,14 @@
       <button class="conv-tab" onclick="convSwitchCat('energy',this)">能量</button>
       <button class="conv-tab" onclick="convSwitchCat('density',this)">密度</button>
       <button class="conv-tab" onclick="convSwitchCat('viscosity',this)">粘度</button>
+      <button class="conv-tab" onclick="convSwitchCat('fuel',this)">耗油率</button>
       <button class="conv-tab" onclick="convSwitchCat('byte',this)">字节</button>
     </div>
     <div class="conv-input-area">
       <input type="number" id="convInput" placeholder="输入数值" step="any" oninput="convCalc()">
       <select id="convUnit" onchange="convCalc()"></select>
+      <span style="font-size:0.68rem;color:var(--muted);white-space:nowrap;">g=</span>
+      <input type="number" id="convGInput" value="9.8" step="0.001" style="width:52px;padding:0.2rem 0.3rem;border:1px solid var(--rule);border-radius:6px;font-size:0.7rem;background:var(--bg2);color:var(--ink);outline:none;font-family:var(--font);" onchange="convUpdateG()" title="重力加速度（航空发动机默认9.8）">
     </div>
     <div class="conv-results" id="convResults">
       <div class="conv-empty">输入数值后自动换算</div>
@@ -4638,6 +4641,7 @@
 
     // === Unit Converter Feature ===
     var convCat = 'length';
+    var convG = 9.8; // 重力加速度（可修改），影响 kgf 与耗油率换算
     var convDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
     var convResize = { active: false, startX: 0, startY: 0, startW: 0, startH: 0 };
 
@@ -4713,13 +4717,14 @@
         { label: 'at (工程大气压)', factor: 98066.5 }
       ],
       force: [
+        { label: 'DaN (十牛)', factor: 10 },
         { label: 'N (牛)', factor: 1 },
         { label: 'kN (千牛)', factor: 1000 },
         { label: 'MN (兆牛)', factor: 1000000 },
         { label: 'dyn (达因)', factor: 0.00001 },
         { label: 'lbf (磅力)', factor: 4.4482216152605 },
         { label: 'kip (千磅力)', factor: 4448.2216152605 },
-        { label: 'kgf (千克力)', factor: 9.80665 },
+        { label: 'kgf (千克力)', toBase: function(v){return v * convG;}, fromBase: function(v){return v / convG;} },
         { label: 'pdl (磅达)', factor: 0.138254954376 }
       ],
       area: [
@@ -4800,9 +4805,29 @@
         { label: 'lb/in³', factor: 27679.904710203 },
         { label: 'slug/ft³', factor: 515.3788184 },
         { label: 'lb/gal US', factor: 119.8264273169 }
+      ],
+      fuel: [
+        { label: 'kg/(N·s)', factor: 1 },
+        { label: 'g/(N·s)', factor: 0.001 },
+        { label: 'kg/(DaN·s)', factor: 0.1 },
+        { label: 'g/(DaN·s)', factor: 0.0001 },
+        { label: 'kg/(N·h)', factor: 1/3600 },
+        { label: 'g/(N·h)', factor: 0.001/3600 },
+        { label: 'kg/(DaN·h)', factor: 0.1/3600 },
+        { label: 'g/(DaN·h)', factor: 0.0001/3600 },
+        { label: 'kg/(kgf·h)', toBase: function(v){return v / convG / 3600;}, fromBase: function(v){return v * convG * 3600;} },
+        { label: 'g/(kgf·h)', toBase: function(v){return v * 0.001 / convG / 3600;}, fromBase: function(v){return v * 1000 * convG * 3600;} },
+        { label: 'kg/(kgf·s)', toBase: function(v){return v / convG;}, fromBase: function(v){return v * convG;} },
+        { label: 'g/(kgf·s)', toBase: function(v){return v * 0.001 / convG;}, fromBase: function(v){return v * 1000 * convG;} }
       ]
     };
 
+    function convUpdateG() {
+      var inp = document.getElementById('convGInput');
+      if (!inp) return;
+      var v = parseFloat(inp.value);
+      if (!isNaN(v) && v > 0) { convG = v; convCalc(); }
+    }
     function convInitUnits() {
       var sel = document.getElementById('convUnit');
       if (!sel) return;
