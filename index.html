@@ -707,6 +707,146 @@
     }
     .note-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
     @media (max-width: 1023px) { .note-window { display: none !important; } }
+
+    /* === Pomodoro Floating Window === */
+    .pomo-window {
+      display: none; position: fixed; top: 80px; right: 60px; width: 320px; height: 420px;
+      min-width: 280px; min-height: 360px; max-height: 85vh;
+      z-index: 188; background: rgba(255,255,255,0.9); border: 1px solid var(--rule);
+      border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      overflow: hidden; flex-direction: column;
+    }
+    body.dark .pomo-window { background: rgba(17,24,39,0.9); }
+    .pomo-window.visible { display: flex; }
+    .pomo-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule);
+      cursor: move; user-select: none; gap: 0.4rem; flex-shrink: 0;
+    }
+    .pomo-header span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+    .pomo-header-actions { display: flex; gap: 0.25rem; }
+    .pomo-tabs {
+      display: flex; gap: 0; padding: 0.4rem; border-bottom: 1px solid var(--rule); flex-shrink: 0;
+    }
+    .pomo-tab {
+      flex: 1; padding: 0.35rem; font-size: 0.74rem; cursor: pointer;
+      color: var(--muted); border: 1px solid var(--rule); border-radius: 8px;
+      transition: all 0.15s; background: var(--bg2); font-family: var(--font); margin: 0 0.2rem;
+    }
+    .pomo-tab.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .pomo-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+    .pomo-timer-area {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0.5rem; gap: 0.6rem;
+    }
+    .pomo-circle {
+      width: 160px; height: 160px; border-radius: 50%; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background: conic-gradient(var(--accent) 0deg, var(--accent) 0deg, var(--bg3) 0deg, var(--bg3) 360deg);
+      transition: background 0.3s;
+    }
+    .pomo-circle.break { background: conic-gradient(#16a34a 0deg, #16a34a 0deg, var(--bg3) 0deg, var(--bg3) 360deg); }
+    .pomo-circle-inner {
+      width: 140px; height: 140px; border-radius: 50%; background: var(--bg2);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem;
+    }
+    .pomo-time { font-size: 2rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+    .pomo-phase { font-size: 0.72rem; color: var(--muted); }
+    .pomo-controls { display: flex; gap: 0.4rem; }
+    .pomo-btn {
+      padding: 0.4rem 1rem; border: none; border-radius: 8px; font-size: 0.8rem;
+      font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-family: var(--font);
+    }
+    .pomo-btn-start { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .pomo-btn-reset { background: var(--bg3); color: var(--muted); }
+    .pomo-btn:hover { opacity: 0.85; }
+    .pomo-footer {
+      display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+      padding: 0.4rem 0.7rem; border-top: 1px solid var(--rule);
+      font-size: 0.72rem; color: var(--muted); flex-shrink: 0;
+    }
+    .pomo-stat { display: flex; align-items: center; gap: 0.25rem; }
+    .pomo-stat strong { color: var(--accent); font-size: 0.9rem; }
+    .pomo-resize-handle {
+      position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+      cursor: nwse-resize; z-index: 5;
+      background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
+    }
+    .pomo-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
+    @media (max-width: 1023px) { .pomo-window { display: none !important; } }
+
+    /* === Unit Converter Floating Window === */
+    .conv-window {
+      display: none; position: fixed; top: 80px; right: 60px; width: 360px; height: 460px;
+      min-width: 300px; min-height: 360px; max-height: 85vh;
+      z-index: 186; background: rgba(255,255,255,0.9); border: 1px solid var(--rule);
+      border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      overflow: hidden; flex-direction: column;
+    }
+    body.dark .conv-window { background: rgba(17,24,39,0.9); }
+    .conv-window.visible { display: flex; }
+    .conv-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule);
+      cursor: move; user-select: none; gap: 0.4rem; flex-shrink: 0;
+    }
+    .conv-header span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+    .conv-header-actions { display: flex; gap: 0.25rem; }
+    .conv-tabs {
+      display: flex; gap: 0; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--rule); flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .conv-tab {
+      padding: 0.3rem 0.5rem; font-size: 0.72rem; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.15s; background: none; border-top: none; border-left: none;
+      border-right: none; font-family: var(--font);
+    }
+    .conv-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .conv-tab:hover { color: var(--accent); }
+    .conv-input-area {
+      display: flex; gap: 0.35rem; padding: 0.45rem 0.6rem; align-items: center;
+      border-bottom: 1px solid var(--rule); flex-shrink: 0;
+    }
+    .conv-input-area input {
+      flex: 1; padding: 0.38rem 0.55rem; border: 1px solid var(--rule);
+      border-radius: 8px; font-size: 0.82rem; background: var(--bg2); color: var(--ink);
+      outline: none; font-family: var(--font); min-width: 0;
+    }
+    .conv-input-area input:focus { border-color: var(--accent); }
+    .conv-input-area select {
+      padding: 0.38rem 0.4rem; border: 1px solid var(--rule); border-radius: 8px;
+      font-size: 0.76rem; background: var(--bg2); color: var(--ink); outline: none;
+      font-family: var(--font); cursor: pointer;
+    }
+    .conv-input-area select:focus { border-color: var(--accent); }
+    .conv-results {
+      flex: 1; overflow-y: auto; padding: 0.35rem 0.45rem;
+    }
+    .conv-results::-webkit-scrollbar { width: 4px; }
+    .conv-results::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+    .conv-result-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.35rem 0.45rem; border-radius: 7px; transition: background 0.15s;
+      gap: 0.3rem; margin-bottom: 0.15rem;
+    }
+    .conv-result-item:hover { background: var(--bg3); }
+    .conv-result-label { font-size: 0.76rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+    .conv-result-value {
+      font-size: 0.8rem; font-weight: 600; color: var(--ink); text-align: right;
+      font-variant-numeric: tabular-nums; word-break: break-all; cursor: pointer;
+    }
+    .conv-result-value:hover { color: var(--accent); }
+    .conv-empty { text-align: center; padding: 1.5rem 0.5rem; color: var(--muted); font-size: 0.82rem; }
+    .conv-resize-handle {
+      position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+      cursor: nwse-resize; z-index: 5;
+      background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
+    }
+    .conv-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
+    @media (max-width: 1023px) { .conv-window { display: none !important; } }
   </style>
   <script>
     var _hmt = _hmt || [];
@@ -1727,6 +1867,75 @@
     <div class="note-resize-handle" id="noteResizeHandle"></div>
   </div>
 
+  <!-- === Pomodoro Floating Window === -->
+  <div class="pomo-window" id="pomoWindow">
+    <div class="pomo-header" id="pomoHeader">
+      <span>🍅 番茄钟</span>
+      <div class="pomo-header-actions">
+        <button class="todo-btn-icon" onclick="pomoExport()" title="导出数据">📤</button>
+        <button class="todo-btn-icon" onclick="pomoImport()" title="导入数据">📥</button>
+        <button class="todo-btn-icon todo-close" onclick="closePomoWindow()" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="pomo-tabs">
+      <button class="pomo-tab active" data-mode="work" onclick="pomoSwitchMode('work',this)">专注 25</button>
+      <button class="pomo-tab" data-mode="short" onclick="pomoSwitchMode('short',this)">短休 5</button>
+      <button class="pomo-tab" data-mode="long" onclick="pomoSwitchMode('long',this)">长休 15</button>
+    </div>
+    <div class="pomo-timer-area">
+      <div class="pomo-circle" id="pomoCircle">
+        <div class="pomo-circle-inner">
+          <div class="pomo-time" id="pomoTime">25:00</div>
+          <div class="pomo-phase" id="pomoPhase">点击开始专注</div>
+        </div>
+      </div>
+      <div class="pomo-controls">
+        <button class="pomo-btn pomo-btn-start" id="pomoStartBtn" onclick="pomoToggle()">开始</button>
+        <button class="pomo-btn pomo-btn-reset" onclick="pomoReset()">重置</button>
+      </div>
+    </div>
+    <div class="pomo-footer">
+      <div class="pomo-stat">今日专注 <strong id="pomoTodayCount">0</strong> 次</div>
+      <div class="pomo-stat">累计 <strong id="pomoTotalMin">0</strong> 分钟</div>
+      <input type="file" id="pomoImportFile" accept=".json" style="display:none" onchange="pomoHandleImport(event)">
+    </div>
+    <div class="pomo-resize-handle" id="pomoResizeHandle"></div>
+  </div>
+
+  <!-- === Unit Converter Floating Window === -->
+  <div class="conv-window" id="convWindow">
+    <div class="conv-header" id="convHeader">
+      <span>📐 单位换算</span>
+      <div class="conv-header-actions">
+        <button class="todo-btn-icon todo-close" onclick="closeConvWindow()" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="conv-tabs" id="convTabs">
+      <button class="conv-tab active" onclick="convSwitchCat('length',this)">长度</button>
+      <button class="conv-tab" onclick="convSwitchCat('mass',this)">质量</button>
+      <button class="conv-tab" onclick="convSwitchCat('temp',this)">温度</button>
+      <button class="conv-tab" onclick="convSwitchCat('angle',this)">角度</button>
+      <button class="conv-tab" onclick="convSwitchCat('area',this)">面积</button>
+      <button class="conv-tab" onclick="convSwitchCat('volume',this)">体积</button>
+      <button class="conv-tab" onclick="convSwitchCat('velocity',this)">速度</button>
+      <button class="conv-tab" onclick="convSwitchCat('pressure',this)">压力</button>
+      <button class="conv-tab" onclick="convSwitchCat('force',this)">力</button>
+      <button class="conv-tab" onclick="convSwitchCat('power',this)">功率</button>
+      <button class="conv-tab" onclick="convSwitchCat('energy',this)">能量</button>
+      <button class="conv-tab" onclick="convSwitchCat('density',this)">密度</button>
+      <button class="conv-tab" onclick="convSwitchCat('viscosity',this)">粘度</button>
+      <button class="conv-tab" onclick="convSwitchCat('byte',this)">字节</button>
+    </div>
+    <div class="conv-input-area">
+      <input type="number" id="convInput" placeholder="输入数值" step="any" oninput="convCalc()">
+      <select id="convUnit" onchange="convCalc()"></select>
+    </div>
+    <div class="conv-results" id="convResults">
+      <div class="conv-empty">输入数值后自动换算</div>
+    </div>
+    <div class="conv-resize-handle" id="convResizeHandle"></div>
+  </div>
+
   <footer>
     <p>AURORAUS导航 &copy; 2026 | 汇聚优质资源，发现精彩世界</p>
     <p style="margin-top:0.4rem;">贡献者：<a href="https://originalfileserver.aminer.cn/sys/aminer/history/AI-history-1.mp4" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-weight:600;">Auroraus</a></p>
@@ -2648,6 +2857,8 @@
         if (idx === 0) {
           h += '<div class="rt-tab" onclick="toggleTodoWindow()" title="待办事项">📋<span class="rt-label">待办事项</span></div>';
           h += '<div class="rt-tab" onclick="toggleNoteWindow()" title="记事本">📝<span class="rt-label">记事本</span></div>';
+          h += '<div class="rt-tab" onclick="togglePomoWindow()" title="番茄钟">🍅<span class="rt-label">番茄钟</span></div>';
+          h += '<div class="rt-tab" onclick="toggleConvWindow()" title="单位换算">📐<span class="rt-label">单位换算</span></div>';
         }
       });
       custom.forEach(function(t) {
@@ -4169,7 +4380,595 @@
     }
 
     initNoteDrag();
-    initNoteResize()
+    initNoteResize();
+
+    // === Pomodoro Feature ===
+    var pomoMode = 'work'; // work / short / long
+    var pomoDurations = { work: 25*60, short: 5*60, long: 15*60 };
+    var pomoRemaining = pomoDurations.work;
+    var pomoRunning = false;
+    var pomoInterval = null;
+    var pomoDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+    var pomoResize = { active: false, startX: 0, startY: 0, startW: 0, startH: 0 };
+
+    function pomoGetStats() {
+      try {
+        var s = JSON.parse(localStorage.getItem('nav_pomo_stats') || '{}');
+        var today = new Date().toISOString().slice(0,10);
+        if (s.date !== today) { s = { date: today, count: 0, totalMin: 0 }; }
+        return { date: today, count: s.count||0, totalMin: s.totalMin||0 };
+      } catch(e) { return { date: new Date().toISOString().slice(0,10), count: 0, totalMin: 0 }; }
+    }
+
+    function pomoSaveStats(stats) {
+      try { localStorage.setItem('nav_pomo_stats', JSON.stringify(stats)); } catch(e) {}
+    }
+
+    function pomoAddCompleted() {
+      var stats = pomoGetStats();
+      stats.count += 1;
+      stats.totalMin += 25;
+      pomoSaveStats(stats);
+      pomoRenderStats();
+    }
+
+    function pomoRenderStats() {
+      var stats = pomoGetStats();
+      var c = document.getElementById('pomoTodayCount');
+      var m = document.getElementById('pomoTotalMin');
+      if (c) c.textContent = stats.count;
+      if (m) m.textContent = stats.totalMin;
+    }
+
+    function pomoFormat(sec) {
+      var m = Math.floor(sec / 60);
+      var s = sec % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function pomoRenderTime() {
+      var t = document.getElementById('pomoTime');
+      var p = document.getElementById('pomoPhase');
+      var circle = document.getElementById('pomoCircle');
+      var btn = document.getElementById('pomoStartBtn');
+      if (t) t.textContent = pomoFormat(pomoRemaining);
+      var total = pomoDurations[pomoMode];
+      var pct = (total - pomoRemaining) / total;
+      if (circle) {
+        var deg = pct * 360;
+        var color = pomoMode === 'work' ? 'var(--accent)' : '#16a34a';
+        var bg = 'var(--bg3)';
+        circle.style.background = 'conic-gradient(' + color + ' 0deg, ' + color + ' ' + deg + 'deg, ' + bg + ' ' + deg + 'deg, ' + bg + ' 360deg)';
+        if (pomoMode !== 'work') circle.classList.add('break'); else circle.classList.remove('break');
+      }
+      if (p) {
+        if (pomoRunning) p.textContent = (pomoMode === 'work' ? '专注中…' : (pomoMode === 'short' ? '短休中…' : '长休中…'));
+        else p.textContent = pomoMode === 'work' ? '点击开始专注' : (pomoMode === 'short' ? '短休准备' : '长休准备');
+      }
+      if (btn) btn.textContent = pomoRunning ? '暂停' : (pomoRemaining < pomoDurations[pomoMode] ? '继续' : '开始');
+    }
+
+    function pomoToggle() {
+      if (pomoRunning) {
+        pomoRunning = false;
+        clearInterval(pomoInterval);
+      } else {
+        pomoRunning = true;
+        pomoInterval = setInterval(function() {
+          pomoRemaining--;
+          if (pomoRemaining <= 0) {
+            pomoFinish();
+          } else {
+            pomoRenderTime();
+          }
+        }, 1000);
+      }
+      pomoRenderTime();
+    }
+
+    function pomoFinish() {
+      clearInterval(pomoInterval);
+      pomoRunning = false;
+      if (pomoMode === 'work') {
+        pomoAddCompleted();
+        pomoMode = 'short';
+        pomoRemaining = pomoDurations.short;
+        var stats = pomoGetStats();
+        if (stats.count % 4 === 0) { pomoMode = 'long'; pomoRemaining = pomoDurations.long; }
+        try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==').play(); } catch(e) {}
+        document.title = '🍅 专注完成！';
+        setTimeout(function(){ document.title = 'Auroraus导航'; }, 4000);
+      } else {
+        pomoMode = 'work';
+        pomoRemaining = pomoDurations.work;
+      }
+      pomoUpdateTabs();
+      pomoRenderTime();
+    }
+
+    function pomoReset() {
+      clearInterval(pomoInterval);
+      pomoRunning = false;
+      pomoRemaining = pomoDurations[pomoMode];
+      pomoRenderTime();
+    }
+
+    function pomoSwitchMode(mode, el) {
+      if (pomoRunning && !confirm('当前计时进行中，确定要切换模式吗？')) return;
+      clearInterval(pomoInterval);
+      pomoRunning = false;
+      pomoMode = mode;
+      pomoRemaining = pomoDurations[mode];
+      pomoUpdateTabs();
+      pomoRenderTime();
+    }
+
+    function pomoUpdateTabs() {
+      var tabs = document.querySelectorAll('#pomoWindow .pomo-tab');
+      tabs.forEach(function(t) {
+        if (t.dataset.mode === pomoMode) t.classList.add('active');
+        else t.classList.remove('active');
+      });
+    }
+
+    function togglePomoWindow() {
+      var win = document.getElementById('pomoWindow');
+      if (!win) return;
+      if (win.classList.contains('visible')) closePomoWindow();
+      else openPomoWindow();
+    }
+
+    function openPomoWindow() {
+      var win = document.getElementById('pomoWindow');
+      if (!win) return;
+      pomoRestorePos();
+      win.classList.add('visible');
+      pomoRenderStats();
+      pomoRenderTime();
+    }
+
+    function closePomoWindow() {
+      var win = document.getElementById('pomoWindow');
+      if (!win) return;
+      win.classList.remove('visible');
+    }
+
+    function pomoRestorePos() {
+      var win = document.getElementById('pomoWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_pomo_pos') || 'null');
+        if (saved && typeof saved.x === 'number') {
+          var maxX = window.innerWidth - win.offsetWidth - 10;
+          var maxY = window.innerHeight - win.offsetHeight - 10;
+          win.style.left = Math.min(Math.max(saved.x, 10), maxX) + 'px';
+          win.style.top = Math.min(Math.max(saved.y, 10), maxY) + 'px';
+          win.style.right = 'auto';
+        }
+        if (saved && typeof saved.w === 'number' && saved.w >= 280 && saved.h >= 360) {
+          win.style.width = saved.w + 'px'; win.style.height = saved.h + 'px';
+        }
+      } catch(e) {}
+    }
+
+    function pomoSavePos() {
+      var win = document.getElementById('pomoWindow');
+      if (!win) return;
+      try {
+        var rect = win.getBoundingClientRect();
+        localStorage.setItem('nav_pomo_pos', JSON.stringify({ x: rect.left, y: rect.top, w: rect.width, h: rect.height }));
+      } catch(e) {}
+    }
+
+    function initPomoDrag() {
+      var header = document.getElementById('pomoHeader');
+      var win = document.getElementById('pomoWindow');
+      if (!header || !win) return;
+      header.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        pomoDrag.active = true; pomoDrag.startX = e.clientX; pomoDrag.startY = e.clientY;
+        var rect = win.getBoundingClientRect();
+        pomoDrag.startLeft = rect.left; pomoDrag.startTop = rect.top;
+        win.style.right = 'auto'; win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
+        win.style.transition = 'none'; e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!pomoDrag.active) return;
+        var newLeft = Math.max(0, Math.min(pomoDrag.startLeft + e.clientX - pomoDrag.startX, window.innerWidth - win.offsetWidth));
+        var newTop = Math.max(0, Math.min(pomoDrag.startTop + e.clientY - pomoDrag.startY, window.innerHeight - win.offsetHeight));
+        win.style.left = newLeft + 'px'; win.style.top = newTop + 'px';
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (!pomoDrag.active) return;
+        pomoDrag.active = false; win.style.transition = ''; pomoSavePos();
+      });
+    }
+
+    function initPomoResize() {
+      var handle = document.getElementById('pomoResizeHandle');
+      var win = document.getElementById('pomoWindow');
+      if (!handle || !win) return;
+      handle.addEventListener('mousedown', function(e) {
+        pomoResize.active = true; pomoResize.startX = e.clientX; pomoResize.startY = e.clientY;
+        pomoResize.startW = win.offsetWidth; pomoResize.startH = win.offsetHeight;
+        win.style.transition = 'none'; e.preventDefault(); e.stopPropagation();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!pomoResize.active) return;
+        var newW = Math.max(280, Math.min(pomoResize.startW + e.clientX - pomoResize.startX, window.innerWidth - win.getBoundingClientRect().left - 10));
+        var newH = Math.max(360, Math.min(pomoResize.startH + e.clientY - pomoResize.startY, window.innerHeight - win.getBoundingClientRect().top - 10));
+        win.style.width = newW + 'px'; win.style.height = newH + 'px';
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (!pomoResize.active) return;
+        pomoResize.active = false; win.style.transition = ''; pomoSavePos();
+      });
+    }
+
+    function pomoExport() {
+      var stats = pomoGetStats();
+      var data = { version: 1, exportedAt: new Date().toISOString(), stats: stats };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'auroraus_pomo_' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function pomoImport() {
+      var f = document.getElementById('pomoImportFile');
+      if (f) f.click();
+    }
+
+    function pomoHandleImport(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = JSON.parse(e.target.result);
+          if (data.stats) { pomoSaveStats(data.stats); pomoRenderStats(); }
+        } catch(err) { alert('解析文件失败'); }
+      };
+      reader.readAsText(file); event.target.value = '';
+    }
+
+    initPomoDrag();
+    initPomoResize();
+
+    // === Unit Converter Feature ===
+    var convCat = 'length';
+    var convDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+    var convResize = { active: false, startX: 0, startY: 0, startW: 0, startH: 0 };
+
+    // factor = 1 of this unit equals factor base units (first in list = base, factor=1)
+    var convData = {
+      byte: [
+        { label: 'B (字节)', factor: 1 },
+        { label: 'KB', factor: 1024 },
+        { label: 'MB', factor: 1048576 },
+        { label: 'GB', factor: 1073741824 },
+        { label: 'TB', factor: 1099511627776 },
+        { label: 'PB', factor: 1125899906842624 },
+        { label: 'bit (比特)', factor: 0.125 },
+        { label: 'Kibit', factor: 128 }
+      ],
+      temp: [
+        { label: '℃ (摄氏)', toBase: function(v){return v;}, fromBase: function(v){return v;} },
+        { label: '℉ (华氏)', toBase: function(v){return (v-32)*5/9;}, fromBase: function(v){return v*9/5+32;} },
+        { label: 'K (开尔文)', toBase: function(v){return v-273.15;}, fromBase: function(v){return v+273.15;} },
+        { label: '°R (兰氏度)', toBase: function(v){return (v-491.67)*5/9;}, fromBase: function(v){return v*9/5+491.67;} }
+      ],
+      angle: [
+        { label: '度 (°)', factor: 1 },
+        { label: '弧度 (rad)', factor: 57.29577951308232 },
+        { label: '梯度 (grad)', factor: 0.9 },
+        { label: '角秒 (″)', factor: 1/3600 },
+        { label: '角分 (′)', factor: 1/60 },
+        { label: '转 (turn)', factor: 360 },
+        { label: '毫弧度 (mrad)', factor: 0.05729577951308232 }
+      ],
+      length: [
+        { label: 'm (米)', factor: 1 },
+        { label: 'km (千米)', factor: 1000 },
+        { label: 'cm (厘米)', factor: 0.01 },
+        { label: 'mm (毫米)', factor: 0.001 },
+        { label: 'μm (微米)', factor: 0.000001 },
+        { label: 'nm (纳米)', factor: 0.000000001 },
+        { label: 'inch (英寸)', factor: 0.0254 },
+        { label: 'ft (英尺)', factor: 0.3048 },
+        { label: 'yd (码)', factor: 0.9144 },
+        { label: 'mile (英里)', factor: 1609.344 },
+        { label: 'nmi (海里)', factor: 1852 },
+        { label: 'mil (密耳)', factor: 0.0000254 },
+        { label: '光年 (ly)', factor: 9460730472580800 }
+      ],
+      mass: [
+        { label: 'kg (千克)', factor: 1 },
+        { label: 'g (克)', factor: 0.001 },
+        { label: 'mg (毫克)', factor: 0.000001 },
+        { label: 't (吨)', factor: 1000 },
+        { label: 'lb (磅)', factor: 0.45359237 },
+        { label: 'oz (盎司)', factor: 0.028349523125 },
+        { label: 'slug (斯勒格)', factor: 14.59390293720636 },
+        { label: 'grain (格令)', factor: 0.00006479891 },
+        { label: 'US ton (短吨)', factor: 907.18474 },
+        { label: 'long ton (长吨)', factor: 1016.0469088 },
+        { label: 'ct (克拉)', factor: 0.0002 }
+      ],
+      pressure: [
+        { label: 'Pa (帕)', factor: 1 },
+        { label: 'kPa (千帕)', factor: 1000 },
+        { label: 'MPa (兆帕)', factor: 1000000 },
+        { label: 'GPa (吉帕)', factor: 1000000000 },
+        { label: 'bar (巴)', factor: 100000 },
+        { label: 'mbar (毫巴)', factor: 100 },
+        { label: 'atm (标准大气压)', factor: 101325 },
+        { label: 'psi (磅/英寸²)', factor: 6894.757293168 },
+        { label: 'psf (磅/英尺²)', factor: 47.880258980335 },
+        { label: 'ksi (千磅/英寸²)', factor: 6894757.293168 },
+        { label: 'mmHg (毫米汞柱)', factor: 133.322387415 },
+        { label: 'inHg (英寸汞柱)', factor: 3386.389 },
+        { label: 'torr (托)', factor: 133.322368421 },
+        { label: 'at (工程大气压)', factor: 98066.5 }
+      ],
+      force: [
+        { label: 'N (牛)', factor: 1 },
+        { label: 'kN (千牛)', factor: 1000 },
+        { label: 'MN (兆牛)', factor: 1000000 },
+        { label: 'dyn (达因)', factor: 0.00001 },
+        { label: 'lbf (磅力)', factor: 4.4482216152605 },
+        { label: 'kip (千磅力)', factor: 4448.2216152605 },
+        { label: 'kgf (千克力)', factor: 9.80665 },
+        { label: 'pdl (磅达)', factor: 0.138254954376 }
+      ],
+      area: [
+        { label: 'm² (平方米)', factor: 1 },
+        { label: 'km² (平方千米)', factor: 1000000 },
+        { label: 'cm² (平方厘米)', factor: 0.0001 },
+        { label: 'mm² (平方毫米)', factor: 0.000001 },
+        { label: 'ha (公顷)', factor: 10000 },
+        { label: 'acre (英亩)', factor: 4046.8564224 },
+        { label: 'ft² (平方英尺)', factor: 0.09290304 },
+        { label: 'in² (平方英寸)', factor: 0.00064516 },
+        { label: 'mi² (平方英里)', factor: 2589988.110336 },
+        { label: 'yd² (平方码)', factor: 0.83612736 }
+      ],
+      power: [
+        { label: 'W (瓦)', factor: 1 },
+        { label: 'kW (千瓦)', factor: 1000 },
+        { label: 'MW (兆瓦)', factor: 1000000 },
+        { label: 'mW (毫瓦)', factor: 0.001 },
+        { label: 'hp (机械马力)', factor: 745.69987158227 },
+        { label: 'PS (公制马力)', factor: 735.49875 },
+        { label: 'BTU/s', factor: 1055.05585262 },
+        { label: 'BTU/h', factor: 0.29307107017222 },
+        { label: 'ft·lbf/s', factor: 1.3558179483314 },
+        { label: 'cal/s', factor: 4.184 },
+        { label: 'kcal/h', factor: 1.1622222222222 }
+      ],
+      energy: [
+        { label: 'J (焦)', factor: 1 },
+        { label: 'kJ (千焦)', factor: 1000 },
+        { label: 'MJ (兆焦)', factor: 1000000 },
+        { label: 'cal (卡)', factor: 4.184 },
+        { label: 'kcal (千卡)', factor: 4184 },
+        { label: 'BTU', factor: 1055.05585262 },
+        { label: 'kWh (千瓦时)', factor: 3600000 },
+        { label: 'ft·lbf (英尺磅力)', factor: 1.3558179483314 },
+        { label: 'eV (电子伏)', factor: 1.602176634e-19 },
+        { label: 'therm ( Therm)', factor: 105505585.262 }
+      ],
+      velocity: [
+        { label: 'm/s', factor: 1 },
+        { label: 'km/h', factor: 0.27777777777778 },
+        { label: 'mph (英里/时)', factor: 0.44704 },
+        { label: 'ft/s (英尺/秒)', factor: 0.3048 },
+        { label: 'knot (节)', factor: 0.51444444444444 },
+        { label: 'Mach (海平面)', factor: 340.29 },
+        { label: 'cm/s', factor: 0.01 }
+      ],
+      volume: [
+        { label: 'L (升)', factor: 1 },
+        { label: 'mL (毫升)', factor: 0.001 },
+        { label: 'm³ (立方米)', factor: 1000 },
+        { label: 'cm³ (立方厘米)', factor: 0.001 },
+        { label: 'gal US (美制加仑)', factor: 3.785411784 },
+        { label: 'gal UK (英制加仑)', factor: 4.54609 },
+        { label: 'qt (夸脱)', factor: 0.946352946 },
+        { label: 'pt (品脱)', factor: 0.473176473 },
+        { label: 'cup (杯)', factor: 0.2365882365 },
+        { label: 'fl oz US (液量盎司)', factor: 0.0295735295625 },
+        { label: 'ft³ (立方英尺)', factor: 28.316846592 },
+        { label: 'in³ (立方英寸)', factor: 0.016387064 },
+        { label: 'barrel (石油桶)', factor: 158.987294928 }
+      ],
+      viscosity: [
+        { label: 'Pa·s (帕秒)', factor: 1 },
+        { label: 'mPa·s (毫帕秒)', factor: 0.001 },
+        { label: 'cP (厘泊)', factor: 0.001 },
+        { label: 'P (泊)', factor: 0.1 },
+        { label: 'lbf·s/ft²', factor: 47.880258980335 },
+        { label: 'lb/(ft·s)', factor: 1.4881639435696 },
+        { label: 'kg/(m·s)', factor: 1 }
+      ],
+      density: [
+        { label: 'kg/m³', factor: 1 },
+        { label: 'g/cm³', factor: 1000 },
+        { label: 'g/mL', factor: 1000 },
+        { label: 'lb/ft³', factor: 16.01846337396 },
+        { label: 'lb/in³', factor: 27679.904710203 },
+        { label: 'slug/ft³', factor: 515.3788184 },
+        { label: 'lb/gal US', factor: 119.8264273169 }
+      ]
+    };
+
+    function convInitUnits() {
+      var sel = document.getElementById('convUnit');
+      if (!sel) return;
+      var units = convData[convCat];
+      var h = '';
+      units.forEach(function(u, i) { h += '<option value="' + i + '">' + u.label + '</option>'; });
+      sel.innerHTML = h;
+    }
+
+    function convSwitchCat(cat, el) {
+      convCat = cat;
+      var tabs = document.querySelectorAll('#convTabs .conv-tab');
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      if (el) el.classList.add('active');
+      convInitUnits();
+      convCalc();
+    }
+
+    function convFormatNum(v) {
+      if (!isFinite(v)) return '—';
+      var abs = Math.abs(v);
+      if (abs === 0) return '0';
+      if (abs < 0.000001) return v.toExponential(4);
+      if (abs < 0.01) return v.toFixed(8).replace(/\.?0+$/,'');
+      if (abs < 1) return v.toFixed(6).replace(/\.?0+$/,'');
+      if (abs < 100) return v.toFixed(4).replace(/\.?0+$/,'');
+      if (abs < 100000) return v.toFixed(2).replace(/\.?0+$/,'');
+      if (abs < 1e15) return v.toFixed(0);
+      return v.toExponential(4);
+    }
+
+    function convCalc() {
+      var inp = document.getElementById('convInput');
+      var sel = document.getElementById('convUnit');
+      var res = document.getElementById('convResults');
+      if (!inp || !sel || !res) return;
+      var val = parseFloat(inp.value);
+      if (isNaN(val)) { res.innerHTML = '<div class="conv-empty">输入数值后自动换算</div>'; return; }
+      var units = convData[convCat];
+      var fromIdx = parseInt(sel.value, 10) || 0;
+      var fromUnit = units[fromIdx];
+      var baseVal;
+      if (fromUnit.toBase) baseVal = fromUnit.toBase(val);
+      else baseVal = val * fromUnit.factor;
+
+      var h = '';
+      units.forEach(function(u, i) {
+        if (i === fromIdx) return;
+        var converted;
+        if (u.fromBase) converted = u.fromBase(baseVal);
+        else converted = baseVal / u.factor;
+        h += '<div class="conv-result-item">';
+        h += '<span class="conv-result-label">' + u.label + '</span>';
+        h += '<span class="conv-result-value" onclick="convCopy(this)" title="点击复制">' + convFormatNum(converted) + '</span>';
+        h += '</div>';
+      });
+      res.innerHTML = h;
+    }
+
+    function convCopy(el) {
+      var text = el.textContent;
+      try {
+        navigator.clipboard.writeText(text);
+        var orig = el.style.color;
+        el.style.color = '#16a34a';
+        setTimeout(function(){ el.style.color = orig; }, 600);
+      } catch(e) {}
+    }
+
+    function toggleConvWindow() {
+      var win = document.getElementById('convWindow');
+      if (!win) return;
+      if (win.classList.contains('visible')) closeConvWindow();
+      else openConvWindow();
+    }
+
+    function openConvWindow() {
+      var win = document.getElementById('convWindow');
+      if (!win) return;
+      convRestorePos();
+      win.classList.add('visible');
+      convInitUnits();
+      convCalc();
+      setTimeout(function(){ var i = document.getElementById('convInput'); if (i) i.focus(); }, 100);
+    }
+
+    function closeConvWindow() {
+      var win = document.getElementById('convWindow');
+      if (!win) return;
+      win.classList.remove('visible');
+    }
+
+    function convRestorePos() {
+      var win = document.getElementById('convWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_conv_pos') || 'null');
+        if (saved && typeof saved.x === 'number') {
+          var maxX = window.innerWidth - win.offsetWidth - 10;
+          var maxY = window.innerHeight - win.offsetHeight - 10;
+          win.style.left = Math.min(Math.max(saved.x, 10), maxX) + 'px';
+          win.style.top = Math.min(Math.max(saved.y, 10), maxY) + 'px';
+          win.style.right = 'auto';
+        }
+        if (saved && typeof saved.w === 'number' && saved.w >= 300 && saved.h >= 360) {
+          win.style.width = saved.w + 'px'; win.style.height = saved.h + 'px';
+        }
+      } catch(e) {}
+    }
+
+    function convSavePos() {
+      var win = document.getElementById('convWindow');
+      if (!win) return;
+      try {
+        var rect = win.getBoundingClientRect();
+        localStorage.setItem('nav_conv_pos', JSON.stringify({ x: rect.left, y: rect.top, w: rect.width, h: rect.height }));
+      } catch(e) {}
+    }
+
+    function initConvDrag() {
+      var header = document.getElementById('convHeader');
+      var win = document.getElementById('convWindow');
+      if (!header || !win) return;
+      header.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        convDrag.active = true; convDrag.startX = e.clientX; convDrag.startY = e.clientY;
+        var rect = win.getBoundingClientRect();
+        convDrag.startLeft = rect.left; convDrag.startTop = rect.top;
+        win.style.right = 'auto'; win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
+        win.style.transition = 'none'; e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!convDrag.active) return;
+        var newLeft = Math.max(0, Math.min(convDrag.startLeft + e.clientX - convDrag.startX, window.innerWidth - win.offsetWidth));
+        var newTop = Math.max(0, Math.min(convDrag.startTop + e.clientY - convDrag.startY, window.innerHeight - win.offsetHeight));
+        win.style.left = newLeft + 'px'; win.style.top = newTop + 'px';
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (!convDrag.active) return;
+        convDrag.active = false; win.style.transition = ''; convSavePos();
+      });
+    }
+
+    function initConvResize() {
+      var handle = document.getElementById('convResizeHandle');
+      var win = document.getElementById('convWindow');
+      if (!handle || !win) return;
+      handle.addEventListener('mousedown', function(e) {
+        convResize.active = true; convResize.startX = e.clientX; convResize.startY = e.clientY;
+        convResize.startW = win.offsetWidth; convResize.startH = win.offsetHeight;
+        win.style.transition = 'none'; e.preventDefault(); e.stopPropagation();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!convResize.active) return;
+        var newW = Math.max(300, Math.min(convResize.startW + e.clientX - convResize.startX, window.innerWidth - win.getBoundingClientRect().left - 10));
+        var newH = Math.max(360, Math.min(convResize.startH + e.clientY - convResize.startY, window.innerHeight - win.getBoundingClientRect().top - 10));
+        win.style.width = newW + 'px'; win.style.height = newH + 'px';
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (!convResize.active) return;
+        convResize.active = false; win.style.transition = ''; convSavePos();
+      });
+    }
+
+    initConvDrag();
+    initConvResize();
 
     document.getElementById('searchInput').focus();
   </script>

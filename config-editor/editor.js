@@ -588,6 +588,8 @@
       {icon:'💬',name:'微信传输',url:'https://filehelper.weixin.qq.com/'},
       {icon:'📋',name:'待办事项',url:'（悬浮窗）'},
       {icon:'📝',name:'记事本',url:'（悬浮窗）'},
+      {icon:'🍅',name:'番茄钟',url:'（悬浮窗）'},
+      {icon:'📐',name:'单位换算',url:'（悬浮窗）'},
       {icon:'🔢',name:'计算器',url:'https://www.desmos.com/scientific?lang=zh-CN'},
       {icon:'✏️',name:'画图',url:'https://app.diagrams.net/'},
       {icon:'🧰',name:'工具箱',url:'https://txttool.cn/'}
@@ -618,6 +620,22 @@
       htm += '<p class="hint">暂无笔记数据</p>';
     }
     htm += '<p class="hint">笔记数据随全局配置一起导出/导入。在主页面右侧工具栏点击 📝 图标可使用记事本功能。</p>';
+    htm += '</div>';
+
+    htm += '<div class="setting-card"><h4>🍅 番茄钟数据</h4>';
+    try {
+      var pomoData = JSON.parse(localStorage.getItem('nav_pomo_stats') || 'null');
+      if (pomoData) {
+        var pomoCount = pomoData.count || 0;
+        var pomoMin = pomoData.totalMin || 0;
+        htm += '<p class="hint">今日专注次数: <strong>' + pomoCount + '</strong> 次，累计专注时长: <strong>' + pomoMin + '</strong> 分钟</p>';
+      } else {
+        htm += '<p class="hint">暂无番茄钟数据</p>';
+      }
+    } catch(e) {
+      htm += '<p class="hint">暂无番茄钟数据</p>';
+    }
+    htm += '<p class="hint">番茄钟数据随全局配置一起导出/导入。在主页面右侧工具栏点击 🍅 图标可使用番茄钟功能。</p>';
     htm += '</div>';
 
     el.innerHTML = htm;
@@ -722,6 +740,10 @@
       var noteContent = localStorage.getItem('nav_note_content') || '';
       if (noteContent.trim()) data.noteContent = noteContent;
     } catch(e) {}
+    try {
+      var pomoStats = JSON.parse(localStorage.getItem('nav_pomo_stats') || 'null');
+      if (pomoStats) data.pomoStats = pomoStats;
+    } catch(e) {}
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
@@ -770,6 +792,9 @@
         if (data.noteContent && typeof data.noteContent === 'string') {
           try { localStorage.setItem('nav_note_content', data.noteContent); } catch(e) {}
         }
+        if (data.pomoStats) {
+          try { localStorage.setItem('nav_pomo_stats', JSON.stringify(data.pomoStats)); } catch(e) {}
+        }
         // Legacy flat format
         if (data.nav_added_sites) addedSites = data.nav_added_sites;
         if (data.nav_removed_sites) removedSites = data.nav_removed_sites;
@@ -785,6 +810,9 @@
         if (data.nav_all_hidden !== undefined) navAllHidden = !!data.nav_all_hidden;
         if (data.nav_note_content !== undefined) {
           try { localStorage.setItem('nav_note_content', String(data.nav_note_content)); } catch(e) {}
+        }
+        if (data.nav_pomo_stats !== undefined) {
+          try { localStorage.setItem('nav_pomo_stats', typeof data.nav_pomo_stats === 'string' ? data.nav_pomo_stats : JSON.stringify(data.nav_pomo_stats)); } catch(e) {}
         }
         document.body.className = theme === 'dark' ? 'dark' : '';
         editingCats = buildEditingCats();
@@ -820,6 +848,7 @@
     localStorage.removeItem('nav_rt_custom_tools');
     localStorage.removeItem('nav_cat_order');
     localStorage.removeItem('nav_note_content');
+    localStorage.removeItem('nav_pomo_stats');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
     hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'bing';
     customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;

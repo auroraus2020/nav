@@ -148,6 +148,8 @@
         <tr><td>💬</td><td>微信文件传输</td><td>手机和电脑互传文件</td></tr>
         <tr><td>📋</td><td>待办事项</td><td>弹出悬浮窗管理待办（支持重要性、截止日）</td></tr>
         <tr><td>📝</td><td>记事本</td><td>弹出悬浮窗记录笔记（支持Markdown）</td></tr>
+        <tr><td>🍅</td><td>番茄钟</td><td>弹出悬浮窗专注计时</td></tr>
+        <tr><td>📐</td><td>单位换算</td><td>弹出悬浮窗快速换算单位</td></tr>
         <tr><td>🔢</td><td>Desmos科学计算器</td><td>功能强大的在线计算器</td></tr>
         <tr><td>✏️</td><td>draw.io 在线画图</td><td>流程图、思维导图</td></tr>
         <tr><td>🧰</td><td>在线工具箱</td><td>各种小工具合集</td></tr>
@@ -204,6 +206,54 @@
         <li><strong>自由调整大小</strong> — 拖拽悬浮窗右下角的三角形手柄，可以自由拉伸窗口的宽度和高度</li>
       </ul>
       <div class="tip"><strong>💡 数据存储：</strong>笔记内容保存在浏览器本地存储中，不会上传到任何服务器。在配置编辑器中导出/导入全局配置时会一并包含笔记数据。建议定期导出 .md 文件备份重要笔记。</div>
+
+      <h4>🍅 番茄钟</h4>
+      <p>在右侧工具栏中有一个<strong>🍅</strong>图标，点击后会弹出一个<strong>专注计时悬浮窗</strong>，帮你用番茄工作法管理专注时间。</p>
+      <h4>功能说明</h4>
+      <ul>
+        <li><strong>三种模式</strong> — 专注 25 分钟 / 短休 5 分钟 / 长休 15 分钟，可按需切换</li>
+        <li><strong>圆形进度环</strong> — 悬浮窗中央有一个圆形进度环，实时显示剩余时间</li>
+        <li><strong>开始 / 暂停 / 重置</strong> — 三个按钮控制计时流程，可随时暂停或重置当前计时</li>
+        <li><strong>自动统计</strong> — 每完成一次专注，自动累计：今日专注次数 + 累计分钟数</li>
+        <li><strong>长休自动切换</strong> — 每完成 4 次专注后，自动切换为长休模式，劳逸结合</li>
+        <li><strong>标签页标题提示</strong> — 专注完成时，浏览器标签页标题会同步提示，方便你在其他标签页时也能看到</li>
+        <li><strong>拖拽移动</strong> — 按住悬浮窗标题栏，可以把它拖到页面上任意位置</li>
+        <li><strong>自由调整大小</strong> — 拖拽悬浮窗右下角的三角形手柄，可以自由拉伸窗口的宽度和高度</li>
+      </ul>
+      <h4>导入/导出</h4>
+      <p>悬浮窗标题栏有📤导出和📥导入按钮：</p>
+      <ul>
+        <li><strong>📤 导出</strong> — 将番茄钟统计数据导出为独立 <code>.json</code> 文件，方便备份或迁移</li>
+        <li><strong>📥 导入</strong> — 选择之前导出的 <code>.json</code> 文件，恢复番茄钟数据</li>
+      </ul>
+      <div class="tip"><strong>💡 数据存储：</strong>番茄钟数据保存在浏览器的本地存储中，不会上传到任何服务器。在配置编辑器中导出/导入全局配置时会一并包含番茄钟数据。建议定期导出备份。</div>
+
+      <h4>📐 单位换算</h4>
+      <p>悬浮窗式单位换算工具，无需打开外部网站即可快速换算。特别覆盖航空航天常用美制/英制单位（psi/ksi/lbf/slug/ft²/nmi/Mach等）。</p>
+      <ul>
+        <li><strong>十四大类换算</strong>：
+          <ul>
+            <li><strong>长度</strong>：m/km/cm/mm/μm/nm/inch/ft/yd/mile/nmi(海里)/mil(密耳)/光年</li>
+            <li><strong>质量</strong>：kg/g/mg/t/lb/oz/slug(斯勒格)/grain/US ton/long ton/ct</li>
+            <li><strong>温度</strong>：℃/℉/K/°R(兰氏度)</li>
+            <li><strong>角度</strong>：°/rad/grad/角秒/角分/转/mrad</li>
+            <li><strong>面积</strong>：m²/km²/cm²/ha/acre/ft²/in²/mi²/yd²</li>
+            <li><strong>体积</strong>：L/mL/m³/gal(美/英)/qt/pt/cup/fl oz/ft³/in³/石油桶</li>
+            <li><strong>速度</strong>：m/s/km/h/mph/ft/s/knot(节)/Mach(海平面)</li>
+            <li><strong>压力</strong>：Pa/kPa/MPa/GPa/bar/mbar/atm/psi/psf/ksi/mmHg/inHg/torr/at</li>
+            <li><strong>力</strong>：N/kN/MN/dyn/lbf/kip/kgf/pdl</li>
+            <li><strong>功率</strong>：W/kW/MW/hp(机械)/PS(公制)/BTU/s/BTU/h/ft·lbf/s/cal/s</li>
+            <li><strong>能量</strong>：J/kJ/MJ/cal/kcal/BTU/kWh/ft·lbf/eV/therm</li>
+            <li><strong>密度</strong>：kg/m³/g/cm³/lb/ft³/lb/in³/slug/ft³/lb/gal</li>
+            <li><strong>粘度</strong>：Pa·s/mPa·s/cP/P/lbf·s/ft²/lb/(ft·s)/kg/(m·s)</li>
+            <li><strong>字节</strong>：B/KB/MB/GB/TB/PB/bit/Kibit</li>
+          </ul>
+        </li>
+        <li><strong>输入数值后自动换算为所有其他单位</strong></li>
+        <li><strong>点击结果数值即可一键复制</strong></li>
+        <li><strong>拖拽标题栏移动窗口，右下角手柄调整大小</strong></li>
+        <li><strong>位置和大小自动记忆</strong></li>
+      </ul>
     </div>
 
     <!-- 五 -->
