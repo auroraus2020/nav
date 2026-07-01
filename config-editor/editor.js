@@ -586,7 +586,8 @@
     htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th></tr></thead><tbody>';
     var builtins = [
       {icon:'💬',name:'微信传输',url:'https://filehelper.weixin.qq.com/'},
-      {icon:'📝',name:'记事本',url:'https://markdown.com.cn/editor/'},
+      {icon:'📋',name:'待办事项',url:'（悬浮窗）'},
+      {icon:'📝',name:'记事本',url:'（悬浮窗）'},
       {icon:'🔢',name:'计算器',url:'https://www.desmos.com/scientific?lang=zh-CN'},
       {icon:'✏️',name:'画图',url:'https://app.diagrams.net/'},
       {icon:'🧰',name:'工具箱',url:'https://txttool.cn/'}
@@ -595,6 +596,29 @@
       htm += '<tr><td style="font-size:1.2rem;">' + t.icon + '</td><td>' + t.name + '</td><td><code style="word-break:break-all;">' + t.url + '</code></td></tr>';
     });
     htm += '</tbody></table></div>';
+
+    htm += '<div class="setting-card"><h4>📋 待办事项数据</h4>';
+    try {
+      var todoItems = JSON.parse(localStorage.getItem('nav_todo_items') || '[]');
+      var activeCount = todoItems.filter(function(t) { return !t.completed; }).length;
+      var completedCount = todoItems.length - activeCount;
+      htm += '<p class="hint">当前共有 <strong>' + todoItems.length + '</strong> 条待办事项（未完成 ' + activeCount + ' 条，已完成 ' + completedCount + ' 条）</p>';
+    } catch(e) {
+      htm += '<p class="hint">暂无待办数据</p>';
+    }
+    htm += '<p class="hint">待办数据随全局配置一起导出/导入。在主页面右侧工具栏点击 📋 图标可使用待办功能。已完成超过2天的事项会自动清理。</p>';
+    htm += '</div>';
+
+    htm += '<div class="setting-card"><h4>📝 记事本数据</h4>';
+    try {
+      var noteContent = localStorage.getItem('nav_note_content') || '';
+      var noteLines = noteContent.split('\n').length;
+      htm += '<p class="hint">当前笔记长度: <strong>' + noteContent.length + '</strong> 字符（' + noteLines + ' 行）</p>';
+    } catch(e) {
+      htm += '<p class="hint">暂无笔记数据</p>';
+    }
+    htm += '<p class="hint">笔记数据随全局配置一起导出/导入。在主页面右侧工具栏点击 📝 图标可使用记事本功能。</p>';
+    htm += '</div>';
 
     el.innerHTML = htm;
   }
@@ -690,6 +714,14 @@
     s.rtEnabled = !!rtEnabled;
     data.settings=s;
     if (rtCustom.length) data.rtTools = rtCustom;
+    try {
+      var todoItems = JSON.parse(localStorage.getItem('nav_todo_items') || '[]');
+      if (todoItems.length) data.todoItems = todoItems;
+    } catch(e) {}
+    try {
+      var noteContent = localStorage.getItem('nav_note_content') || '';
+      if (noteContent.trim()) data.noteContent = noteContent;
+    } catch(e) {}
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
@@ -732,6 +764,12 @@
           if (typeof s.rtEnabled === 'boolean') rtEnabled = s.rtEnabled;
         }
         if (data.rtTools && Array.isArray(data.rtTools)) rtCustom = data.rtTools;
+        if (data.todoItems && Array.isArray(data.todoItems)) {
+          try { localStorage.setItem('nav_todo_items', JSON.stringify(data.todoItems)); } catch(e) {}
+        }
+        if (data.noteContent && typeof data.noteContent === 'string') {
+          try { localStorage.setItem('nav_note_content', data.noteContent); } catch(e) {}
+        }
         // Legacy flat format
         if (data.nav_added_sites) addedSites = data.nav_added_sites;
         if (data.nav_removed_sites) removedSites = data.nav_removed_sites;
@@ -745,6 +783,9 @@
         if (typeof data.nav_freq_visible !== 'undefined') freqVisible = !!data.nav_freq_visible;
         if (data.nav_freq_count) freqCount = parseInt(data.nav_freq_count) || 6;
         if (data.nav_all_hidden !== undefined) navAllHidden = !!data.nav_all_hidden;
+        if (data.nav_note_content !== undefined) {
+          try { localStorage.setItem('nav_note_content', String(data.nav_note_content)); } catch(e) {}
+        }
         document.body.className = theme === 'dark' ? 'dark' : '';
         editingCats = buildEditingCats();
         saveAll();
@@ -778,6 +819,7 @@
     localStorage.removeItem('nav_rt_enabled');
     localStorage.removeItem('nav_rt_custom_tools');
     localStorage.removeItem('nav_cat_order');
+    localStorage.removeItem('nav_note_content');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
     hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'bing';
     customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;

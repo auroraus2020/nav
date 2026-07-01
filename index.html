@@ -495,6 +495,218 @@
     @media (min-width: 1024px) { .sidebar { display: block; } .card-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
     @media (max-width: 1023px) { .hero h1 { font-size: 1.6rem; } .hero { min-height: 220px; padding: 2rem 1rem; } .page-wrapper { flex-direction: column; padding: 0 0.75rem 2rem; } .desktop-only { display: none; } .category-header h2 { font-size: 1.05rem; } .category-header img { width: 28px; height: 28px; } .settings-btn { top: 0.5rem; left: 0.5rem; width: 32px; height: 32px; font-size: 0.95rem; } }
     @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.4rem; } .search-box input { font-size: 0.85rem; padding: 0.5rem 0.7rem; } .search-box button { font-size: 0.8rem; padding: 0.5rem 1rem; } .settings-btn { width: 30px; height: 30px; font-size: 0.85rem; } .settings-grid { grid-template-columns: 1fr; } .settings-panel { padding:1rem; } }
+
+    /* === Todo Floating Window === */
+    .todo-window {
+      display: none; position: fixed; top: 80px; right: 60px; width: 400px; height: 500px;
+      min-width: 300px; min-height: 340px; max-height: 85vh;
+      z-index: 190; background: rgba(255,255,255,0.9); border: 1px solid var(--rule);
+      border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      overflow: hidden; flex-direction: column;
+    }
+    body.dark .todo-window { background: rgba(17,24,39,0.9); }
+    .todo-window.visible { display: flex; }
+    .todo-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule);
+      cursor: move; user-select: none; gap: 0.4rem; flex-shrink: 0;
+    }
+    .todo-header span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+    .todo-header-actions { display: flex; gap: 0.25rem; }
+    .todo-btn-icon {
+      width: 26px; height: 26px; border: none; background: transparent;
+      cursor: pointer; font-size: 0.85rem; color: var(--muted); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .todo-btn-icon:hover { background: var(--bg3); color: var(--accent); }
+    .todo-btn-icon.todo-close:hover { color: #dc2626; }
+    .todo-input-row {
+      display: flex; gap: 0.3rem; padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid var(--rule); flex-shrink: 0; flex-wrap: wrap;
+    }
+    .todo-input-row input {
+      flex: 1; padding: 0.38rem 0.55rem; border: 1px solid var(--rule);
+      border-radius: 8px; font-size: 0.8rem; background: var(--bg2); color: var(--ink);
+      outline: none; font-family: var(--font); min-width: 0;
+    }
+    .todo-input-row input:focus { border-color: var(--accent); }
+    .todo-input-row button {
+      padding: 0.38rem 0.75rem; border: none; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: opacity 0.2s;
+    }
+    .todo-input-row button:hover { opacity: 0.88; }
+    .todo-input-extras {
+      display: flex; gap: 0.35rem; padding: 0.3rem 0.6rem 0.45rem; align-items: center;
+      border-bottom: 1px solid var(--rule); flex-shrink: 0;
+    }
+    .todo-priority-select {
+      padding: 0.2rem 0.4rem; border: 1px solid var(--rule); border-radius: 6px;
+      font-size: 0.7rem; background: var(--bg2); color: var(--ink); outline: none;
+      font-family: var(--font); cursor: pointer;
+    }
+    .todo-priority-select:focus { border-color: var(--accent); }
+    .todo-date-input {
+      padding: 0.2rem 0.4rem; border: 1px solid var(--rule); border-radius: 6px;
+      font-size: 0.7rem; background: var(--bg2); color: var(--ink); outline: none;
+      font-family: var(--font); width: 115px; min-width: 0;
+    }
+    .todo-date-input:focus { border-color: var(--accent); }
+    .todo-date-label { font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+    .todo-tabs {
+      display: flex; gap: 0; padding: 0 0.4rem; border-bottom: 1px solid var(--rule);
+      flex-shrink: 0;
+    }
+    .todo-tab {
+      padding: 0.4rem 0.6rem; font-size: 0.74rem; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.15s; background: none; border-top: none;
+      border-left: none; border-right: none; font-family: var(--font);
+    }
+    .todo-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .todo-tab:hover { color: var(--accent); }
+    .todo-list {
+      flex: 1; overflow-y: auto; padding: 0.35rem 0.45rem;
+      min-height: 60px;
+    }
+    .todo-list::-webkit-scrollbar { width: 4px; }
+    .todo-list::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+    .todo-item {
+      display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.35rem;
+      border-radius: 8px; transition: background 0.15s; font-size: 0.8rem;
+    }
+    .todo-item:hover { background: var(--bg3); }
+    .todo-item.completed .todo-text { text-decoration: line-through; opacity: 0.55; }
+    .todo-item.completed .todo-pri-badge { opacity: 0.4; }
+    .todo-item.completed .todo-deadline { opacity: 0.4; }
+    .todo-check {
+      width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--rule);
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; transition: all 0.15s; background: transparent; padding: 0;
+    }
+    .todo-check:hover { border-color: var(--accent); }
+    .todo-item.completed .todo-check { background: var(--muted); border-color: var(--muted); }
+    .todo-item.completed .todo-check::after {
+      content: '✓'; color: #fff; font-size: 0.6rem; font-weight: 700; line-height: 1;
+    }
+    .todo-text { flex: 1; word-break: break-word; line-height: 1.4; font-weight: 500; min-width: 0; }
+    .todo-meta { display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0; }
+    .todo-pri-badge {
+      padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.6rem;
+      font-weight: 600; white-space: nowrap; line-height: 1.4;
+    }
+    .todo-pri-badge.low { background: rgba(37,99,235,0.1); color: #2563eb; }
+    .todo-pri-badge.mid { background: rgba(217,119,6,0.1); color: #d97706; }
+    .todo-pri-badge.high { background: rgba(220,38,38,0.1); color: #dc2626; }
+    .todo-deadline {
+      font-size: 0.62rem; white-space: nowrap; font-weight: 500; line-height: 1;
+    }
+    .todo-deadline.overdue { color: #dc2626; }
+    .todo-deadline.soon { color: #d97706; }
+    .todo-deadline.normal { color: var(--muted); }
+    .todo-del {
+      width: 22px; height: 22px; border: none; background: transparent;
+      cursor: pointer; font-size: 0.8rem; color: var(--muted); border-radius: 4px;
+      display: flex; align-items: center; justify-content: center; opacity: 0;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .todo-item:hover .todo-del { opacity: 1; }
+    .todo-del:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
+    .todo-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.4rem 0.7rem; border-top: 1px solid var(--rule);
+      font-size: 0.7rem; color: var(--muted); flex-shrink: 0;
+    }
+    .todo-footer-left { display: flex; align-items: center; gap: 0.5rem; }
+    .todo-footer-btns { display: flex; gap: 0.25rem; }
+    .todo-footer-btns button {
+      padding: 0.25rem 0.5rem; font-size: 0.68rem; border: 1px solid var(--rule);
+      border-radius: 6px; background: var(--bg2); color: var(--muted);
+      cursor: pointer; transition: all 0.15s; font-family: var(--font);
+    }
+    .todo-footer-btns button:hover { border-color: var(--accent); color: var(--accent); }
+    .todo-empty { text-align: center; padding: 1.5rem 0.5rem; color: var(--muted); font-size: 0.82rem; }
+    /* resize handle */
+    .todo-resize-handle {
+      position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+      cursor: nwse-resize; z-index: 5;
+      background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
+    }
+    .todo-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
+    @media (max-width: 1023px) { .todo-window { display: none !important; } }
+
+    /* === Notepad Floating Window === */
+    .note-window {
+      display: none; position: fixed; top: 80px; right: 60px; width: 480px; height: 540px;
+      min-width: 340px; min-height: 380px; max-height: 85vh;
+      z-index: 189; background: rgba(255,255,255,0.9); border: 1px solid var(--rule);
+      border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      overflow: hidden; flex-direction: column;
+    }
+    body.dark .note-window { background: rgba(17,24,39,0.9); }
+    .note-window.visible { display: flex; }
+    .note-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule);
+      cursor: move; user-select: none; gap: 0.4rem; flex-shrink: 0;
+    }
+    .note-header span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+    .note-header-actions { display: flex; gap: 0.25rem; }
+    .note-toolbar {
+      display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.6rem;
+      border-bottom: 1px solid var(--rule); flex-shrink: 0;
+    }
+    .note-toolbar button {
+      padding: 0.2rem 0.5rem; font-size: 0.7rem; border: 1px solid var(--rule);
+      border-radius: 6px; background: var(--bg2); color: var(--muted);
+      cursor: pointer; transition: all 0.15s; font-family: var(--font);
+    }
+    .note-toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+    .note-toolbar button.active { background: rgba(59,130,246,0.1); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .note-editor-area {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .note-textarea {
+      flex: 1; width: 100%; border: none; outline: none; resize: none;
+      padding: 0.6rem 0.7rem; font-family: Consolas, 'PingFang SC', 'Microsoft YaHei', monospace;
+      font-size: 0.82rem; line-height: 1.5; background: transparent; color: var(--ink);
+    }
+    .note-textarea::placeholder { color: var(--muted); font-family: var(--font); }
+    .note-preview {
+      flex: 1; overflow-y: auto; padding: 0.6rem 0.7rem;
+    }
+    .note-preview::-webkit-scrollbar { width: 4px; }
+    .note-preview::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+    .note-preview > *:first-child { margin-top: 0; }
+    .note-preview h1, .note-preview h2, .note-preview h3 { margin: 0.8em 0 0.4em; }
+    .note-preview h1 { font-size: 1.2rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.3em; }
+    .note-preview h2 { font-size: 1.05rem; }
+    .note-preview h3 { font-size: 0.9rem; }
+    .note-preview p { margin: 0.4em 0; }
+    .note-preview ul, .note-preview ol { padding-left: 1.5em; margin: 0.4em 0; }
+    .note-preview li { margin: 0.2em 0; }
+    .note-preview code { background: var(--bg3); padding: 0.1em 0.35em; border-radius: 3px; font-family: Consolas, monospace; font-size: 0.85em; }
+    .note-preview pre { background: var(--bg3); padding: 0.6em 0.8em; border-radius: 6px; overflow-x: auto; }
+    .note-preview pre code { background: none; padding: 0; }
+    .note-preview blockquote { border-left: 3px solid var(--accent); padding-left: 0.6em; color: var(--muted); margin: 0.4em 0; }
+    .note-preview a { color: var(--accent); }
+    .note-preview hr { border: none; border-top: 1px solid var(--rule); margin: 0.6em 0; }
+    .note-preview strong { font-weight: 600; }
+    .note-preview em { font-style: italic; }
+    .note-preview del { text-decoration: line-through; opacity: 0.6; }
+    .note-preview table { border-collapse: collapse; margin: 0.4em 0; font-size: 0.8rem; }
+    .note-preview th, .note-preview td { border: 1px solid var(--rule); padding: 0.3em 0.5em; text-align: left; }
+    .note-preview th { background: var(--bg3); }
+    .note-resize-handle {
+      position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+      cursor: nwse-resize; z-index: 5;
+      background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
+    }
+    .note-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
+    @media (max-width: 1023px) { .note-window { display: none !important; } }
   </style>
   <script>
     var _hmt = _hmt || [];
@@ -1452,6 +1664,69 @@
   <!-- === Right Quick Links === -->
   <div class="rt-edge" id="rtEdge"></div>
 
+  <!-- === Todo Floating Window === -->
+  <div class="todo-window" id="todoWindow">
+    <div class="todo-header" id="todoHeader">
+      <span>📋 待办事项</span>
+      <div class="todo-header-actions">
+        <button class="todo-btn-icon" onclick="todoExport()" title="导出待办">📤</button>
+        <button class="todo-btn-icon" onclick="todoImport()" title="导入待办">📥</button>
+        <button class="todo-btn-icon todo-close" onclick="closeTodoWindow()" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="todo-input-row">
+      <input type="text" id="todoInput" placeholder="输入新的待办事项..." maxlength="200" onkeydown="if(event.key==='Enter')todoAdd()">
+      <button onclick="todoAdd()">添加</button>
+    </div>
+    <div class="todo-input-extras">
+      <select class="todo-priority-select" id="todoPriority">
+        <option value="low">🟦 一般</option>
+        <option value="mid" selected>🟧 重要</option>
+        <option value="high">🟥 紧急</option>
+      </select>
+      <span class="todo-date-label">截止：</span>
+      <input type="date" class="todo-date-input" id="todoDeadline" title="截止日期（可选）">
+    </div>
+    <div class="todo-tabs" id="todoTabs">
+      <button class="todo-tab active" onclick="todoSwitchTab('all',this)">全部</button>
+      <button class="todo-tab" onclick="todoSwitchTab('active',this)">未完成</button>
+      <button class="todo-tab" onclick="todoSwitchTab('completed',this)">已完成</button>
+    </div>
+    <div class="todo-list" id="todoList"></div>
+    <div class="todo-footer">
+      <span class="todo-footer-left" id="todoCount"></span>
+      <div class="todo-footer-btns">
+        <button onclick="todoClearCompleted()">清除已完成</button>
+        <input type="file" id="todoImportFile" accept=".json" style="display:none" onchange="todoHandleImport(event)">
+      </div>
+    </div>
+    <div class="todo-resize-handle" id="todoResizeHandle"></div>
+  </div>
+
+  <!-- === Notepad Floating Window === -->
+  <div class="note-window" id="noteWindow">
+    <div class="note-header" id="noteHeader">
+      <span>📝 记事本</span>
+      <div class="note-header-actions">
+        <button class="todo-btn-icon" onclick="noteExportMd()" title="导出Markdown">📤</button>
+        <button class="todo-btn-icon" onclick="noteImportNote()" title="导入文本">📥</button>
+        <button class="todo-btn-icon todo-close" onclick="closeNoteWindow()" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="note-toolbar">
+      <button id="noteEditBtn" class="active" onclick="noteSwitchMode('edit')">✏️ 编辑</button>
+      <button id="notePreviewBtn" onclick="noteSwitchMode('preview')">👁️ 预览</button>
+      <span style="flex:1;"></span>
+      <button onclick="noteClear()" title="清空全部内容">🗑️ 清空</button>
+      <input type="file" id="noteImportFile" accept=".md,.txt,.json" style="display:none" onchange="noteHandleImport(event)">
+    </div>
+    <div class="note-editor-area">
+      <textarea class="note-textarea" id="noteTextarea" placeholder="开始记录... 支持 Markdown 格式&#10;&#10;# 标题&#10;**粗体** *斜体* &#10;- 列表项&#10;> 引用" spellcheck="false"></textarea>
+      <div class="note-preview" id="notePreview" style="display:none;"></div>
+    </div>
+    <div class="note-resize-handle" id="noteResizeHandle"></div>
+  </div>
+
   <footer>
     <p>AURORAUS导航 &copy; 2026 | 汇聚优质资源，发现精彩世界</p>
     <p style="margin-top:0.4rem;">贡献者：<a href="https://originalfileserver.aminer.cn/sys/aminer/history/AI-history-1.mp4" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-weight:600;">Auroraus</a></p>
@@ -2329,7 +2604,6 @@
     // --- Custom Right-Edge Tools ---
     var rtBuiltins = [
       {icon:'💬', name:'微信传输', url:'https://filehelper.weixin.qq.com/', enabled:true},
-      {icon:'📝', name:'记事本', url:'https://markdown.com.cn/editor/', enabled:true},
       {icon:'🔢', name:'计算器', url:'https://www.desmos.com/scientific?lang=zh-CN', enabled:true},
       {icon:'✏️', name:'画图', url:'https://app.diagrams.net/', enabled:true},
       {icon:'🧰', name:'工具箱', url:'https://txttool.cn/', enabled:true}
@@ -2368,9 +2642,13 @@
       if (!enabled) { edge.innerHTML = ''; return; }
       var custom = loadRtCustom();
       var h = '';
-      rtBuiltins.forEach(function(t) {
+      rtBuiltins.forEach(function(t, idx) {
         if (!t.enabled) return;
         h += '<div class="rt-tab" onclick="rtGo(\'' + t.url.replace(/'/g,"\\'") + '\')" title="' + t.name.replace(/"/g,'&quot;') + '">' + t.icon + '<span class="rt-label">' + t.name + '</span></div>';
+        if (idx === 0) {
+          h += '<div class="rt-tab" onclick="toggleTodoWindow()" title="待办事项">📋<span class="rt-label">待办事项</span></div>';
+          h += '<div class="rt-tab" onclick="toggleNoteWindow()" title="记事本">📝<span class="rt-label">记事本</span></div>';
+        }
       });
       custom.forEach(function(t) {
         if (t.enabled === false) return;
@@ -3219,6 +3497,679 @@
     // rtGo defined above with renderRtEdge
 
     renderRtEdge();
+
+    // === Todo Feature ===
+    var todoItems = [];
+    var todoFilter = 'all';
+    var todoDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+    var todoResize = { active: false, startX: 0, startY: 0, startW: 0, startH: 0 };
+
+    function loadTodoItems() {
+      try { todoItems = JSON.parse(localStorage.getItem('nav_todo_items') || '[]'); } catch(e) { todoItems = []; }
+      cleanExpiredTodos();
+    }
+
+    function saveTodoItems() {
+      try { localStorage.setItem('nav_todo_items', JSON.stringify(todoItems)); } catch(e) {}
+    }
+
+    function cleanExpiredTodos() {
+      var now = Date.now();
+      var twoDays = 2 * 24 * 60 * 60 * 1000;
+      var changed = false;
+      todoItems = todoItems.filter(function(item) {
+        if (item.completed && item.completedAt && (now - item.completedAt) > twoDays) {
+          changed = true;
+          return false;
+        }
+        return true;
+      });
+      if (changed) saveTodoItems();
+    }
+
+    function getFilteredItems() {
+      if (todoFilter === 'active') return todoItems.filter(function(t) { return !t.completed; });
+      if (todoFilter === 'completed') return todoItems.filter(function(t) { return t.completed; });
+      return todoItems;
+    }
+
+    function formatDeadline(deadline) {
+      if (!deadline) return null;
+      var now = new Date(); now.setHours(0,0,0,0);
+      var target = new Date(deadline + 'T00:00:00');
+      var diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return { text: '已过期 ' + Math.abs(diffDays) + ' 天', cls: 'overdue' };
+      if (diffDays === 0) return { text: '今天截止', cls: 'soon' };
+      if (diffDays === 1) return { text: '明天截止', cls: 'soon' };
+      if (diffDays <= 3) return { text: '剩余 ' + diffDays + ' 天', cls: 'soon' };
+      return { text: '剩余 ' + diffDays + ' 天', cls: 'normal' };
+    }
+
+    function priLabel(pri) {
+      if (pri === 'high') return '紧急';
+      if (pri === 'mid') return '重要';
+      return '一般';
+    }
+
+    function renderTodoList() {
+      var listEl = document.getElementById('todoList');
+      var countEl = document.getElementById('todoCount');
+      if (!listEl) return;
+      var filtered = getFilteredItems();
+      var activeCount = todoItems.filter(function(t) { return !t.completed; }).length;
+      var completedCount = todoItems.length - activeCount;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="todo-empty">' + (todoFilter === 'completed' ? '暂无已完成事项' : (todoFilter === 'active' ? '暂无未完成事项，🎉' : '暂无待办事项，添加一个吧')) + '</div>';
+      } else {
+        var h = '';
+        filtered.forEach(function(item) {
+          var pri = item.priority || 'low';
+          var dl = formatDeadline(item.deadline);
+          h += '<div class="todo-item' + (item.completed ? ' completed' : '') + '">';
+          h += '<div class="todo-check" onclick="todoToggle(\'' + item.id + '\')"></div>';
+          h += '<span class="todo-text">' + escapeHtml(item.text) + '</span>';
+          h += '<span class="todo-meta">';
+          h += '<span class="todo-pri-badge ' + pri + '">' + priLabel(pri) + '</span>';
+          if (dl) h += '<span class="todo-deadline ' + dl.cls + '">' + dl.text + '</span>';
+          h += '</span>';
+          h += '<button class="todo-del" onclick="todoDelete(\'' + item.id + '\')" title="删除">×</button>';
+          h += '</div>';
+        });
+        listEl.innerHTML = h;
+      }
+      countEl.textContent = activeCount + ' 项未完成 · ' + completedCount + ' 项已完成';
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function todoAdd() {
+      var input = document.getElementById('todoInput');
+      var priSel = document.getElementById('todoPriority');
+      var dateInp = document.getElementById('todoDeadline');
+      if (!input) return;
+      var text = input.value.trim();
+      if (!text) { input.focus(); return; }
+      var priority = priSel ? priSel.value : 'low';
+      var deadline = (dateInp && dateInp.value) ? dateInp.value : null;
+      todoItems.unshift({
+        id: 't' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        text: text,
+        completed: false,
+        priority: priority,
+        deadline: deadline,
+        createdAt: Date.now(),
+        completedAt: null
+      });
+      saveTodoItems();
+      input.value = '';
+      if (dateInp) dateInp.value = '';
+      if (priSel) priSel.value = 'mid';
+      input.focus();
+      renderTodoList();
+    }
+
+    function todoToggle(id) {
+      var item = todoItems.find(function(t) { return t.id === id; });
+      if (!item) return;
+      item.completed = !item.completed;
+      item.completedAt = item.completed ? Date.now() : null;
+      saveTodoItems();
+      cleanExpiredTodos();
+      renderTodoList();
+    }
+
+    function todoDelete(id) {
+      todoItems = todoItems.filter(function(t) { return t.id !== id; });
+      saveTodoItems();
+      renderTodoList();
+    }
+
+    function todoClearCompleted() {
+      var before = todoItems.length;
+      todoItems = todoItems.filter(function(t) { return !t.completed; });
+      if (todoItems.length < before) {
+        saveTodoItems();
+        renderTodoList();
+      }
+    }
+
+    function todoSwitchTab(filter, el) {
+      todoFilter = filter;
+      var tabs = document.querySelectorAll('#todoTabs .todo-tab');
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      if (el) el.classList.add('active');
+      renderTodoList();
+    }
+
+    function toggleTodoWindow() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      if (win.classList.contains('visible')) {
+        closeTodoWindow();
+      } else {
+        openTodoWindow();
+      }
+    }
+
+    function openTodoWindow() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      cleanExpiredTodos();
+      restoreTodoPosition();
+      restoreTodoSize();
+      win.classList.add('visible');
+      renderTodoList();
+      setTimeout(function() {
+        var input = document.getElementById('todoInput');
+        if (input) input.focus();
+      }, 100);
+    }
+
+    function closeTodoWindow() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      win.classList.remove('visible');
+    }
+
+    function restoreTodoPosition() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_todo_pos') || 'null');
+        if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+          var maxX = window.innerWidth - win.offsetWidth - 10;
+          var maxY = window.innerHeight - win.offsetHeight - 10;
+          win.style.left = Math.min(Math.max(saved.x, 10), maxX) + 'px';
+          win.style.top = Math.min(Math.max(saved.y, 10), maxY) + 'px';
+          win.style.right = 'auto';
+        }
+      } catch(e) {}
+    }
+
+    function saveTodoPosition() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      try {
+        var rect = win.getBoundingClientRect();
+        localStorage.setItem('nav_todo_pos', JSON.stringify({ x: rect.left, y: rect.top, w: rect.width, h: rect.height }));
+      } catch(e) {}
+    }
+
+    function restoreTodoSize() {
+      var win = document.getElementById('todoWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_todo_pos') || 'null');
+        if (saved && typeof saved.w === 'number' && typeof saved.h === 'number' && saved.w >= 300 && saved.h >= 340) {
+          win.style.width = saved.w + 'px';
+          win.style.height = saved.h + 'px';
+        }
+      } catch(e) {}
+    }
+
+    function saveTodoSize() {
+      saveTodoPosition();
+    }
+
+    function initTodoDrag() {
+      var header = document.getElementById('todoHeader');
+      var win = document.getElementById('todoWindow');
+      if (!header || !win) return;
+
+      header.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+        todoDrag.active = true;
+        todoDrag.startX = e.clientX;
+        todoDrag.startY = e.clientY;
+        var rect = win.getBoundingClientRect();
+        todoDrag.startLeft = rect.left;
+        todoDrag.startTop = rect.top;
+        win.style.right = 'auto';
+        win.style.left = rect.left + 'px';
+        win.style.top = rect.top + 'px';
+        win.style.transition = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!todoDrag.active) return;
+        var dx = e.clientX - todoDrag.startX;
+        var dy = e.clientY - todoDrag.startY;
+        var newLeft = todoDrag.startLeft + dx;
+        var newTop = todoDrag.startTop + dy;
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - win.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, window.innerHeight - win.offsetHeight));
+        win.style.left = newLeft + 'px';
+        win.style.top = newTop + 'px';
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        if (!todoDrag.active) return;
+        todoDrag.active = false;
+        win.style.transition = '';
+        saveTodoPosition();
+      });
+    }
+
+    function initTodoResize() {
+      var handle = document.getElementById('todoResizeHandle');
+      var win = document.getElementById('todoWindow');
+      if (!handle || !win) return;
+
+      handle.addEventListener('mousedown', function(e) {
+        todoResize.active = true;
+        todoResize.startX = e.clientX;
+        todoResize.startY = e.clientY;
+        todoResize.startW = win.offsetWidth;
+        todoResize.startH = win.offsetHeight;
+        win.style.transition = 'none';
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!todoResize.active) return;
+        var newW = todoResize.startW + (e.clientX - todoResize.startX);
+        var newH = todoResize.startH + (e.clientY - todoResize.startY);
+        newW = Math.max(300, Math.min(newW, window.innerWidth - win.getBoundingClientRect().left - 10));
+        newH = Math.max(340, Math.min(newH, window.innerHeight - win.getBoundingClientRect().top - 10));
+        win.style.width = newW + 'px';
+        win.style.height = newH + 'px';
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        if (!todoResize.active) return;
+        todoResize.active = false;
+        win.style.transition = '';
+        saveTodoSize();
+      });
+    }
+
+    function todoExport() {
+      var data = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        items: todoItems
+      };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'auroraus_todo_' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function todoImport() {
+      var fileInput = document.getElementById('todoImportFile');
+      if (fileInput) fileInput.click();
+    }
+
+    function todoHandleImport(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = JSON.parse(e.target.result);
+          if (!data.items || !Array.isArray(data.items)) {
+            alert('无效的待办数据文件格式');
+            return;
+          }
+          var imported = data.items.filter(function(t) {
+            return t && typeof t.text === 'string' && t.text.trim();
+          }).map(function(t) {
+            return {
+              id: t.id || ('t' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)),
+              text: t.text.trim(),
+              completed: !!t.completed,
+              priority: t.priority || 'low',
+              deadline: t.deadline || null,
+              createdAt: t.createdAt || Date.now(),
+              completedAt: t.completed ? (t.completedAt || Date.now()) : null
+            };
+          });
+          if (imported.length === 0) {
+            alert('文件中没有有效的待办事项');
+            return;
+          }
+          todoItems = imported;
+          saveTodoItems();
+          cleanExpiredTodos();
+          renderTodoList();
+        } catch(err) {
+          alert('解析文件失败，请检查文件格式');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    loadTodoItems();
+    initTodoDrag();
+    initTodoResize();
+
+    // === Notepad Feature ===
+    var noteDrag = { active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+    var noteResize = { active: false, startX: 0, startY: 0, startW: 0, startH: 0 };
+    var noteMode = 'edit';
+
+    function loadNoteContent() {
+      try { return localStorage.getItem('nav_note_content') || ''; } catch(e) { return ''; }
+    }
+
+    function saveNoteContent(text) {
+      try { localStorage.setItem('nav_note_content', text); } catch(e) {}
+    }
+
+    function noteRenderMd(text) {
+      if (!text) return '';
+      text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      var lines = text.split('\n');
+      var out = '';
+      var inCodeBlock = false;
+      var inList = false;
+      var listType = '';
+      var inTable = false;
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (/^```/.test(line)) {
+          if (!inCodeBlock) { inCodeBlock = true; out += '<pre><code>'; }
+          else { inCodeBlock = false; out += '</code></pre>'; }
+          continue;
+        }
+        if (inCodeBlock) { out += line + '\n'; continue; }
+        // Table
+        if (/^\|.*\|/.test(line) && /\|.*\|/.test(lines[i+1]||'') && /^\|[\s\-:]+\|/.test(lines[i+1]||'')) {
+          if (!inTable) { out += '<table>'; inTable = true; }
+          var cells = line.split('|').filter(function(c) { return c.trim(); });
+          out += '<tr>' + cells.map(function(c) { return '<th>' + c.trim() + '</th>'; }).join('') + '</tr>';
+          continue;
+        }
+        if (inTable && /^\|.*\|/.test(line)) {
+          var tds = line.split('|').filter(function(c) { return c.trim(); });
+          out += '<tr>' + tds.map(function(c) { return '<td>' + c.trim() + '</td>'; }).join('') + '</tr>';
+          continue;
+        }
+        if (inTable && !/^\|.*\|/.test(line)) {
+          out += '</table>'; inTable = false;
+        }
+        // Headings
+        if (/^#{1,6}\s/.test(line)) {
+          var lvl = line.match(/^(#{1,6})/)[1].length;
+          var txt = line.replace(/^#{1,6}\s+/, '');
+          out += '<h' + lvl + '>' + inlineMd(txt) + '</h' + lvl + '>';
+          continue;
+        }
+        // HR
+        if (/^(\*{3,}|-{3,}|_{3,})$/.test(line.trim())) { out += '<hr>'; continue; }
+        // Blockquote
+        if (/^>\s/.test(line)) {
+          out += '<blockquote>' + inlineMd(line.replace(/^>\s?/, '')) + '</blockquote>';
+          continue;
+        }
+        // Unordered list
+        if (/^[\-\*\+]\s/.test(line)) {
+          if (!inList || listType !== 'ul') { out += '<ul>'; inList = true; listType = 'ul'; }
+          out += '<li>' + inlineMd(line.replace(/^[\-\*\+]\s/, '')) + '</li>';
+          continue;
+        }
+        // Ordered list
+        if (/^\d+\.\s/.test(line)) {
+          if (!inList || listType !== 'ol') { out += '<ol>'; inList = true; listType = 'ol'; }
+          out += '<li>' + inlineMd(line.replace(/^\d+\.\s/, '')) + '</li>';
+          continue;
+        }
+        // Close list
+        if (inList && line.trim() === '') { out += (listType === 'ul' ? '</ul>' : '</ol>'); inList = false; listType = ''; }
+        if (inList) { out += (listType === 'ul' ? '</ul>' : '</ol>'); inList = false; listType = ''; }
+        // Paragraph
+        if (line.trim() === '') { out += '<p> </p>'; continue; }
+        out += '<p>' + inlineMd(line) + '</p>';
+      }
+      if (inCodeBlock) out += '</code></pre>';
+      if (inTable) out += '</table>';
+      if (inList) out += (listType === 'ul' ? '</ul>' : '</ol>');
+      return out;
+    }
+
+    function inlineMd(text) {
+      text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:4px;">');
+      text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      return text;
+    }
+
+    function noteUpdatePreview() {
+      var ta = document.getElementById('noteTextarea');
+      var prev = document.getElementById('notePreview');
+      if (!ta || !prev) return;
+      var text = ta.value;
+      prev.innerHTML = noteRenderMd(text);
+    }
+
+    function noteSwitchMode(mode) {
+      noteMode = mode;
+      var ta = document.getElementById('noteTextarea');
+      var prev = document.getElementById('notePreview');
+      var editBtn = document.getElementById('noteEditBtn');
+      var previewBtn = document.getElementById('notePreviewBtn');
+      if (!ta || !prev) return;
+      if (mode === 'edit') {
+        ta.style.display = ''; prev.style.display = 'none';
+        editBtn.classList.add('active'); previewBtn.classList.remove('active');
+        setTimeout(function() { ta.focus(); }, 50);
+      } else {
+        noteUpdatePreview();
+        ta.style.display = 'none'; prev.style.display = '';
+        previewBtn.classList.add('active'); editBtn.classList.remove('active');
+      }
+    }
+
+    function noteClear() {
+      if (!confirm('确定要清空记事本全部内容吗？此操作不可恢复。')) return;
+      var ta = document.getElementById('noteTextarea');
+      if (!ta) return;
+      ta.value = '';
+      saveNoteContent('');
+      noteUpdatePreview();
+    }
+
+    function noteExportMd() {
+      var ta = document.getElementById('noteTextarea');
+      if (!ta) return;
+      var text = ta.value;
+      if (!text) { alert('记事本为空，没有可导出的内容'); return; }
+      var blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'auroraus_note_' + new Date().toISOString().slice(0, 10) + '.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function noteImportNote() {
+      var fileInput = document.getElementById('noteImportFile');
+      if (fileInput) fileInput.click();
+    }
+
+    function noteHandleImport(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var ta = document.getElementById('noteTextarea');
+        if (!ta) return;
+        ta.value = e.target.result || '';
+        saveNoteContent(ta.value);
+        noteUpdatePreview();
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function toggleNoteWindow() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      if (win.classList.contains('visible')) {
+        closeNoteWindow();
+      } else {
+        openNoteWindow();
+      }
+    }
+
+    function openNoteWindow() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      restoreNotePosition();
+      restoreNoteSize();
+      win.classList.add('visible');
+      var ta = document.getElementById('noteTextarea');
+      if (ta) ta.value = loadNoteContent();
+      if (noteMode === 'preview') noteUpdatePreview();
+      setTimeout(function() {
+        if (noteMode === 'edit' && ta) ta.focus();
+      }, 100);
+    }
+
+    function closeNoteWindow() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      var ta = document.getElementById('noteTextarea');
+      if (ta) saveNoteContent(ta.value);
+      win.classList.remove('visible');
+    }
+
+    function restoreNotePosition() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_note_pos') || 'null');
+        if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+          var maxX = window.innerWidth - win.offsetWidth - 10;
+          var maxY = window.innerHeight - win.offsetHeight - 10;
+          win.style.left = Math.min(Math.max(saved.x, 10), maxX) + 'px';
+          win.style.top = Math.min(Math.max(saved.y, 10), maxY) + 'px';
+          win.style.right = 'auto';
+        }
+      } catch(e) {}
+    }
+
+    function saveNotePosition() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      try {
+        var rect = win.getBoundingClientRect();
+        localStorage.setItem('nav_note_pos', JSON.stringify({ x: rect.left, y: rect.top, w: rect.width, h: rect.height }));
+      } catch(e) {}
+    }
+
+    function restoreNoteSize() {
+      var win = document.getElementById('noteWindow');
+      if (!win) return;
+      try {
+        var saved = JSON.parse(localStorage.getItem('nav_note_pos') || 'null');
+        if (saved && typeof saved.w === 'number' && typeof saved.h === 'number' && saved.w >= 340 && saved.h >= 380) {
+          win.style.width = saved.w + 'px';
+          win.style.height = saved.h + 'px';
+        }
+      } catch(e) {}
+    }
+
+    function saveNoteSize() {
+      saveNotePosition();
+    }
+
+    function initNoteDrag() {
+      var header = document.getElementById('noteHeader');
+      var win = document.getElementById('noteWindow');
+      if (!header || !win) return;
+
+      header.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        noteDrag.active = true;
+        noteDrag.startX = e.clientX;
+        noteDrag.startY = e.clientY;
+        var rect = win.getBoundingClientRect();
+        noteDrag.startLeft = rect.left;
+        noteDrag.startTop = rect.top;
+        win.style.right = 'auto';
+        win.style.left = rect.left + 'px';
+        win.style.top = rect.top + 'px';
+        win.style.transition = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!noteDrag.active) return;
+        var dx = e.clientX - noteDrag.startX;
+        var dy = e.clientY - noteDrag.startY;
+        var newLeft = noteDrag.startLeft + dx;
+        var newTop = noteDrag.startTop + dy;
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - win.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, window.innerHeight - win.offsetHeight));
+        win.style.left = newLeft + 'px';
+        win.style.top = newTop + 'px';
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        if (!noteDrag.active) return;
+        noteDrag.active = false;
+        win.style.transition = '';
+        saveNotePosition();
+      });
+    }
+
+    function initNoteResize() {
+      var handle = document.getElementById('noteResizeHandle');
+      var win = document.getElementById('noteWindow');
+      if (!handle || !win) return;
+
+      handle.addEventListener('mousedown', function(e) {
+        noteResize.active = true;
+        noteResize.startX = e.clientX;
+        noteResize.startY = e.clientY;
+        noteResize.startW = win.offsetWidth;
+        noteResize.startH = win.offsetHeight;
+        win.style.transition = 'none';
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!noteResize.active) return;
+        var newW = noteResize.startW + (e.clientX - noteResize.startX);
+        var newH = noteResize.startH + (e.clientY - noteResize.startY);
+        newW = Math.max(340, Math.min(newW, window.innerWidth - win.getBoundingClientRect().left - 10));
+        newH = Math.max(380, Math.min(newH, window.innerHeight - win.getBoundingClientRect().top - 10));
+        win.style.width = newW + 'px';
+        win.style.height = newH + 'px';
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        if (!noteResize.active) return;
+        noteResize.active = false;
+        win.style.transition = '';
+        saveNoteSize();
+      });
+    }
+
+    initNoteDrag();
+    initNoteResize()
 
     document.getElementById('searchInput').focus();
   </script>

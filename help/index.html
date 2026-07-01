@@ -146,7 +146,8 @@
       <table>
         <tr><th>图标</th><th>名称</th><th>说明</th></tr>
         <tr><td>💬</td><td>微信文件传输</td><td>手机和电脑互传文件</td></tr>
-        <tr><td>📝</td><td>Markdown编辑器</td><td>在线编辑Markdown文档</td></tr>
+        <tr><td>📋</td><td>待办事项</td><td>弹出悬浮窗管理待办（支持重要性、截止日）</td></tr>
+        <tr><td>📝</td><td>记事本</td><td>弹出悬浮窗记录笔记（支持Markdown）</td></tr>
         <tr><td>🔢</td><td>Desmos科学计算器</td><td>功能强大的在线计算器</td></tr>
         <tr><td>✏️</td><td>draw.io 在线画图</td><td>流程图、思维导图</td></tr>
         <tr><td>🧰</td><td>在线工具箱</td><td>各种小工具合集</td></tr>
@@ -168,6 +169,41 @@
       <p>在编辑器的快捷工具页面，可以用<strong>全局开关</strong>一键启用或禁用整个右侧工具栏。禁用后所有图标都会消失。</p>
 
       <div class="tip"><strong>💡 为什么不在主页设置里管理？</strong>快捷工具的自定义配置项较多（图标、名称、URL、启用状态），放在编辑器里用表格管理更方便。导出/导入配置时会自动包含自定义工具。</div>
+
+      <h4>📋 待办事项</h4>
+      <p>在右侧工具栏最下方有一个<strong>📋</strong>图标，点击后会弹出一个<strong>半透明悬浮窗</strong>，可以用它来管理你的待办事项。</p>
+      <h4>功能说明</h4>
+      <ul>
+        <li><strong>添加待办</strong> — 在输入框中输入内容，按回车或点"添加"按钮即可新增待办</li>
+        <li><strong>切换状态</strong> — 点击待办项前面的方框，可以在"未完成"和"已完成"之间切换</li>
+        <li><strong>筛选查看</strong> — 顶部有"全部""未完成""已完成"三个标签页，方便分类查看</li>
+        <li><strong>删除待办</strong> — 鼠标悬停在待办项上，右侧会出现 × 删除按钮</li>
+        <li><strong>重要性等级</strong> — 每条待办支持设置三个等级：<span style="color:#3b82f6">● 一般</span> / <span style="color:#f97316">● 重要</span> / <span style="color:#ef4444">● 紧急</span>，分别以蓝、橙、红三色圆点标记，点击圆点即可循环切换</li>
+        <li><strong>截止日期与倒数日</strong> — 可为待办设置截止日期，待办项右侧会显示距离截止日的<strong>倒数天数</strong>（如"剩3天""已过期2天"），过期任务以红色高亮提醒</li>
+        <li><strong>自动清理</strong> — 已完成超过2天的待办事项会被自动清除，不再显示</li>
+        <li><strong>拖拽移动</strong> — 按住悬浮窗标题栏，可以把它拖到页面上任意位置</li>
+        <li><strong>关闭窗口</strong> — 点击标题栏右侧的 ✕ 按钮即可关闭（不会自动消失，只有手动关闭）</li>
+      </ul>
+      <h4>导入/导出</h4>
+      <p>悬浮窗标题栏有📤导出和📥导入按钮：</p>
+      <ul>
+        <li><strong>📤 导出</strong> — 将所有待办事项导出为 <code>.json</code> 文件，方便备份或迁移</li>
+        <li><strong>📥 导入</strong> — 选择之前导出的 <code>.json</code> 文件，恢复待办数据</li>
+      </ul>
+      <div class="tip"><strong>💡 数据存储：</strong>待办数据保存在浏览器的本地存储中，不会上传到任何服务器。清除浏览器缓存或更换浏览器会导致数据丢失，建议定期导出备份。</div>
+
+      <h4>📝 记事本</h4>
+      <p>在右侧工具栏中有一个<strong>📝</strong>图标，点击后会弹出一个<strong>Markdown 记事本悬浮窗</strong>，可以随时随地记录笔记。</p>
+      <h4>功能说明</h4>
+      <ul>
+        <li><strong>编辑 / 预览双模式</strong> — 顶部有"编辑"和"预览"两个标签页切换。编辑模式下自由书写 Markdown 文本，预览模式下实时渲染为格式化的富文本</li>
+        <li><strong>📥 导入 .md 文件</strong> — 点击标题栏的 📥 按钮，可从本地选择 <code>.md</code> 或 <code>.txt</code> 文件导入到编辑区</li>
+        <li><strong>📤 导出 .md 文件</strong> — 点击标题栏的 📤 按钮，将当前笔记内容导出为 <code>.md</code> 文件下载保存</li>
+        <li><strong>🗑️ 清空内容</strong> — 点击标题栏的 🗑️ 按钮可一键清空所有笔记内容（操作前有确认提示）</li>
+        <li><strong>拖拽移动</strong> — 按住悬浮窗标题栏，可以将记事本拖到页面上任意位置</li>
+        <li><strong>自由调整大小</strong> — 拖拽悬浮窗右下角的三角形手柄，可以自由拉伸窗口的宽度和高度</li>
+      </ul>
+      <div class="tip"><strong>💡 数据存储：</strong>笔记内容保存在浏览器本地存储中，不会上传到任何服务器。在配置编辑器中导出/导入全局配置时会一并包含笔记数据。建议定期导出 .md 文件备份重要笔记。</div>
     </div>
 
     <!-- 五 -->
