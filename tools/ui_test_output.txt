@@ -66,6 +66,17 @@
 [PASS] order_default_and_migration::versionStamped
 [PASS] order_default_and_migration::firstFive
 [PASS] order_default_and_migration::listFirst
+[PASS] order_three_way_invariant::mainEqSidebar
+[PASS] order_three_way_invariant::tabsEqSidebar
+[PASS] order_three_way_invariant::sameCount
+[PASS] order_three_way_invariant::noDuplicates
+[PASS] order_three_way_invariant::firstFive
+[PASS] order_three_way_invariant::h2FirstFive
+[PASS] order_three_way_invariant::sidebarDirectChildren
+[PASS] order_three_way_invariant::afterClickMainEqSidebar
+[PASS] order_after_bump_three_way::bumpedFirst
+[PASS] order_after_bump_three_way::mainEqSidebar
+[PASS] order_after_bump_three_way::tabsEqSidebar
 [PASS] settings_panel_render::panelVisible
 [PASS] settings_panel_render::recentChipVisible
 [PASS] settings_panel_render::fixedChipVisible
@@ -82,4 +93,4 @@
 [PASS] counts_visible::allCountsMatch
 [PASS] counts_visible::totalCategories
 
-PASS=83 FAIL=0
+PASS=94 FAIL=0

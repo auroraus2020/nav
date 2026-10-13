@@ -205,6 +205,49 @@ INJECT = r'''
         var first = document.querySelector('#settingsCatOrderList .cat-order-item .cat-order-name');
         eq('listFirst', first ? first.textContent : '', '综合导航');
       }
+      else if (CASE === 'order_three_way_invariant') {
+        // 核心不变量：正文 / 侧边栏 / 手机 Tab 三处顺序必须逐项相同，且同类入口数量一致
+        var side = sidebarIds();
+        var tabIds = [];
+        document.querySelectorAll('.mobile-tabs a[href^="#cat-"]').forEach(function(a) {
+          tabIds.push(a.getAttribute('href').replace('#', ''));
+        });
+        var main = mainIds();
+        eq('mainEqSidebar', main.join(','), side.join(','));
+        eq('tabsEqSidebar', tabIds.join(','), side.join(','));
+        eq('sameCount', main.length, side.length);
+        eq('noDuplicates', side.length, new Set(side).size);
+        // 顺序必须是用户指定的前五项
+        var names = [];
+        document.querySelectorAll('#sidebar a[href^="#cat-"] span').forEach(function(s) { names.push(s.textContent); });
+        eq('firstFive', names.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
+        // 正文里每个分类标题的顺序同样一致
+        var h2 = [];
+        document.querySelectorAll('.main-content .category-section h2').forEach(function(t) { h2.push(t.textContent); });
+        eq('h2FirstFive', h2.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
+        // 侧边栏里的 a 必须是 #sidebar 的直接子节点（历史上出现过被塞进标题 div 的情况）
+        var direct = 0;
+        for (var i = 0; i < document.getElementById('sidebar').children.length; i++) {
+          var ch = document.getElementById('sidebar').children[i];
+          if (ch.tagName === 'A' && (ch.getAttribute('href') || '').indexOf('#cat-') === 0) direct++;
+        }
+        eq('sidebarDirectChildren', direct, side.length);
+        // 切一次分类后三处仍一致（fixed 模式下不应该变化）
+        setActive(document.querySelector('#sidebar a[href="#cat-cloud"]'));
+        eq('afterClickMainEqSidebar', mainIds().join(','), sidebarIds().join(','));
+      }
+      else if (CASE === 'order_after_bump_three_way') {
+        // recent 模式下 bump 之后，三处也都要跟着变，且保持一致
+        setActive(document.querySelector('#sidebar a[href="#cat-cloud"]'));
+        var side = sidebarIds();
+        eq('bumpedFirst', side[0], 'cat-cloud');
+        eq('mainEqSidebar', mainIds().join(','), side.join(','));
+        var tabIds = [];
+        document.querySelectorAll('.mobile-tabs a[href^="#cat-"]').forEach(function(a) {
+          tabIds.push(a.getAttribute('href').replace('#', ''));
+        });
+        eq('tabsEqSidebar', tabIds.join(','), side.join(','));
+      }
       else if (CASE === 'settings_panel_render') {
         openSettings();
         var panel = document.querySelector('.settings-panel');
@@ -293,6 +336,13 @@ CASES = [
     ('order_default_and_migration', [('nav_wallpaper', 'default'),
                                      ('nav_cat_order', json.dumps(['cat-cloud', 'cat-mirror', 'cat-aero'])),
                                      ('nav_cat_order_ver', None)]),
+    ('order_three_way_invariant', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'fixed'),
+                                   ('nav_cat_sort_migrated', '1'),
+                                   ('nav_cat_order', json.dumps(['cat-cloud', 'cat-mirror'])),
+                                   ('nav_cat_order_ver', '2')]),
+    ('order_after_bump_three_way', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'recent'),
+                                    ('nav_cat_sort_migrated', '1'),
+                                    ('nav_cat_order', None), ('nav_cat_order_ver', '2')]),
     ('settings_panel_render', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'fixed'), ('nav_theme', 'light')]),
     ('counts_visible', [('nav_wallpaper', 'default')]),
 ]
