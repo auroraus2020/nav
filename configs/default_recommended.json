@@ -72,51 +72,35 @@
   "removeSites": {
     "cat-general": []
   },
-  "categories": [
-    {
-      "id": "custom-1788003662535",
-      "name": "传统文化",
-      "icon": "assets/icon_nav.jpg",
-      "sites": [
-        {
-          "name": "老黄历",
-          "url": "https://www.huangli123.net/huangli/",
-          "desc": "老黄历查询",
-          "icon": "H",
-          "iconColor": "red"
-        }
-      ]
-    }
-  ],
+  "categories": [],
   "settings": {
     "rtEnabled": true,
     "theme": "light",
-    "wallpaper": "bing",
+    "wallpaper": "default",
     "customWallpaper": "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOG8zZjU2aXlzY2VxMmNldjdlNG81eXJkOWN0c3lxejA5bzVtamNicCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/54QhQQoolGzcHaqxoQ/giphy.gif",
     "freqVisible": false,
     "freqCount": 8,
     "navFold": "hide",
     "catOrder": [
-      "cat-buaa",
-      "custom-1788003662535",
-      "custom-1782788038041",
-      "cat-entertainment",
-      "cat-ai",
-      "custom-1782788534883",
-      "cat-academic",
-      "cat-translate",
-      "cat-map",
-      "cat-tech",
-      "cat-learn",
-      "cat-tutorial",
-      "cat-mirror",
-      "cat-aero",
-      "cat-efficiency",
-      "cat-navweb",
       "cat-general",
-      "cat-cloud",
-      "cat-tool"
+      "cat-academic",
+      "cat-ai",
+      "cat-buaa",
+      "cat-navweb",
+      "cat-tech",
+      "cat-translate",
+      "cat-learn",
+      "cat-efficiency",
+      "cat-tool",
+      "cat-map",
+      "cat-entertainment",
+      "cat-tutorial",
+      "cat-aero",
+      "cat-mirror",
+      "cat-tradition",
+      "cat-cloud"
     ],
+    "catSortMode": "fixed",
     "hiddenCategories": {
       "cat-general": false,
       "cat-academic": false,
@@ -133,8 +117,8 @@
       "cat-tutorial": false,
       "cat-aero": false,
       "cat-mirror": false,
-      "cat-cloud": false,
-      "custom-1788003662535": false
+      "cat-tradition": false,
+      "cat-cloud": false
     },
     "hiddenEngines": {
       "bing": false,
@@ -163,12 +147,5 @@
       "custom": true
     }
   },
-  "rtTools": [
-    {
-      "icon": "📄",
-      "name": "WPS在线",
-      "url": "https://365.kdocs.cn",
-      "enabled": true
-    }
-  ]
+  "rtTools": []
 }

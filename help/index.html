@@ -76,7 +76,8 @@
       <a href="#json-format">十三、JSON格式参考</a>
       <a href="#download">十四、推荐配置下载</a>
       <a href="#community">十五、交流与反馈</a>
-      <a href="#faq">十六、常见问题</a>
+      <a href="#catsort">十六、分类排序模式</a>
+      <a href="#faq">十七、常见问题</a>
     </div>
 
     <!-- 一 -->
@@ -89,7 +90,7 @@
         <li><strong>常用站点</strong> — 你点得最多的网站，会自动出现在搜索框下面</li>
         <li><strong>分类导航卡片</strong> — 按"综合导航""学术检索""AI大模型"等分类排列的网站卡片</li>
         <li><strong>左侧侧边栏</strong>（电脑）或 <strong>底部Tab栏</strong>（手机）— 快速跳转到不同分类</li>
-        <li><strong>右侧快速工具栏</strong>（电脑）— 一排竖着的图标，一键打开微信传输、计算器、画图等常用网站</li>
+        <li><strong>右侧快速工具栏</strong>（电脑）— 一排竖着的图标，一键打开在线WPS、微信传输、计算器、画图等常用网站</li>
       </ul>
 
       <div class="step">
@@ -145,7 +146,8 @@
       <h4>内置工具</h4>
       <table>
         <tr><th>图标</th><th>名称</th><th>说明</th></tr>
-        <tr><td>💬</td><td>微信文件传输</td><td>手机和电脑互传文件</td></tr>
+        <tr><td>💬</td><td>微信文件传输</td><td>手机和电脑互传文件（右侧工具栏第一项）</td></tr>
+        <tr><td>📄</td><td>在线WPS</td><td>金山在线文档（365.kdocs.cn），直接编辑 Word/Excel/PPT</td></tr>
         <tr><td>📋</td><td>待办事项</td><td>弹出悬浮窗管理待办（支持重要性、截止日）</td></tr>
         <tr><td>📝</td><td>记事本</td><td>弹出悬浮窗记录笔记（支持Markdown）</td></tr>
         <tr><td>🍅</td><td>番茄钟</td><td>弹出悬浮窗专注计时</td></tr>
@@ -283,6 +285,12 @@
       <p>开关显示 + 设置数量（1~12）。如果你不想让别人看到你常点的网站，可以关掉。</p>
       <h4>📂 分类显示</h4>
       <p>每一个分类都可以开关。比如你不需要"影音娱乐"，点灰它就从页面和侧边栏消失。</p>
+      <h4>🔀 分类排序模式</h4>
+      <p>左侧导航栏的分类顺序有两种模式，二选一（详见第十六节）：</p>
+      <ul>
+        <li><strong>固定顺序</strong> — 顺序由你手动定，点分类不会改变顺序（默认）</li>
+        <li><strong>按使用时间排序</strong> — 你点过哪个分类，它自动跳到最前面</li>
+      </ul>
       <h4>🖊️ 编辑器</h4>
       <p>点这个打开可视化配置编辑器，可以管理所有站点、搜索引擎、页面设置和<strong>自定义快捷工具</strong>。</p>
       <h4>❓ 帮助 / 💬 交流</h4>
@@ -295,7 +303,7 @@
       <table>
         <tr><th>模式</th><th>说明</th></tr>
         <tr><td><strong>在线风景壁纸</strong></td><td>每天从你放在 <code>assets/</code> 文件夹里的风景图里随机选一张。支持 <code>.jpg</code> 和 <code>.gif</code> 动图。把图片按 <code>wp_01.jpg</code>、<code>wp_13.gif</code> 这样命名放进去就行。</td></tr>
-        <tr><td><strong>默认壁纸</strong></td><td>用导航页自带的那张背景图。不用管。</td></tr>
+        <tr><td><strong>默认壁纸</strong></td><td>用导航页自带的那张背景图（<code>assets/hero_bg_light.jpg</code>）。<strong>这是新访客的默认选项</strong>，什么都不用设置就有好看的背景。之前一直停留在"在线风景壁纸"且从未手动切换过的用户，也会被自动切到这个默认壁纸一次，之后以你的手动选择为准。</td></tr>
         <tr><td><strong>自定义网络壁纸</strong></td><td>在输入框里贴一个图片的网络地址（URL），网页背景就换成那张图。支持 JPG、PNG、GIF动图。这个地址会随 JSON 导出分享给朋友。</td></tr>
         <tr><td><strong>本地图片壁纸</strong></td><td>点 📁 <strong>选择本地图片</strong>，从你电脑/手机里选一张图。图片存在你的浏览器里，别人看不到。如果想把本地壁纸也分享出去，勾选下面的"导出JSON时包含本地壁纸"复选框即可。</td></tr>
       </table>
@@ -441,12 +449,13 @@
       <h4>内置分类 ID 列表（用于 addSites/removeSites）</h4>
       <pre><code>cat-general     综合导航      cat-academic    学术检索
 cat-ai          AI大模型      cat-buaa        北航网站
-cat-navweb      导航网站      cat-translate    翻译工具
-cat-tech        技术交流      cat-learn        学习提升
-cat-efficiency  效率提升      cat-tool         效率工具
+cat-navweb      导航网站      cat-tech        技术与交流
+cat-translate   翻译工具      cat-learn       学习提升
+cat-efficiency  效率提升      cat-tool        效率工具
 cat-map         地图天气      cat-entertainment 影音娱乐
-cat-tutorial    学习教程      cat-aero         航空科普
-cat-mirror      镜像网站      cat-cloud        云服务器</code></pre>
+cat-tutorial    学习教程      cat-aero        航空与科普
+cat-mirror      镜像网站      cat-tradition   传统文化
+cat-cloud       云服务器</code></pre>
     </div>
 
     <!-- 十二 -->
@@ -487,7 +496,8 @@ cat-mirror      镜像网站      cat-cloud        云服务器</code></pre>
     "hiddenCategories": { "id": true },  // 分类显隐
     "hiddenEngines": { "id": true },     // 引擎显隐
     "rtEnabled": true,           // 右侧快捷工具全局开关
-    "catOrder": ["id1","id2"]    // 分类排序（数组，可选）
+    "catOrder": ["id1","id2"],   // 分类排序（数组，可选）
+    "catSortMode": "fixed"       // fixed=固定顺序（默认） | recent=按使用时间排序（可选）
   },
   "rtTools": [                   // 自定义快捷工具（可选）
     { "icon": "🔗", "name": "我的工具", "url": "https://...", "enabled": true }
@@ -496,7 +506,7 @@ cat-mirror      镜像网站      cat-cloud        云服务器</code></pre>
 }</code></pre>
 
       <h4>图标颜色可选：</h4>
-      <p><code>blue</code> <code>red</code> <code>green</code> <code>orange</code> <code>purple</code> <code>cyan</code> <code>teal</code> <code>pink</code> <code>indigo</code></p>
+      <p><code>blue</code> <code>red</code> <code>green</code> <code>orange</code> <code>purple</code> <code>cyan</code> <code>teal</code> <code>pink</code> <code>indigo</code> <code>yellow</code></p>
 
       <h4>搜索引擎ID列表：</h4>
       <pre><code>bing baidu google sogou sogouweixin sogouzhihu yandex
@@ -527,7 +537,28 @@ baidumap wikihow scihub kiphub msacademic custom</code></pre>
     </div>
 
     <!-- 十六 -->
-    <h2 id="faq">十六、常见问题</h2>
+    <h2 id="catsort">十六、分类排序模式</h2>
+    <div class="card">
+      <p>左侧导航栏（手机是底部 Tab 栏）里分类的先后顺序，有两种模式，在 <strong>设置面板 → 🔀 分类排序模式</strong> 里切换：</p>
+      <table>
+        <tr><th>模式</th><th>行为</th></tr>
+        <tr><td><strong>固定顺序</strong>（默认）</td><td>顺序完全由你定：点分类<strong>不会</strong>改变顺序。适合"位置要固定、形成肌肉记忆"。</td></tr>
+        <tr><td><strong>按使用时间排序</strong></td><td>你点过哪个分类，它就自动跳到最前面，越常用的越靠上。适合"我常去的分类想随手就能点到"。</td></tr>
+      </table>
+
+      <div class="step">
+        <strong>🎯 怎么手动调整顺序：</strong>设置面板 → 分类排序模式 → 确认在 <strong>固定顺序</strong>（默认就是）→ 下方会出现分类列表，每一行右边有 <strong>↑</strong> 和 <strong>↓</strong> 两个按钮，点一下就把这个分类往上/往下挪一位。顺序<strong>实时生效</strong>，侧边栏、正文、手机 Tab 三处同步变化，并且会随"导出配置"一起保存。
+      </div>
+      <div class="step">
+        <strong>🔁 从"按使用时间排序"切到"固定顺序"时：</strong>会把你<strong>当前看到的顺序</strong>固定下来作为起点，不会跳回某个预设顺序。
+      </div>
+      <div class="tip">
+        在"按使用时间排序"模式下，分类列表是灰色只读的（因为顺序由点击决定）。想手动排布，切到"固定顺序"。
+      </div>
+    </div>
+
+    <!-- 十七 -->
+    <h2 id="faq">十七、常见问题</h2>
     <div class="card">
       <h4>❓ 编辑器改完保存了，主页刷新没变化？</h4>
       <p>试试硬刷新（<span class="kbd">Ctrl</span> + <span class="kbd">F5</span>），或者先关掉主页标签页再重新打开。如果还不生效，检查一下是不是在浏览器隐身模式下操作（隐身窗口的 localStorage 是隔离的）。</p>
