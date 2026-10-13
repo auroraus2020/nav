@@ -188,6 +188,23 @@ INJECT = r'''
         eq('hasGujiLib', tradHtml.indexOf('read.nlc.cn') >= 0, true);
         eq('hasVoiceTubeFixedInEnt', document.querySelector('#cat-entertainment a[href="https://www.voicetube.com"]') !== null, true);
       }
+      else if (CASE === 'order_default_and_migration') {
+        // 新默认顺序：左栏应为 综合导航/AI大模型/北航网站/地图天气/学术检索/影音娱乐/技术与交流/学习提升/学习教程…
+        var EXPECT = 'cat-general,cat-ai,cat-buaa,cat-map,cat-academic,cat-entertainment,cat-tech,' +
+                     'cat-learn,cat-tutorial,cat-aero,cat-translate,cat-navweb,cat-efficiency,' +
+                     'cat-tool,cat-tradition,cat-mirror,cat-cloud';
+        eq('sidebarOrder', sidebarIds().join(','), EXPECT);
+        eq('mainOrder', mainIds().join(','), EXPECT);
+        // 存量旧顺序（版本号缺失）+ 旧顺序值 → 一次性迁移为新默认顺序
+        eq('migratedStored', JSON.parse(ls('nav_cat_order') || '[]').join(','), EXPECT);
+        eq('versionStamped', ls('nav_cat_order_ver'), '2');
+        var titles = [];
+        document.querySelectorAll('#sidebar a[href^="#cat-"] span').forEach(function(s) { titles.push(s.textContent); });
+        eq('firstFive', titles.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
+        // 固定排序基准与 DOM 一致，且设置面板调序列表首项为综合导航
+        var first = document.querySelector('#settingsCatOrderList .cat-order-item .cat-order-name');
+        eq('listFirst', first ? first.textContent : '', '综合导航');
+      }
       else if (CASE === 'settings_panel_render') {
         openSettings();
         var panel = document.querySelector('.settings-panel');
@@ -273,6 +290,9 @@ CASES = [
                   ('nav_rt_custom_tools', json.dumps([{'icon': '📄', 'name': 'WPS在线', 'url': 'https://365.kdocs.cn', 'enabled': True}],
                                                      ensure_ascii=False))]),
     ('tradition_cat', [('nav_wallpaper', 'default')]),
+    ('order_default_and_migration', [('nav_wallpaper', 'default'),
+                                     ('nav_cat_order', json.dumps(['cat-cloud', 'cat-mirror', 'cat-aero'])),
+                                     ('nav_cat_order_ver', None)]),
     ('settings_panel_render', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'fixed'), ('nav_theme', 'light')]),
     ('counts_visible', [('nav_wallpaper', 'default')]),
 ]

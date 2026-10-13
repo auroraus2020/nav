@@ -60,6 +60,12 @@
 [PASS] tradition_cat::noDeadChgis
 [PASS] tradition_cat::hasGujiLib
 [PASS] tradition_cat::hasVoiceTubeFixedInEnt
+[PASS] order_default_and_migration::sidebarOrder
+[PASS] order_default_and_migration::mainOrder
+[PASS] order_default_and_migration::migratedStored
+[PASS] order_default_and_migration::versionStamped
+[PASS] order_default_and_migration::firstFive
+[PASS] order_default_and_migration::listFirst
 [PASS] settings_panel_render::panelVisible
 [PASS] settings_panel_render::recentChipVisible
 [PASS] settings_panel_render::fixedChipVisible
@@ -76,4 +82,4 @@
 [PASS] counts_visible::allCountsMatch
 [PASS] counts_visible::totalCategories
 
-PASS=77 FAIL=0
+PASS=83 FAIL=0

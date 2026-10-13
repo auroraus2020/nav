@@ -702,6 +702,8 @@
     try { localStorage.setItem('nav_freq_count', String(freqCount)); } catch(e) {}
     try { localStorage.setItem('nav_all_hidden', navAllHidden ? '1' : '0'); } catch(e) {}
     try { localStorage.setItem('nav_cat_order', JSON.stringify(catOrder || editingCats.map(function(c){return c.id;}))); } catch(e) {}
+    // 与 index.html 的 CAT_ORDER_VER 保持一致：带上版本号，避免首页把编辑器的排序当成「过期默认顺序」覆盖掉
+    try { localStorage.setItem('nav_cat_order_ver', '2'); } catch(e) {}
     try { localStorage.setItem('nav_rt_enabled', rtEnabled ? '1' : '0'); } catch(e) {}
     try { localStorage.setItem('nav_rt_custom_tools', JSON.stringify(rtCustom)); } catch(e) {}
     showMsg('✅ 配置已保存！回到导航首页刷新即可看到变化');

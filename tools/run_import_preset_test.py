@@ -45,7 +45,7 @@ INJECT = r'''
     eq('sortModeFixed', localStorage.getItem('nav_cat_sort_mode'), 'fixed');
     var order = JSON.parse(localStorage.getItem('nav_cat_order') || '[]');
     eq('orderHasTradition', order.indexOf('cat-tradition') >= 0, true);
-    eq('orderHead', order.slice(0, 3).join(','), 'cat-general,cat-academic,cat-ai');
+    eq('orderHead', order.slice(0, 3).join(','), 'cat-general,cat-ai,cat-buaa');
     eq('catOrderMatchesSidebar', sidebarIdsJoined(), order.join(','));
     eq('noCustomTradition', (localStorage.getItem('nav_custom_cats') || '').indexOf('传统文化') >= 0, false);
     eq('wpsRenderedOnce', (document.getElementById('rtEdge').innerHTML.match(/365\.kdocs\.cn/g) || []).length, 1);
