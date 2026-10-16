@@ -156,7 +156,7 @@
       "kiphub": true,
       "wikipedia": true
     },
-    "vpnMode": "auto"
+    "vpnMode": "always"
   },
   "rtTools": []
 }

@@ -4283,6 +4283,7 @@
             if (settings.vpnMode === 'auto' || settings.vpnMode === 'off' || settings.vpnMode === 'always') {
               localStorage.setItem('nav_vpn_mode', settings.vpnMode);
               localStorage.setItem('nav_vpn_mode_migrated', '1');   // 导入视为显式选择，不再参与默认值迁移
+              localStorage.setItem('nav_vpn_mode_ver', VPN_MODE_VER);
             }
             if (typeof settings.onlyActive === 'boolean') {
               localStorage.setItem('nav_only_active', settings.onlyActive ? '1' : '0');
@@ -4340,7 +4341,7 @@
 
       function restoreDefaults() {
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
@@ -4828,23 +4829,33 @@
     var vpnOn = true;
     var VPN_PROBE_KEY = 'nav_vpn_probe';
     var VPN_ENGINES = { google: 1, googlescholar: 1, scihub: 1, quora: 1, reddit: 1, perplexity: 1, wikipedia: 1 };
+    var VPN_MODE_VER = '2';
 
     function loadVpnMode() {
       var raw = ixLS('nav_vpn_mode');
       var migrated = ixLS('nav_vpn_mode_migrated') === '1';
-      if (!migrated) {
-        // 一次性迁移：默认值改为「自动判断」。
-        // 旧默认是 always；存量里只有 auto/off 必然是用户主动选的（要保留），
-        // 'always' 可能是用户选的、也可能是旧默认或历史 bug 写入的 → 统一切到新默认 auto。
+      var ver = ixLS('nav_vpn_mode_ver');
+      if (ver !== VPN_MODE_VER) {
+        // 一次性迁移（ver 2）：默认值改回「一直显示」——需 VPN 的站点/引擎默认就在页面上带角标显示。
+        // 只有「一直隐藏」（off）必然用户主动选的、要保留；auto/always/空 → 统一切到新默认 always。
+        if (raw === 'off') {
+          vpnMode = 'off';
+        } else {
+          vpnMode = 'always';
+          ixSet('nav_vpn_mode', 'always');
+        }
+        ixSet('nav_vpn_mode_migrated', '1');
+        ixSet('nav_vpn_mode_ver', VPN_MODE_VER);
+      } else if (!migrated) {
         if (raw === 'auto' || raw === 'off') {
           vpnMode = raw;
         } else {
-          vpnMode = 'auto';
-          ixSet('nav_vpn_mode', 'auto');
+          vpnMode = 'always';
+          ixSet('nav_vpn_mode', 'always');
         }
         ixSet('nav_vpn_mode_migrated', '1');
       } else {
-        vpnMode = (raw === 'auto' || raw === 'off' || raw === 'always') ? raw : 'auto';
+        vpnMode = (raw === 'auto' || raw === 'off' || raw === 'always') ? raw : 'always';
       }
       // 关键：载入后立刻算出 vpnOn，否则「一直隐藏」在刷新后不生效
       vpnOn = (vpnMode !== 'off');
@@ -5028,7 +5039,7 @@
     // 否则每次刷新页面都会把用户存的设置覆盖成默认值。
     function vpnModeHintText() {
       return vpnMode === 'always'
-        ? '一直显示：所有站点都显示，需 VPN 的站点带小角标提示。'
+        ? '一直显示（默认）：所有站点都显示，需 VPN 的站点带小角标提示，需 VPN 的搜索引擎也在引擎栏里。'
         : vpnMode === 'auto'
           ? '自动判断：加载时后台探测 Google 与 Quora（各 1.5 秒上限），两个都不通才隐藏需 VPN 的站点与搜索引擎。'
           : '一直隐藏：需 VPN 的站点与搜索引擎一律不显示（不做任何探测，最快）。';

@@ -583,8 +583,8 @@ baidumap wikihow scihub kiphub msacademic custom</code></pre>
       <p>有些站点（Google、YouTube、X、Quora、维基百科等）需要科学上网才能访问。导航页会给这类站点打上一个小角标 <span class="kbd">VPN</span>，并且提供三种显示方式（设置面板 → 🌐 需 VPN 站点的显示方式）：</p>
       <table>
         <tr><th>方式</th><th>行为</th></tr>
-        <tr><td><strong>自动判断</strong>（默认）</td><td>页面加载后会在后台探测 <code>google.com</code> 与 <code>quora.com</code> 的图标图片（各最多等 2.5 秒，结果缓存 10 分钟）。<strong>两个都失败</strong>才隐藏需 VPN 的站点；只要有一个成功、或探测本身异常，都按「显示」处理，避免误杀。用图片加载判断而非 HTTP 状态，是因为部分网络的拦截页会返回假 200，图片解码可识破。按 F12 可在控制台看到探测结果。</td></tr>
-        <tr><td><strong>一直显示</strong></td><td>所有站点都显示，需 VPN 的站点右上角带小角标提示。</td></tr>
+        <tr><td><strong>一直显示</strong>（默认）</td><td>所有站点与搜索引擎都显示，需 VPN 的带小角标提示。不做任何探测，打开就是完整列表。</td></tr>
+        <tr><td><strong>自动判断</strong></td><td>页面加载后会在后台探测 <code>google.com</code> 与 <code>quora.com</code> 的图标图片（各最多等 2.5 秒，结果缓存 10 分钟）。<strong>两个都失败</strong>才隐藏需 VPN 的站点；只要有一个成功、或探测本身异常，都按「显示」处理，避免误杀。用图片加载判断而非 HTTP 状态，是因为部分网络的拦截页会返回假 200，图片解码可识破。按 F12 可在控制台看到探测结果。</td></tr>
         <tr><td><strong>一直隐藏</strong></td><td>需 VPN 的站点与对应搜索引擎一律不显示，不做任何探测（最快）。</td></tr>
       </table>
       <p>这三种模式是<strong>互斥单选</strong>，任何时候只有一个生效。隐藏后：某个分类里的站点全被隐藏时，该分类会自动收起；带 VPN 属性的搜索引擎也会从引擎栏里消失，若当前正选着它，会自动切回第一个可用引擎。</p>

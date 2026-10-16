@@ -227,6 +227,14 @@ INJECT = r'''
         // 搜索模式默认「全搜索」，且初始化不得写盘（刷新不丢设置的既有约束）
         eq('searchModeDefaultFull', searchMode, 'full');
         eq('searchModeNotWritten', ls('nav_search_mode'), null);
+        // 需 VPN 站点的显示方式默认「一直显示」
+        eq('vpnModeDefaultAlways', vpnMode, 'always');
+        eq('vpnOnByDefault', vpnOn, true);
+        eq('vpnModeDefaultWritten', ls('nav_vpn_mode'), 'always');
+        eq('vpnModeVerWritten', ls('nav_vpn_mode_ver'), '2');
+        openSettings();
+        eq('alwaysChipOnByDefault', document.getElementById('setVpnAlways').classList.contains('on'), true);
+        closeSettings();
         // 没有收藏时，默认高亮仍是综合导航（空收藏分类不应抢焦点）
         eq('activeIsGeneralWithoutFav', (function() {
           var a = document.querySelector('.sidebar a.active');

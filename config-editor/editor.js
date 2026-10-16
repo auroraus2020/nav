@@ -31,7 +31,7 @@
   var rtCustom = getLSJ('nav_rt_custom_tools', []);
   var rtEnabled = getLS('nav_rt_enabled', '1') !== '0';
   var catSortMode = getLS('nav_cat_sort_mode', 'fixed') === 'recent' ? 'recent' : 'fixed';
-  var vpnMode = getLS('nav_vpn_mode', 'auto');
+  var vpnMode = getLS('nav_vpn_mode', 'always');
   var onlyActive = getLS('nav_only_active', '0') === '1';
   var todayVisible = getLS('nav_today_visible', '1') !== '0';
   var rtSides = getLSJ('nav_rt_sides', {});   // 每个工具的侧别：{key: 'left'|'right'}

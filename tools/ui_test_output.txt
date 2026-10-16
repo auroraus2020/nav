@@ -51,6 +51,11 @@
 [PASS] tradition_cat::sectionExists
 [PASS] tradition_cat::searchModeDefaultFull
 [PASS] tradition_cat::searchModeNotWritten
+[PASS] tradition_cat::vpnModeDefaultAlways
+[PASS] tradition_cat::vpnOnByDefault
+[PASS] tradition_cat::vpnModeDefaultWritten
+[PASS] tradition_cat::vpnModeVerWritten
+[PASS] tradition_cat::alwaysChipOnByDefault
 [PASS] tradition_cat::activeIsGeneralWithoutFav
 [PASS] tradition_cat::sidebarLink
 [PASS] tradition_cat::mobileTab
@@ -279,4 +284,4 @@
 [PASS] engine_defaults_vpn::fallbackToVisible
 [PASS] engine_defaults_vpn::fallbackIsBing
 
-PASS=280 FAIL=0
+PASS=285 FAIL=0
