@@ -435,7 +435,10 @@
     body.only-active .category-section.not-active { display: none !important; }
 
     /* === 工具条：左/右两条独立渲染（每个工具一个侧别） === */
-    #rtEdgeLeft { left: 0; display: none; }
+    /* 关键：左条必须清掉 .rt-edge 的 right:0，否则 left+right 同时生效会横向铺满视口，
+       变成一层看不见的全宽遮罩 → 搜索框点不动、导航展开按钮点不动。 */
+    #rtEdgeLeft { left: 0; right: auto; width: 38px; align-items: flex-start; display: none; }
+    #rtEdgeLeft .rt-tab { border-right: 1px solid var(--rule); border-left: none; border-radius: 0 7px 7px 0; }
     #rtEdgeLeft .rt-tab .rt-label { right: auto; left: 44px; }
     body.rt-left-on #rtEdgeLeft { display: flex; }
     /* 仅在「视口不足以把工具条容纳进页面留白」时才让位，宽屏保持原版 4 列卡片观感 */
@@ -2775,6 +2778,15 @@
       </div>
 
       <div class="settings-section wide">
+        <h4>🎯 搜索模式</h4>
+        <div class="settings-row">
+          <span class="settings-chip" id="setSearchFocus" onclick="setSearchMode('focus',this)">专注搜索</span>
+          <span class="settings-chip" id="setSearchFull" onclick="setSearchMode('full',this)">全搜索</span>
+        </div>
+        <p class="settings-hint" id="searchModeHint"></p>
+      </div>
+
+      <div class="settings-section wide">
         <h4>🗂️ 主页面显示范围</h4>
         <div class="settings-toggle" id="setOnlyActiveToggle" onclick="toggleOnlyActive(this)">
           <div class="sw"></div> 仅显示左侧选中的分类
@@ -3031,8 +3043,61 @@
       }
     }
 
-    var catCollapsePrefs = {};
+    // ---------- 搜索模式：全搜索（默认）/ 专注搜索 ----------
+    var searchMode = 'full';
+    function loadSearchMode() {
+      var v = null;
+      try { v = localStorage.getItem('nav_search_mode'); } catch(e) {}
+      searchMode = (v === 'focus') ? 'focus' : 'full';
+    }
+    function searchModeHintText() {
+      return searchMode === 'focus'
+        ? '专注搜索：搜索框只负责联网搜索——输入时不会匹配本站网站、也不会自动展开下方分类；导航的展开/收起状态保持你现在的样子（不替你收起，也不替你展开）。'
+        : '全搜索（默认）：输入关键词时同时筛选本页网站、自动展开匹配的分类；回车或点「搜索」再用所选引擎联网搜索。';
+    }
+    function applySearchModeUi() {
+      var f = document.getElementById('setSearchFocus');
+      var u = document.getElementById('setSearchFull');
+      if (f) f.classList.toggle('on', searchMode === 'focus');
+      if (u) u.classList.toggle('on', searchMode === 'full');
+      var hint = document.getElementById('searchModeHint');
+      if (hint) hint.textContent = searchModeHintText();
+    }
+    // 退出「全搜索」留下的筛选状态，把卡片显隐交还给站点/VPN/仅显示选中分类规则
+    function exitNavFilter() {
+      document.querySelectorAll('.nav-card').forEach(function(c) { c.style.display = ''; });
+      document.querySelectorAll('.category-section').forEach(function(s) {
+        s.style.display = hiddenCategories[s.id] ? 'none' : '';
+      });
+      ixSearching = false;
+      if (typeof applySiteVisibility === 'function') applySiteVisibility();
+      if (typeof applyOnlyActive === 'function') applyOnlyActive();
+    }
+    // 专注模式：只清搜索框自身样式；不筛选、不展开、也不改动导航的展开/收起状态
+    // （用户当前是展开就保持展开，是收起就保持收起——搜索不该替你改）
+    function handleFocusSearchInput(sb) {
+      if (sb) sb.classList.remove('expanded', 'tall', 'multiline');
+      if (typeof autosizeSearch === 'function') autosizeSearch();
+    }
+    function setSearchMode(mode, el) {
+      searchMode = (mode === 'focus') ? 'focus' : 'full';
+      try { localStorage.setItem('nav_search_mode', searchMode); } catch(e) {}
+      applySearchModeUi();
+      var input = document.getElementById('searchInput');
+      var val = (input && input.value || '').trim();
+      if (searchMode === 'focus') {
+        exitNavFilter();                        // 清掉「全搜索」留下的筛选态，折叠状态保持原样
+        handleFocusSearchInput(document.querySelector('.search-box'));
+      } else if (val) {
+        var hasMatch = doNavSearch();
+        if (hasMatch) document.body.classList.remove('all-hidden');
+      }
+    }
+    window.setSearchMode = setSearchMode;
+    window.applySearchModeUi = applySearchModeUi;
+    loadSearchMode();
 
+    var catCollapsePrefs = {};
     function loadCatPrefs() {
       try {
         var ver = localStorage.getItem('nav_catpref_ver');
@@ -3453,6 +3518,10 @@
 
     document.getElementById('searchInput').addEventListener('input', function() {
       var sb = document.querySelector('.search-box');
+      if (searchMode === 'focus') {            // 专注搜索：不匹配本站关键词、不展开分类，导航保持折叠
+        handleFocusSearchInput(sb);
+        return;
+      }
       if (!this.value.trim()) {
         document.querySelectorAll('.nav-card').forEach(function(c) { c.style.display = ''; });
         document.querySelectorAll('.category-section').forEach(function(s) {
@@ -3936,6 +4005,7 @@
       on('setThemeDark', isDark);
       on('setNavShow', !allHidden);
       on('setNavHide', allHidden);
+      applySearchModeUi();      // 搜索模式 chip + 说明文案
       var ft = $('setFreqToggle');
       if (ft) ft.classList.toggle('on', freqVisible);
       var fc = $('setFreqCount');
@@ -4247,6 +4317,9 @@
             if (settings.catSortMode === 'fixed' || settings.catSortMode === 'recent') {
               localStorage.setItem('nav_cat_sort_mode', settings.catSortMode);
             }
+            if (settings.searchMode === 'focus' || settings.searchMode === 'full') {
+              localStorage.setItem('nav_search_mode', settings.searchMode);
+            }
           }
           var msgParts = [];
           if (data.rtTools && Array.isArray(data.rtTools)) {
@@ -4267,7 +4340,7 @@
 
       function restoreDefaults() {
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
@@ -4323,6 +4396,10 @@
       try {
         var csm = localStorage.getItem('nav_cat_sort_mode');
         settings.catSortMode = (csm === 'fixed') ? 'fixed' : 'recent';
+      } catch(e) {}
+      try {
+        var smd = localStorage.getItem('nav_search_mode');
+        settings.searchMode = (smd === 'focus') ? 'focus' : 'full';
       } catch(e) {}
       try {
         var vm = localStorage.getItem('nav_vpn_mode');
@@ -4960,6 +5037,7 @@
     function refreshExtSettingsUi() {
       applyVpnUi();
       applyOnlyActive();
+      applySearchModeUi();      // 只回显，不写盘
       // 仅回显提示文案，不调用 setVpnMode（那会写盘）
       var hint = document.getElementById('vpnModeHint');
       if (hint) hint.textContent = vpnModeHintText();

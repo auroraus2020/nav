@@ -224,6 +224,9 @@ INJECT = r'''
       }
       else if (CASE === 'tradition_cat') {
         eq('sectionExists', !!document.getElementById('cat-tradition'), true);
+        // 搜索模式默认「全搜索」，且初始化不得写盘（刷新不丢设置的既有约束）
+        eq('searchModeDefaultFull', searchMode, 'full');
+        eq('searchModeNotWritten', ls('nav_search_mode'), null);
         // 没有收藏时，默认高亮仍是综合导航（空收藏分类不应抢焦点）
         eq('activeIsGeneralWithoutFav', (function() {
           var a = document.querySelector('.sidebar a.active');
@@ -401,6 +404,48 @@ INJECT = r'''
         eq('noDupLeft', lt.length, new Set(lt).size);
         eq('wechatOnLeft', lt.indexOf('微信传输') >= 0, true);
         eq('floatingWindowFollows', lt.indexOf('待办事项') >= 0, true);
+        // 回归：左侧工具条不得横向铺满（曾因 left+right 同时生效变成隐形全宽遮罩，
+        // 导致搜索框无法输入、导航展开按钮点不动）
+        var lb = document.getElementById('rtEdgeLeft').getBoundingClientRect();
+        eq('leftEdgeNarrow', lb.width > 0 && lb.width <= 60, true);
+        eq('leftEdgeNotFullWidth', lb.width < window.innerWidth / 2, true);
+        // 把「所有」工具都挪到左侧（复现用户场景：左条足够高，会盖住搜索框/展开按钮所在的横带）
+        var allSides = {};
+        rtCollectTabs().forEach(function(t) { allSides[t.key] = 'left'; });
+        localStorage.setItem('nav_rt_sides', JSON.stringify(allSides));
+        renderRtEdge();
+        var lbAll = document.getElementById('rtEdgeLeft').getBoundingClientRect();
+        eq('leftEdgeStillNarrowWithAllTools', lbAll.width > 0 && lbAll.width <= 60, true);
+        eq('allToolsOnLeft', document.querySelectorAll('#rtEdgeLeft .rt-tab').length, rtCollectTabs().length);
+        // 左条贴左边、tab 保持 38px（几何证据，替代人工截图）
+        var firstLeftTab = document.querySelector('#rtEdgeLeft .rt-tab');
+        var flr = firstLeftTab.getBoundingClientRect();
+        eq('leftEdgeAtLeftEdge', Math.round(lbAll.left), 0);
+        eq('leftTabWidth', Math.round(flr.width), 38);
+        eq('leftTabAtLeftEdge', Math.round(flr.left), 0);
+        var lbl = firstLeftTab.querySelector('.rt-label');
+        eq('leftLabelPointsRight', getComputedStyle(lbl).left, '44px');
+        function topElementAt(el) {
+          var r = el.getBoundingClientRect();
+          return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        }
+        var si = document.getElementById('searchInput');
+        var hitInput = topElementAt(si);
+        eq('searchInputClickable', hitInput === si || (hitInput && si.contains(hitInput)), true);
+        var toggleBtn = document.getElementById('heroToggleBtn');
+        var hitToggle = topElementAt(toggleBtn);
+        eq('navToggleClickable', hitToggle === toggleBtn || (hitToggle && toggleBtn.contains(hitToggle)), true);
+        // 工具条区域之外才算遮罩：左条自身宽度内点得到 tab，但页面中部内容不被挡
+        var anyCard = document.querySelector('#cat-general .nav-card');
+        var hitCard = topElementAt(anyCard);
+        eq('cardClickable', hitCard === anyCard || (hitCard && anyCard.contains(hitCard)), true);
+        // 真的还能在框里打字：聚焦后置值并输入事件
+        si.focus();
+        si.value = 'kerry';
+        si.dispatchEvent(new Event('input'));
+        eq('searchInputTypeable', si.value, 'kerry');
+        si.value = '';
+        si.dispatchEvent(new Event('input'));
       }
       else if (CASE === 'sort_mode_not_in_popup') {
         openSettings();
@@ -598,6 +643,51 @@ INJECT = r'''
         eq('fallbackToVisible', getVisibleEngineKeys().indexOf(getSelectedEngine()) >= 0, true);
         eq('fallbackIsBing', getSelectedEngine(), 'bing');
         setVpnMode('always');   // 还原，避免影响同进程其它断言
+      }
+      else if (CASE === 'search_mode_focus') {
+        openSettings();
+        eq('focusChipOn', document.getElementById('setSearchFocus').classList.contains('on'), true);
+        eq('fullChipOff', document.getElementById('setSearchFull').classList.contains('on'), false);
+        eq('hintText', (document.getElementById('searchModeHint').textContent || '').length > 15, true);
+        closeSettings();
+        var ta = document.getElementById('searchInput');
+        var beforeHidden = document.querySelectorAll('.nav-card[style*="display: none"]').length;
+        eq('startsExpanded', document.body.classList.contains('all-hidden'), false);
+        // 专注模式输入：不匹配本站、不展开分类，且不擅自改变展开/收起状态
+        ta.value = '谷歌';
+        ta.dispatchEvent(new Event('input'));
+        eq('staysExpandedWhileSearching', document.body.classList.contains('all-hidden'), false);
+        eq('noCardFiltering', document.querySelectorAll('.nav-card[style*="display: none"]').length, beforeHidden);
+        eq('sectionsUntouched', document.querySelectorAll('.category-section[style*="none"]').length <= 3, true);
+        // 收起状态下搜索也不该被自动展开
+        toggleAllContent();
+        eq('manualCollapseWorks', document.body.classList.contains('all-hidden'), true);
+        ta.value = '谷歌搜索';
+        ta.dispatchEvent(new Event('input'));
+        eq('staysCollapsedWhileSearching', document.body.classList.contains('all-hidden'), true);
+        // 再手动展开，继续输入同样保持展开
+        toggleAllContent();
+        ta.value = '谷歌搜索引';
+        ta.dispatchEvent(new Event('input'));
+        eq('manualExpandKept', document.body.classList.contains('all-hidden'), false);
+        // 清空 → 仍然不筛选、状态不跳变
+        ta.value = '';
+        ta.dispatchEvent(new Event('input'));
+        eq('stateKeptAfterClear', document.body.classList.contains('all-hidden'), false);
+        eq('stillNoCardFiltering', document.querySelectorAll('.nav-card[style*="display: none"]').length, beforeHidden);
+        // 切到全搜索 → 又恢复即时筛选
+        setSearchMode('full');
+        eq('modePersisted', ls('nav_search_mode'), 'full');
+        eq('fullChipOn', document.getElementById('setSearchFull').classList.contains('on'), true);
+        eq('exportHasSearchMode', (buildConfigData().settings || {}).searchMode, 'full');
+        ta.value = 'zzz不存在的站点关键字';
+        ta.dispatchEvent(new Event('input'));
+        eq('fullModeFiltersAgain', document.querySelectorAll('.nav-card[style*="display: none"]').length > 0, true);
+        ta.value = '';
+        ta.dispatchEvent(new Event('input'));
+        setSearchMode('focus');
+        eq('focusPersisted', ls('nav_search_mode'), 'focus');
+        eq('exportSearchModeFocus', (buildConfigData().settings || {}).searchMode, 'focus');
       }
       else if (CASE === 'engine_modifier_switch') {
         // 单独按 Ctrl → 下一个可用引擎；单独按 Alt → 上一个可用引擎（按显示顺序循环）
@@ -875,6 +965,8 @@ CASES = [
     ('fav_feature', [('nav_wallpaper', 'default'),
                      ('nav_fav', json.dumps(['https://www.google.com', 'https://www.zhihu.com'], ensure_ascii=False))]),
     ('search_autosize', [('nav_wallpaper', 'default')]),
+    ('search_mode_focus', [('nav_wallpaper', 'default'), ('nav_search_mode', 'focus'),
+                           ('nav_all_hidden', '0'), ('nav_only_active', '0')]),
     ('fav_only_active_default', [('nav_wallpaper', 'default'), ('nav_only_active', '1'),
                                  ('nav_fav', json.dumps(['https://www.google.com', 'https://www.zhihu.com'],
                                                         ensure_ascii=False))]),
