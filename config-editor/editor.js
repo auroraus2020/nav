@@ -30,6 +30,20 @@
   var catOrder = getLSJ('nav_cat_order', null);
   var rtCustom = getLSJ('nav_rt_custom_tools', []);
   var rtEnabled = getLS('nav_rt_enabled', '1') !== '0';
+  var catSortMode = getLS('nav_cat_sort_mode', 'fixed') === 'recent' ? 'recent' : 'fixed';
+  var vpnMode = getLS('nav_vpn_mode', 'auto');
+  var onlyActive = getLS('nav_only_active', '0') === '1';
+  var todayVisible = getLS('nav_today_visible', '1') !== '0';
+  var rtSides = getLSJ('nav_rt_sides', {});   // 每个工具的侧别：{key: 'left'|'right'}
+  var engineVpn = getLSJ('nav_engine_vpn', {}); // 每个引擎是否需 VPN 的覆盖：{id: bool}
+  function engineVpnOf(engId, deflt) {
+    if (engineVpn.hasOwnProperty(engId)) return engineVpn[engId] === true;
+    return deflt === true;
+  }
+  var siteOverrides = getLSJ('nav_site_overrides', {});
+  var SITE_SEP = '|';
+
+  function ovKey(catId, name) { return catId + SITE_SEP + name; }
 
   function catDisplayId(cat) {
     var idx = defaultCatIds.indexOf(cat.id);
@@ -52,7 +66,13 @@
       cats.push(cat);
     });
     customCats.forEach(function(cc) {
-      cats.push({ id: cc.id, name: cc.name, icon: cc.icon, isDefault: false, sites: deepClone(cc.sites || []) });
+      var rmSet = removedSites[cc.id] || [];
+      var sites = (cc.sites || []).map(function(s) {
+        var site = deepClone(s);
+        site._removed = rmSet.indexOf(s.name) >= 0;   // 自定义分类同样回显「显示/隐藏」状态
+        return site;
+      });
+      cats.push({ id: cc.id, name: cc.name, icon: cc.icon, isDefault: false, sites: sites });
     });
     if (catOrder && catOrder.length) {
       var orderMap = {};
@@ -88,14 +108,15 @@
   }
 
   var engineLabelMap = {
-    bing: '🔵必应', baidu: '🔴百度', google: '🟢谷歌', sogou: '🟠搜狗',
+    bing: '🔵必应', baidu: '🔴百度', google: '🟢谷歌', metaso: '🧠秘塔AI', perplexity: '🔎Perplexity', sogou: '🟠搜狗',
     sogouweixin: '🟢搜狗微信', sogouzhihu: '🔵搜狗知乎', yandex: '🔴Yandex',
     gscholar2: '🟣谷歌学术②', xmol: '🟢XMOL', googlescholar: '🔵谷歌学术',
     buaaebsco: '🟠北航外文', baiduxueshu: '🔴百度学术', douyin: '🎵抖音',
     xiaohongshu: '📕小红书', bilibili: '📺哔哩哔哩', zhihu: '🔷知乎',
     weibo: '🔶微博', github: '🐙GitHub', baidumap: '🗺️百度地图',
     wikihow: '📘WikiHow', scihub: '📄Sci-Hub', kiphub: '📖KipHub',
-    msacademic: '🟣微软学术', custom: '⚙️自定义'
+    msacademic: '🟣微软学术', quora: '🌐Quora', reddit: '🟠Reddit', wikipedia: '📖维基百科',
+    trans2en: '🔤译英', trans2zh: '🔤译中', custom: '⚙️自定义'
   };
 
   function getAllEngines() {
@@ -126,6 +147,9 @@
     if (name === 'categories') {
       document.getElementById('tab-categories').classList.add('active');
       renderCategories();
+    } else if (name === 'catorder') {
+      document.getElementById('tab-catorder').classList.add('active');
+      renderCatOrder();
     } else if (name === 'engines') {
       document.getElementById('tab-engines').classList.add('active');
       renderEngines();
@@ -209,32 +233,34 @@
     var cat = getCatById(activeCatId);
     if (!cat) { contentEl.innerHTML = '<p style="color:var(--muted);padding:1rem">请选择一个分类</p>'; return; }
     var visibleCount = 0;
-    if (cat.isDefault) {
-      cat.sites.forEach(function(s) { if (!s._removed) visibleCount++; });
-    } else {
-      visibleCount = cat.sites.length;
-    }
-    var htm = '<h4>' + cat.name + ' <span class="count">' + cat.sites.length + '个站点' + (cat.isDefault ? '（' + visibleCount + ' 个可见）' : '') + '</span></h4>';
+    cat.sites.forEach(function(s) { if (!s._removed) visibleCount++; });
+    var htm = '<h4>' + cat.name + ' <span class="count">' + cat.sites.length + '个站点' +
+              (visibleCount < cat.sites.length ? '（' + visibleCount + ' 个可见）' : '') + '</span></h4>';
     htm += '<table class="site-table"><thead><tr>' +
-      '<th class="col-show">显示</th><th class="col-name">名称</th><th class="col-url">URL</th>' +
+      '<th class="col-show">显示</th><th class="col-vpn" title="是否需要科学上网">VPN</th>' +
+      '<th class="col-name">名称</th><th class="col-url">URL</th>' +
       '<th class="col-desc">描述</th><th class="col-icon">图标</th><th class="col-color">颜色</th>' +
-      '<th class="col-actions"></th></tr></thead><tbody>';
+      '<th class="col-actions">排序/删除</th></tr></thead><tbody>';
     cat.sites.forEach(function(site, idx) {
       var isNew = false;
       if (cat.isDefault) {
         var adds = addedSites[cat.id] || [];
         isNew = adds.some(function(a) { return a.name === site.name; });
       }
-      var isRemoved = cat.isDefault ? site._removed : false;
+      var isRemoved = !!site._removed;   // 默认分类与自定义分类统一从 _removed 回显
       var rowCls = 'site-row' + (isRemoved ? ' removed' : '') + (isNew ? ' added' : '');
       htm += '<tr class="' + rowCls + '" data-idx="' + idx + '">' +
         '<td class="col-show"><input type="checkbox" ' + (isRemoved ? '' : 'checked') + ' onchange="toggleSite(\'' + cat.id + '\',\'' + escHtml(site.name) + '\',this.checked)" title="显示/隐藏"></td>' +
+        '<td class="col-vpn"><input type="checkbox" ' + (siteVpn(cat, site) ? 'checked' : '') + ' onchange="toggleSiteVpn(\'' + cat.id + '\',\'' + escHtml(site.name) + '\',this.checked)" title="需要 VPN / 科学上网"></td>' +
         '<td class="col-name">' + renderEditableField(site, cat, idx, 'name') + '</td>' +
         '<td class="col-url">' + renderEditableField(site, cat, idx, 'url') + '</td>' +
         '<td class="col-desc">' + renderEditableField(site, cat, idx, 'desc') + '</td>' +
         '<td class="col-icon"><input type="text" value="' + escAttr(site.icon || '') + '" onchange="updateSiteField(\'' + cat.id + '\',' + idx + ',\'icon\',this.value)" style="width:40px;text-align:center" maxlength="2" title="图标文字"></td>' +
         '<td class="col-color">' + renderColorSelect(site, cat, idx) + '</td>' +
-        '<td class="col-actions"><button class="btn danger small" onclick="removeSite(\'' + cat.id + '\',' + idx + ')" title="删除">✕</button></td>' +
+        '<td class="col-actions">' +
+          '<button class="btn small" onclick="moveSite(\'' + cat.id + '\',' + idx + ',-1)" title="上移"' + (idx === 0 ? ' disabled' : '') + '>↑</button> ' +
+          '<button class="btn small" onclick="moveSite(\'' + cat.id + '\',' + idx + ',1)" title="下移"' + (idx === cat.sites.length - 1 ? ' disabled' : '') + '>↓</button> ' +
+          '<button class="btn danger small" onclick="removeSite(\'' + cat.id + '\',' + idx + ')" title="删除">✕</button></td>' +
         '</tr>';
     });
     htm += '</tbody></table>';
@@ -268,6 +294,50 @@
   window.selectCategory = function(catId) {
     activeCatId = catId;
     renderCategories();
+  };
+
+  function siteVpn(cat, site) {
+    if (site && site.vpn === true) return true;
+    var ov = siteOverrides[ovKey(cat.id, site.name)];
+    return !!(ov && ov.vpn === true);
+  }
+
+  window.toggleSiteVpn = function(catId, siteName, checked) {
+    var k = ovKey(catId, siteName);
+    if (!siteOverrides[k]) siteOverrides[k] = {};
+    siteOverrides[k].vpn = !!checked;
+    editingCats = buildEditingCats();
+    renderCatContent(document.getElementById('catContent'));
+  };
+
+  window.moveSite = function(catId, idx, delta) {
+    var cat = getCatById(catId);
+    if (!cat) return;
+    var j = idx + delta;
+    if (j < 0 || j >= cat.sites.length) return;
+    var arr = cat.sites;
+    var tmp = arr[idx]; arr[idx] = arr[j]; arr[j] = tmp;
+    // 用 order 覆盖记录新顺序，保证首页与编辑器一致
+    arr.forEach(function(site, i) {
+      var k = ovKey(catId, site.name);
+      if (!siteOverrides[k]) siteOverrides[k] = {};
+      siteOverrides[k].order = i;
+    });
+    if (cat.isDefault) {
+      // 默认站点：把重排结果写进 addedSites 覆盖（首页据此排序）
+      var list = addedSites[catId] || [];
+      arr.forEach(function(site) {
+        var k = ovKey(catId, site.name);
+        var rec = null;
+        for (var i = 0; i < list.length; i++) { if (list[i].name === site.name) { rec = list[i]; break; } }
+        if (!rec) {
+          list.push({ name: site.name, url: site.url, desc: site.desc || '', icon: site.icon || '', iconColor: site.iconColor || 'blue' });
+        }
+      });
+      addedSites[catId] = list;
+    }
+    editingCats = buildEditingCats();
+    renderCatContent(document.getElementById('catContent'));
   };
 
   window.toggleSite = function(catId, siteName, checked) {
@@ -427,12 +497,19 @@
     var htm = '<h4 style="margin-bottom:.8rem">搜索引擎管理</h4>';
     htm += '<table class="engine-table"><thead><tr>' +
       '<th style="width:40px;text-align:center">显示</th>' +
-      '<th style="width:160px">名称</th><th style="width:80px">标签</th>' +
+      '<th style="width:64px;text-align:center" title="需要科学上网才能使用">需VPN</th>' +
+      '<th style="width:150px">名称</th><th style="width:80px">标签</th>' +
       '<th>URL</th><th style="width:60px"></th></tr></thead><tbody>';
     engines.forEach(function(eng) {
       var rowCls = eng.hidden ? 'site-row removed' : '';
+      var defVpn = false;
+      if (eng.isDefault) {
+        var de = DEFAULT_ENGINES.filter(function(e) { return e.id === eng.id; })[0];
+        defVpn = !!(de && de.vpn);
+      }
       htm += '<tr class="' + rowCls + '">' +
         '<td style="text-align:center"><input type="checkbox" ' + (eng.hidden ? '' : 'checked') + ' onchange="toggleEngine(\'' + eng.id + '\',this.checked)"></td>' +
+        '<td style="text-align:center"><input type="checkbox" ' + (engineVpnOf(eng.id, defVpn) ? 'checked' : '') + ' onchange="toggleEngineVpn(\'' + eng.id + '\',this.checked)" title="需要科学上网才能使用"></td>' +
         '<td>' + (eng.isDefault ? eng.name : '<input type="text" value="' + escAttr(eng.name) + '" onchange="updateCustomEngine(\'' + eng.id + '\',\'name\',this.value)">') + '</td>' +
         '<td>' + (eng.isDefault ? eng.label : '<input type="text" value="' + escAttr(eng.label || '') + '" onchange="updateCustomEngine(\'' + eng.id + '\',\'label\',this.value)">') + '</td>' +
         '<td>' + (eng.isDefault ? '<span style="font-size:.75rem;color:var(--muted)">' + escHtml(eng.url) + '</span>' : '<input type="text" value="' + escAttr(eng.url) + '" onchange="updateCustomEngine(\'' + eng.id + '\',\'url\',this.value)">') + '</td>' +
@@ -448,6 +525,11 @@
 
     el.innerHTML = htm;
   }
+
+  window.toggleEngineVpn = function(engId, checked) {
+    engineVpn[engId] = !!checked;
+    renderEngines();
+  };
 
   window.toggleEngine = function(engId, checked) {
     hiddenEngines[engId] = !checked;
@@ -484,6 +566,73 @@
     if (hiddenEngines[engId]) delete hiddenEngines[engId];
     renderEngines();
     showMsg('引擎已删除');
+  };
+
+  function renderCatOrder() {
+    var el = document.getElementById('catOrderContent');
+    if (!el) return;
+    var htm = '<h4>🧭 分类排序</h4>';
+    htm += '<div class="setting-card"><h4>排序模式</h4><div class="setting-row">' +
+      '<span class="chip' + (catSortMode === 'fixed' ? ' on' : '') + '" onclick="setCatSort(\'fixed\')">📌 固定顺序（默认）</span>' +
+      '<span class="chip' + (catSortMode === 'recent' ? ' on' : '') + '" onclick="setCatSort(\'recent\')">🕘 按使用时间排序</span>' +
+      '</div><p style="font-size:.74rem;color:var(--muted);margin:.4rem 0 0">固定顺序：点分类只把它提到自己分组的最前；按使用时间排序：每次点击都按最近使用重排。自定义分类始终排在默认分类之前。</p></div>';
+
+    htm += '<div class="setting-card"><h4>顺序（↑ ↓ 调整，自定义分类排在最前）</h4>';
+    var order = (catOrder && catOrder.length) ? catOrder.slice() : editingCats.map(function(c) { return c.id; });
+    // 补齐缺失分类
+    editingCats.forEach(function(c) { if (order.indexOf(c.id) < 0) order.push(c.id); });
+    order = order.filter(function(id) { return editingCats.some(function(c) { return c.id === id; }); });
+    // 自定义分类置顶
+    var customs = order.filter(function(id) { return defaultCatIds.indexOf(id) < 0; });
+    var defaults = order.filter(function(id) { return defaultCatIds.indexOf(id) >= 0; });
+    order = customs.concat(defaults);
+
+    htm += '<div class="order-list">';
+    order.forEach(function(id, i) {
+      var cat = getCatById(id);
+      var nm = cat ? cat.name : id;
+      var isCustom = defaultCatIds.indexOf(id) < 0;
+      htm += '<div class="order-item">' +
+        '<span class="order-idx">' + (i + 1) + '</span>' +
+        '<span class="order-name">' + nm + (isCustom ? ' <span class="badge">自定义</span>' : '') + '</span>' +
+        '<button class="btn small" onclick="moveCatInEditor(\'' + id + '\',-1)"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button class="btn small" onclick="moveCatInEditor(\'' + id + '\',1)"' + (i === order.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '</div>';
+    });
+    htm += '</div><p style="font-size:.74rem;color:var(--muted);margin:.5rem 0 0">提示：这里调好的顺序会写入 <code>nav_cat_order</code>，并在导出 JSON 时带上。</p></div>';
+
+    htm += '<div class="setting-card"><h4>其他显示设置</h4><div class="setting-row">' +
+      '<label class="setting-label"><input type="checkbox" ' + (onlyActive ? 'checked' : '') + ' onchange="setSetting(\'onlyActive\',this.checked)"> 主页面仅显示选中的分类</label></div>' +
+      '<div class="setting-row"><span style="font-size:.78rem">需 VPN 站点：</span>' +
+      '<span class="chip' + (vpnMode === 'always' ? ' on' : '') + '" onclick="setSetting(\'vpnMode\',\'always\')">一直显示</span>' +
+      '<span class="chip' + (vpnMode === 'auto' ? ' on' : '') + '" onclick="setSetting(\'vpnMode\',\'auto\')">自动判断</span>' +
+      '<span class="chip' + (vpnMode === 'off' ? ' on' : '') + '" onclick="setSetting(\'vpnMode\',\'off\')">一直隐藏</span></div>' +
+      '<p style="font-size:.74rem;color:var(--muted);margin:.4rem 0 0">快捷工具的左侧/右侧在「🔗 快捷工具」标签页里逐个设置。</p>' +
+      '</div>';
+    el.innerHTML = htm;
+  }
+
+  window.setCatSort = function(mode) {
+    catSortMode = (mode === 'recent') ? 'recent' : 'fixed';
+    renderCatOrder();
+  };
+
+  window.moveCatInEditor = function(id, delta) {
+    var order = (catOrder && catOrder.length) ? catOrder.slice() : editingCats.map(function(c) { return c.id; });
+    editingCats.forEach(function(c) { if (order.indexOf(c.id) < 0) order.push(c.id); });
+    var i = order.indexOf(id);
+    var j = i + delta;
+    if (i < 0 || j < 0 || j >= order.length) return;
+    order.splice(i, 1);
+    order.splice(j, 0, id);
+    catOrder = order;
+    // 让分类 tab 的顺序跟随
+    for (var k = 0; k < order.length; k++) {
+      var idx = -1;
+      for (var m2 = 0; m2 < editingCats.length; m2++) { if (editingCats[m2].id === order[k]) { idx = m2; break; } }
+      if (idx >= 0) editingCats.push(editingCats.splice(idx, 1)[0]);
+    }
+    renderCatOrder();
   };
 
   function renderSettings() {
@@ -544,6 +693,12 @@
       freqCount = value;
     } else if (key === 'navAllHidden') {
       navAllHidden = value;
+    } else if (key === 'onlyActive') {
+      onlyActive = !!value;
+      renderCatOrder();
+    } else if (key === 'vpnMode') {
+      vpnMode = value;
+      renderCatOrder();
     } else if (key === 'hiddenCat') {
       var catId = value;
       if (hiddenCats[catId]) {
@@ -556,6 +711,21 @@
   };
 
   // --- Quick Tools ---
+  function rtSideOf(key) {
+    return rtSides[key] === 'left' ? 'left' : 'right';
+  }
+
+  function sideChips(key, handler) {
+    var cur = rtSideOf(key);
+    return '<span class="chip' + (cur === 'left' ? ' on' : '') + '" onclick="' + handler + '(\'' + key + '\',\'left\')">⬅️ 左</span>' +
+           '<span class="chip' + (cur === 'right' ? ' on' : '') + '" onclick="' + handler + '(\'' + key + '\',\'right\')">➡️ 右</span>';
+  }
+
+  window.setRtSideOf = function(key, side) {
+    rtSides[key] = (side === 'left') ? 'left' : 'right';
+    renderRtTools();
+  };
+
   function renderRtTools() {
     var el = document.getElementById('rtToolsContent');
     var htm = '<h4 style="margin-bottom:.8rem">快捷工具</h4>';
@@ -565,12 +735,13 @@
       '</div><p class="hint">禁用后右侧边栏所有快捷图标都会消失</p></div>';
 
     htm += '<div class="setting-card"><h4>自定义工具 (' + rtCustom.length + ' 个)</h4>';
-    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th><th>启用</th><th>操作</th></tr></thead><tbody>';
+    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th><th>侧别</th><th>启用</th><th>操作</th></tr></thead><tbody>';
     rtCustom.forEach(function(t, i) {
       htm += '<tr>';
       htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.icon||'🔗') + '" onchange="setRtSetting(\'icon\',' + i + ',this.value)" style="width:48px;text-align:center;font-size:1rem;"></td>';
       htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.name||'') + '" onchange="setRtSetting(\'name\',' + i + ',this.value)" placeholder="名称"></td>';
       htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.url||'') + '" onchange="setRtSetting(\'url\',' + i + ',this.value)" placeholder="https://..."></td>';
+      htm += '<td>' + sideChips('rtc:' + (t.id || t.name || i), 'setRtSideOf') + '</td>';
       htm += '<td><span class="chip' + (t.enabled !== false ? ' on' : '') + '" onclick="setRtSetting(\'toggle\',' + i + ')">' + (t.enabled !== false ? '是' : '否') + '</span></td>';
       htm += '<td><button class="btn danger" onclick="setRtSetting(\'del\',' + i + ')" style="font-size:.7rem;padding:0.15rem 0.5rem;">✕</button></td>';
       htm += '</tr>';
@@ -582,10 +753,11 @@
       '</div>';
     htm += '</div>';
 
-    htm += '<div class="setting-card"><h4>内置工具</h4><p class="hint">这些是系统内置的快捷入口。如需管理内置工具，请在主页设置中操作（导出/导入配置）。</p>';
-    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th></tr></thead><tbody>';
+    htm += '<div class="setting-card"><h4>内置工具</h4><p class="hint">每个工具都能单独选择显示在<strong>左侧</strong>还是<strong>右侧</strong>工具条上；同一工具只会出现在一侧，不会重复。</p>';
+    htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>说明</th><th>侧别</th></tr></thead><tbody>';
     var builtins = [
       {icon:'💬',name:'微信传输',url:'https://filehelper.weixin.qq.com/'},
+      {icon:'📄',name:'在线WPS',url:'https://365.kdocs.cn'},
       {icon:'📋',name:'待办事项',url:'（悬浮窗）'},
       {icon:'📝',name:'记事本',url:'（悬浮窗）'},
       {icon:'🍅',name:'番茄钟',url:'（悬浮窗）'},
@@ -595,7 +767,9 @@
       {icon:'🧰',name:'工具箱',url:'https://txttool.cn/'}
     ];
     builtins.forEach(function(t) {
-      htm += '<tr><td style="font-size:1.2rem;">' + t.icon + '</td><td>' + t.name + '</td><td><code style="word-break:break-all;">' + t.url + '</code></td></tr>';
+      htm += '<tr><td style="font-size:1.2rem;">' + t.icon + '</td><td>' + t.name + '</td>' +
+        '<td><code style="word-break:break-all;">' + t.url + '</code></td>' +
+        '<td>' + sideChips('rtb:' + t.name, 'setRtSideOf') + '</td></tr>';
     });
     htm += '</tbody></table></div>';
 
@@ -702,6 +876,13 @@
     try { localStorage.setItem('nav_freq_count', String(freqCount)); } catch(e) {}
     try { localStorage.setItem('nav_all_hidden', navAllHidden ? '1' : '0'); } catch(e) {}
     try { localStorage.setItem('nav_cat_order', JSON.stringify(catOrder || editingCats.map(function(c){return c.id;}))); } catch(e) {}
+    try { localStorage.setItem('nav_cat_sort_mode', catSortMode); } catch(e) {}
+    try { localStorage.setItem('nav_vpn_mode', vpnMode); } catch(e) {}
+    try { localStorage.setItem('nav_only_active', onlyActive ? '1' : '0'); } catch(e) {}
+    try { localStorage.setItem('nav_today_visible', todayVisible ? '1' : '0'); } catch(e) {}
+    try { localStorage.setItem('nav_rt_sides', JSON.stringify(rtSides)); } catch(e) {}
+    try { localStorage.setItem('nav_engine_vpn', JSON.stringify(engineVpn)); } catch(e) {}
+    try { localStorage.setItem('nav_site_overrides', JSON.stringify(siteOverrides)); } catch(e) {}
     // 与 index.html 的 CAT_ORDER_VER 保持一致：带上版本号，避免首页把编辑器的排序当成「过期默认顺序」覆盖掉
     try { localStorage.setItem('nav_cat_order_ver', '2'); } catch(e) {}
     try { localStorage.setItem('nav_rt_enabled', rtEnabled ? '1' : '0'); } catch(e) {}

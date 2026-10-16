@@ -77,7 +77,10 @@
       <a href="#download">十四、推荐配置下载</a>
       <a href="#community">十五、交流与反馈</a>
       <a href="#catsort">十六、分类排序模式</a>
-      <a href="#faq">十七、常见问题</a>
+      <a href="#vpn">十七、需 VPN 站点与三种显示方式</a>
+      <a href="#newsites">十八、自定义分类 / 返回顶部 / 单分类模式</a>
+      <a href="#editordeep">十九、编辑器进阶：站点显隐、需VPN、排序</a>
+      <a href="#faq">二十、常见问题</a>
     </div>
 
     <!-- 一 -->
@@ -100,7 +103,8 @@
         <strong>📂 收起/展开一个分类：</strong>点分类标题（比如"学术检索"），下面所有卡片会收起或展开。鼠标点一下就行。
       </div>
       <div class="step">
-        <strong>🔍 搜索本页的网站：</strong>在搜索框输入关键词（比如输入"知乎"），页面会只保留名称或描述包含"知乎"的卡片。按 <span class="kbd">Esc</span> 键或手动清空搜索框恢复到全部显示。
+        <strong>🔍 搜索本页的网站：</strong>在搜索框输入关键词（比如输入"知乎"），页面会只保留名称或描述包含"知乎"的卡片。按 <span class="kbd">Esc</span> 键恢复到全部显示。
+        <br><strong>📏 长文本自适应：</strong>输入长内容时搜索框会自动变高并<strong>自动换行</strong>（最多 10 行，超出后框内滚动），文本始终可见；<span class="kbd">Enter</span> 直接搜索、<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行。清空输入请按 <span class="kbd">Esc</span>。
       </div>
       <div class="tip">
         <strong>💡 常用站点区：</strong>你每点一个网站卡片，系统就记一次数。点得最多的几个会自动出现在"常用站点"区。不需要你特意收藏。
@@ -112,16 +116,22 @@
     <div class="card">
       <p>搜索框不只是用来过滤导航卡片的——它更是一个能切换多种搜索引擎的<strong>搜索聚合器</strong>。</p>
 
+      <h4>✅ 默认勾选哪几个引擎</h4>
+      <p>默认只显示这 <strong>13 个</strong>：<strong>必应、谷歌、秘塔AI（metaso）、Perplexity、Yandex、搜狗知乎、搜狗微信、Quora、Reddit、谷歌学术、微软学术、译中、译英</strong>；其余（百度、搜狗、谷歌学术②、XMOL、北航外文、百度学术、抖音、小红书、哔哩哔哩、知乎、微博、GitHub、百度地图、WikiHow、Sci-Hub、KipHub、维基百科）默认隐藏，想要哪个去设置面板 → "搜索引擎显示"点成蓝色即可。</p>
+      <p>新增的 <strong>🧠秘塔AI</strong>（metaso.cn，国产 AI 搜索，免登录即可用）、<strong>🔎Perplexity</strong>（perplexity.ai，AI 答案引擎，紧挨在秘塔后面）与 <strong>🟠Reddit</strong>（Reddit 站内搜索）已加入引擎栏；都支持回车直搜。</p>
+
       <h4>🔀 切换搜索引擎（三种方式）</h4>
       <div class="step"><strong>方式一：鼠标点</strong> — 点搜索框下面你想用的引擎就行了，选中的会高亮。</div>
-      <div class="step"><strong>方式二：按 <span class="kbd">Ctrl</span> 键</strong> — 单独按一下 Ctrl（不要同时按别的），引擎会按搜索框下面的<strong>显示顺序</strong>挨个切换。只会在你开启的那些引擎之间循环。</div>
+      <div class="step"><strong>方式二：按 <span class="kbd">Ctrl</span> / <span class="kbd">Alt</span> 键</strong> — 单独按一下 Ctrl（不要同时按别的），引擎按搜索框下面的<strong>显示顺序</strong>切到<strong>下一个</strong>；单独按一下 Alt，切到<strong>上一个</strong>（到头会循环）。只会在你开启的那些引擎之间轮换。</div>
       <div class="step"><strong>方式三：按 <span class="kbd">F1</span> ~ <span class="kbd">F12</span></strong> — F1 选搜索框下面第一个可用引擎，F2 选第二个……也是按<strong>显示顺序</strong>。</div>
 
       <h4>🔎 执行搜索</h4>
       <p>在搜索框里打好你要搜的关键词 → 按 <strong>回车键</strong> 或点旁边的"搜索"按钮 → 浏览器开新标签页用你选的引擎搜索。</p>
+      <p>提交搜索后，输入框里的关键词会<strong>自动清空</strong>（顶部悬浮搜索条一起清空），页面上的筛选也同时复位，方便你接着搜下一个词——想换关键词直接打就行，不用手动删。</p>
       <p>网页往下滚一段距离后，页面顶部会浮出一个<strong>悬浮搜索条</strong>，显示当前选中的搜索引擎名字，随时可以搜，不用滚回顶部。</p>
 
       <div class="tip"><strong>💡 怎么让某个引擎出现/消失：</strong>去设置面板 → "搜索引擎显示"，点它对应的圆角按钮。蓝色 = 显示，灰色 = 隐藏。新导入的自定义引擎默认是隐藏的，记得去打开。</div>
+      <div class="tip"><strong>🌐 没有科学上网时会自动少几个：</strong>默认勾选的 13 个里，<strong>谷歌、Perplexity、Quora、Reddit、谷歌学术</strong> 需要科学上网。当"需 VPN 站点的显示方式"判定为当前上不了外网时，这 5 个会自动从引擎栏里消失（其余 8 个不受影响，仍可正常搜索）；有 VPN 时会自动回来。若此刻正选着被隐藏的引擎，会自动切回必应。不想让它自动判断，可在设置面板把显示方式改成"一直显示"或"一直隐藏"。</div>
     </div>
 
     <!-- 三 -->
@@ -132,8 +142,10 @@
         <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">K</span></td><td>光标跳到搜索框</td></tr>
         <tr><td><span class="kbd">Alt</span> + <span class="kbd">S</span></td><td>光标跳到搜索框并全选（方便直接打字替换）</td></tr>
         <tr><td><span class="kbd">Esc</span></td><td>清空搜索框，恢复显示全部导航卡片</td></tr>
-        <tr><td>单独按 <span class="kbd">Ctrl</span></td><td>按显示顺序切到下一个可用搜索引擎</td></tr>
+        <tr><td>单独按 <span class="kbd">Ctrl</span></td><td>按显示顺序切到<strong>下一个</strong>可用搜索引擎</td></tr>
+        <tr><td>单独按 <span class="kbd">Alt</span></td><td>按显示顺序切到<strong>上一个</strong>可用搜索引擎</td></tr>
         <tr><td><span class="kbd">F1</span> ~ <span class="kbd">F12</span></td><td>按显示顺序选择第1~第12个可用搜索引擎</td></tr>
+        <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">S</span></td><td>打开 / 关闭弹出式设置面板（Mac 用 <span class="kbd">⌘</span> + <span class="kbd">S</span>）</td></tr>
       </table>
       <div class="warn"><strong>⚠️ 笔记本用户注意：</strong>有些笔记本的 F1~F12 默认是调亮度/音量，需要同时按住 <span class="kbd">Fn</span> 键才行。或者在系统设置里改为"标准F1-F12"。</div>
     </div>
@@ -539,10 +551,10 @@ baidumap wikihow scihub kiphub msacademic custom</code></pre>
     <!-- 十六 -->
     <h2 id="catsort">十六、分类排序模式</h2>
     <div class="card">
-      <p>左侧导航栏（手机是底部 Tab 栏）里分类的先后顺序，有两种模式，在 <strong>设置面板 → 🔀 分类排序模式</strong> 里切换：</p>
+      <p>左侧导航栏（手机是底部 Tab 栏）里分类的先后顺序：<strong>自定义分类永远在最前</strong>；默认分类按你在编辑器里定的顺序显示（当前默认：综合导航 → AI大模型 → 北航网站 → 学术检索 → 技术与交流 → 地图天气 → 在线工具 → 翻译工具 → 在线学习 → 影音娱乐 → 办公协作 → 云盘与文件 → 数据与统计 → 编程教程 → 航空与科普 → 传统文化 → 导航网站 → 镜像网站 → 云服务器），左栏与主页面<strong>逐项一致</strong>。有两种模式可选：</p>
       <table>
         <tr><th>模式</th><th>行为</th></tr>
-        <tr><td><strong>固定顺序</strong>（默认）</td><td>顺序完全由你定：点分类<strong>不会</strong>改变顺序。适合"位置要固定、形成肌肉记忆"。</td></tr>
+        <tr><td><strong>固定顺序</strong>（默认）</td><td>顺序完全由你定：点击分类<strong>只跳转，绝对不会改变顺序</strong>（顺序与保存值都不变）。适合"位置要固定、形成肌肉记忆"。</td></tr>
         <tr><td><strong>按使用时间排序</strong></td><td>你点过哪个分类，它就自动跳到最前面，越常用的越靠上。适合"我常去的分类想随手就能点到"。</td></tr>
       </table>
 
@@ -552,13 +564,86 @@ baidumap wikihow scihub kiphub msacademic custom</code></pre>
       <div class="step">
         <strong>🔁 从"按使用时间排序"切到"固定顺序"时：</strong>会把你<strong>当前看到的顺序</strong>固定下来作为起点，不会跳回某个预设顺序。
       </div>
-      <div class="tip">
-        在"按使用时间排序"模式下，分类列表是灰色只读的（因为顺序由点击决定）。想手动排布，切到"固定顺序"。
+      <div class="step">
+        <strong>🔒 关于"固定顺序"：</strong>这个模式下点左侧分类只是跳到该分类，<strong>列表顺序不会动</strong>；顺序只由编辑器里的 ↑↓ 决定，改完一直保留。
+      </div>
+      <div class="step">
+        <strong>🖊️ 在哪里改：</strong>设置面板 → 打开编辑器 → <strong>🧭 分类排序</strong> 标签页（可显示自定义分类名称、支持 ↑↓ 调序）。
       </div>
     </div>
 
     <!-- 十七 -->
-    <h2 id="faq">十七、常见问题</h2>
+    <h2 id="vpn">十七、需 VPN 站点与三种显示方式</h2>
+    <div class="card">
+      <p>搜索引擎仍是原来那一排标签按钮，点一下切换、按回车搜索。</p>
+      <p>有些站点（Google、YouTube、X、Quora、维基百科等）需要科学上网才能访问。导航页会给这类站点打上一个小角标 <span class="kbd">VPN</span>，并且提供三种显示方式（设置面板 → 🌐 需 VPN 站点的显示方式）：</p>
+      <table>
+        <tr><th>方式</th><th>行为</th></tr>
+        <tr><td><strong>自动判断</strong>（默认）</td><td>页面加载后会在后台探测 <code>google.com</code> 与 <code>quora.com</code> 的图标图片（各最多等 2.5 秒，结果缓存 10 分钟）。<strong>两个都失败</strong>才隐藏需 VPN 的站点；只要有一个成功、或探测本身异常，都按「显示」处理，避免误杀。用图片加载判断而非 HTTP 状态，是因为部分网络的拦截页会返回假 200，图片解码可识破。按 F12 可在控制台看到探测结果。</td></tr>
+        <tr><td><strong>一直显示</strong></td><td>所有站点都显示，需 VPN 的站点右上角带小角标提示。</td></tr>
+        <tr><td><strong>一直隐藏</strong></td><td>需 VPN 的站点与对应搜索引擎一律不显示，不做任何探测（最快）。</td></tr>
+      </table>
+      <p>这三种模式是<strong>互斥单选</strong>，任何时候只有一个生效。隐藏后：某个分类里的站点全被隐藏时，该分类会自动收起；带 VPN 属性的搜索引擎也会从引擎栏里消失，若当前正选着它，会自动切回第一个可用引擎。</p>
+      <p><strong>哪些站点被标了 VPN？</strong>全部经过你本机网络（北京家宽，无代理）的实测核实——判据是 DNS 污染特征 + TCP/TLS 真实握手 + 浏览器实际打开，三关都过才不标。<strong>共 50 个</strong>：Google 全家（搜索/学术/翻译/地图/地球/Gmail/Drive/Gemini/Colab）、维基百科（中/英/文库/词典）、ChatGPT、Claude、YouTube、X (Twitter)、Quora、Reddit、Medium、Netflix、TikTok、Twitch、Vimeo、Spotify、The Roku Channel、BBC Learning English、GitHub、Docker Hub、Hugging Face、Kaggle、DuckDuckGo、Startpage、Sci-Hub、Internet Archive、ProtonMail、Dropbox、MEGA、OneDrive、OpenStreetMap、V2EX、Hacker News、APKPure、APKMirror、APKCombo、Uptodown、F-Droid、APKMonk、Octave Online 等。你实测可直连的 typewords、多邻国、TED、微软学术、XMOL、Yandex、谷歌学术②、KipHub、WikiHow 等已全部改为不标。名单可在编辑器逐条改。</p>
+      <p><strong>本轮（最新一次全站实测）新补的标记：</strong>APKPure、APKMirror、APKCombo、Uptodown、F-Droid、APKMonk（安卓 APK 镜像，国内直连超时）、V2EX、Hacker News、OpenStreetMap、Vimeo、Spotify、The Roku Channel、BBC Learning English、OneDrive。同一轮实测确认<strong>国内可直连、因此不标</strong>的有：squoosh、Carbon、jamovi、Datawrapper、Flourish、WolframAlpha、SageMath Cell、draw.io、regex101、TinyPNG、Photopea、ECharts、Zenodo 等。</p>
+      <p>搜索引擎里 Quora、维基百科 也标了需 VPN；<strong>译英 / 译中</strong> 两个新引擎走必应翻译，国内可直连——在搜索框输入句子回车，直接跳到翻译结果页。</p>
+      <div class="tip">
+        哪个站点算「需 VPN」是可以在<strong>编辑器</strong>里逐个改的（见第十九节），不必改代码。
+      </div>
+    </div>
+
+    <!-- 十八 -->
+    <h2 id="newsites">十八、自定义分类 / 返回顶部 / 单分类模式</h2>
+    <div class="card">
+      <h4>📌 自定义分类永远排在最前</h4>
+      <p>你自己新建的分类（在编辑器里「+ 新建分类」）在左侧栏和主页面里都<strong>默认排在最前面</strong>，并且左侧栏顺序与主页面顺序<strong>逐项一致</strong>。点击任意分类会把它提到同类分组的最前面：自定义分类在前，默认分类随后，两者不会互相穿插。</p>
+
+      <h4>⬆️ 返回顶部</h4>
+      <p>页面<strong>右下角</strong>，意见反馈按钮<strong>正上方</strong>有一个 <strong>↑</strong> 按钮（已在右边缘留出空间，不会和右侧小工具条重叠）；向下滚动超过一屏后才会淡入，点一下平滑回到顶部。</p>
+
+      <h4>📊 在线数据处理工具（在线工具 分类）</h4>
+      <p>「在线工具」分类新增 10 个免费的数据处理站点：<strong>ECharts在线编辑</strong>（图表库官方在线编辑与示例）、<strong>Google Colab</strong>（云端 Python 笔记本，需VPN）、<strong>Octave Online</strong>（免费在线 MATLAB 兼容计算，需VPN）、<strong>SageMath Cell</strong>（在线数学/符号计算）、<strong>SPSSAU</strong>（在线统计分析）、<strong>jamovi</strong>（免费云端统计）、<strong>WolframAlpha</strong>（计算知识引擎）、<strong>Datawrapper</strong>（免注册数据图表）、<strong>Flourish</strong>（动态数据可视化）、<strong>百度飞桨 AI Studio</strong>（免费 GPU Python 笔记本）。</p>
+      <p><strong>「在线工具」整类已逐个实测：</strong>只有 <strong>Google Colab</strong> 与 <strong>Octave Online</strong> 国内直连打不开（已标 VPN）；其余 23 个（tool.lu、LZL在线工具、LaTeXLive、ECharts、SageMath Cell、SPSSAU、jamovi、WolframAlpha、Datawrapper、Flourish、飞桨 AI Studio、draw.io、单位换算、JSON.cn、Aconvert、Markdown、Photopea、TinyPNG、草料二维码、Regex101、Squoosh、Carbon 等）实测都能直连；它们只是偶尔引用 Google 字体/统计脚本，页面本身可以正常打开，不会因为字体被墙就打不开。</p>
+
+      <h4>⭐ 收藏网址（按你的使用频次排序）</h4>
+      <p>每张网址卡片<strong>右上角有一颗星星 ★</strong>（在 VPN 角标旁边，两者不会重叠）：点一下星星变黄即收藏，再点一下取消。收藏的网址会自动聚合到左侧栏最顶上的 <strong>⭐ 收藏网址</strong> 分类里（比自定义分类还靠前，左栏与主页面都置顶），点击那里就能直达常用站点。</p>
+      <p>收藏区里的站点<strong>按你自己点开的次数从高到低排</strong>：点得越多的越靠前，点一次就会自动往上走；次数相同则保持收藏顺序（最近收藏的在前）。点星星本身不计数，所以在收藏区里点开哪个网站，那个网站下次就排得更靠前。</p>
+      <p>页面加载后<strong>默认「打开」的就是收藏网址</strong>：左侧栏与手机 Tab 的高亮都落在它身上；如果你开了「仅显示左侧选中的分类」，打开页面时显示的也正是收藏网址（没有收藏时仍然默认高亮综合导航）。</p>
+      <p>收藏数据存在本机浏览器，会随"导出配置"一起带走。不需要这个分类时：设置面板 → 📂 分类显示 → 把「⭐ 收藏网址」点灰即可整体隐藏（星星本身还在各卡片上）。</p>
+
+      <h4>🗂️ 只看一个分类</h4>
+      <p>设置面板 → 🗂️ 主页面显示范围 → 打开「仅显示左侧选中的分类」，主页面就只显示当前选中分类的网站，点左侧栏其他分类即切换。<strong>默认关闭。</strong></p>
+      <p>这个模式下仍然可以正常搜索：在搜索框里输入关键词时，会<strong>自动跨全部分类</strong>显示匹配结果；清空搜索框后恢复只显示选中分类。</p>
+
+      <h4>🧰 快捷工具：每个工具单独选左 / 右</h4>
+      <p>打开设置 → 🖊️ 编辑器 → <strong>🔗 快捷工具</strong> 标签页。内置工具和自定义工具<strong>每一行都有「⬅️ 左 / ➡️ 右」</strong>两个按钮：点哪个，这个工具就显示在页面的哪一侧，默认靠右。</p>
+      <p>左右两侧各自显示各自的工具，<strong>同一个工具只会出现在一侧、不会重复</strong>；左侧有工具时页面内容会自动让位，窄屏（手机）下只显示右侧那条，避免挤占屏幕。</p>
+
+      <h4>⌨️ Ctrl + S 打开设置</h4>
+      <p>在页面上按 <span class="kbd">Ctrl</span> + <span class="kbd">S</span>（Mac 为 <span class="kbd">⌘</span> + <span class="kbd">S</span>）即可打开弹出式设置面板，再按一次关闭；这个快捷键会阻止浏览器默认的「保存网页」。</p>
+    </div>
+
+    <!-- 十九 -->
+    <h2 id="editordeep">十九、编辑器进阶：站点显隐、需VPN、排序</h2>
+    <div class="card">
+      <p>打开设置 → 🖊️ 编辑器，可以逐个站点精细管理：</p>
+
+      <h4>✓ 每个站点都能「显示 / 不显示」</h4>
+      <p>每个站点行最左边的勾选框控制<strong>显示</strong>：取消勾选 = 暂时隐藏这个站点（首页上不出现，但配置里还留着），随时可以勾回来。注意这和右边的 <strong>✕ 删除</strong>不同：删除会把自定义站点从配置里移除，默认站点则记录为「隐藏」。</p>
+
+      <h4>🌐 「VPN」勾选框</h4>
+      <p>每个站点行新增一列 <strong>VPN</strong>：勾上表示这个站点需要科学上网。首页会给它显示 VPN 角标，并在「需 VPN 站点的显示方式」为自动判断/一直隐藏时按规则隐藏。默认值我已经按站点性质预先标好了（如 Google、YouTube、X、Quora、维基百科、Sci-Hub、Kaggle 等），你随时可以逐条改。</p>
+
+      <h4>↕️ 站点排序</h4>
+      <p>每个站点行右侧多了 <strong>↑</strong> / <strong>↓</strong> 按钮，可以把常用站点往前挪；顺序会保存并影响首页显示顺序。</p>
+
+      <h4>🧭 新的「分类排序」标签页</h4>
+      <p>编辑器顶部多了 <strong>🧭 分类排序</strong> 标签页，里面可以：选择排序模式（固定顺序 / 按使用时间排序）、用 ↑↓ 调整每个分类的位置（<strong>显示的是分类名称，自定义分类会标出「自定义」</strong>）、以及开关「仅显示选中分类」和「需 VPN 站点的显示方式」。改完点右上角 💾 保存即可。</p>
+      <div class="tip">排序与这些开关同样会随「导出 JSON」一起带走，换电脑导入后保持一致。</div>
+    </div>
+
+    <!-- 二十 -->
+    <h2 id="faq">二十、常见问题</h2>
     <div class="card">
       <h4>❓ 编辑器改完保存了，主页刷新没变化？</h4>
       <p>试试硬刷新（<span class="kbd">Ctrl</span> + <span class="kbd">F5</span>），或者先关掉主页标签页再重新打开。如果还不生效，检查一下是不是在浏览器隐身模式下操作（隐身窗口的 localStorage 是隔离的）。</p>

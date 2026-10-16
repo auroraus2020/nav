@@ -16,6 +16,7 @@ INJECT = r'''
 <script>
 (function(){
   var preset = __PRESET__;
+  var FAV_PAYLOAD = JSON.stringify({favorites: ['https://www.google.com'], favClicks: {'https://www.google.com': 7}});   // processImportJson 收的是 JSON 文本
   window.addEventListener('load', function(){
     var out = [];
     var stage = sessionStorage.getItem('__import_stage') || '0';
@@ -24,6 +25,14 @@ INJECT = r'''
       window.alert = function(){};  // headless 下屏蔽导入成功弹窗
       try { processImportJson(preset); } catch(e) { out.push('[FAIL] import_throw: ' + e.message); }
       // processImportJson 内部 alert 在 headless 下无副作用；随后它会 reload
+      document.getElementById('__out').textContent = out.join('\n');
+      return;
+    }
+    if (stage === '1') {
+      // 预设导入完成 → 再导入一份带「收藏网址 + 使用频次」的配置，验证导入能带走收藏
+      sessionStorage.setItem('__import_stage', '2');
+      window.alert = function(){};
+      try { processImportJson(FAV_PAYLOAD); } catch(e) { out.push('[FAIL] favImport_throw: ' + e.message); }
       document.getElementById('__out').textContent = out.join('\n');
       return;
     }
@@ -46,10 +55,16 @@ INJECT = r'''
     var order = JSON.parse(localStorage.getItem('nav_cat_order') || '[]');
     eq('orderHasTradition', order.indexOf('cat-tradition') >= 0, true);
     eq('orderHead', order.slice(0, 3).join(','), 'cat-general,cat-ai,cat-buaa');
-    eq('catOrderMatchesSidebar', sidebarIdsJoined(), order.join(','));
+    eq('catOrderMatchesSidebar',
+       sidebarIdsJoined().replace('cat-favorites,', ''),
+       order.join(','));
     eq('noCustomTradition', (localStorage.getItem('nav_custom_cats') || '').indexOf('传统文化') >= 0, false);
     eq('wpsRenderedOnce', (document.getElementById('rtEdge').innerHTML.match(/365\.kdocs\.cn/g) || []).length, 1);
     eq('traditionCards', document.querySelectorAll('#cat-tradition .nav-card').length, 19);
+    // 第二轮导入带来的收藏与频次
+    eq('favImported', localStorage.getItem('nav_fav'), '["https://www.google.com"]');
+    eq('favClicksImported', JSON.parse(localStorage.getItem('nav_fav_clicks') || '{}')['https://www.google.com'], 7);
+    eq('favCardRendered', document.querySelectorAll('#cat-favorites .nav-card').length, 1);
     function sidebarIdsJoined() {
       var ids = [];
       document.querySelectorAll('#sidebar a[href^="#cat-"]').forEach(function(a) { ids.push(a.getAttribute('href').replace('#','')); });
@@ -79,8 +94,8 @@ def main():
         page = os.path.join(tmp, 'index.html')
         with io.open(page, 'w', encoding='utf-8') as f:
             f.write(html)
-        cmd = [CHROME, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
-               '--allow-file-access-from-files', '--virtual-time-budget=9000',
+        cmd = [CHROME, '--headless=new', '--disable-gpu', '--no-first-run', '--window-size=1600,1200', '--no-default-browser-check',
+               '--allow-file-access-from-files', '--virtual-time-budget=30000',
                '--user-data-dir=' + os.path.join(tmp, 'prof'),
                '--dump-dom', 'file:///' + page.replace('\\', '/')]
         r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=300)

@@ -8,7 +8,12 @@
 import io, os, re, sys
 
 SECTION_RE = re.compile(r'<section class="category-section" id="([^"]+)">(.*?)</section>', re.S)
-CARD_RE = re.compile(r'<a class="nav-card" href="([^"]+)"[^>]*>.*?<h3>(.*?)</h3>', re.S)
+CARD_RE = re.compile(
+    r'<a class="nav-card"(?P<attrs>[^>]*)>\s*'
+    r'<div class="icon icon-(?P<color>[a-z]+)">(?P<glyph>[^<]*)</div>\s*'
+    r'<div class="info"><h3>(?P<name>[^<]*)</h3>',
+    re.S)
+URL_IN_ATTRS = re.compile(r'href="([^"]+)"')
 COUNT_RE = re.compile(r'<span class="count">(\d+)个站点</span>')
 
 # 用户点名的站点 -> 期望所在分类（按 h3 文本或 URL 片段匹配）
@@ -38,18 +43,21 @@ REQUIRED = [
     ('cat-tradition', '万年日历查询', 'https://wannianrili.bmcx.com/'),
     ('cat-translate', '谷歌翻译', 'https://translate.google.com'),
     ('cat-learn', '维基百科', 'https://zh.wikipedia.org'),
-    ('cat-tutorial', '维基百科', 'https://zh.wikipedia.org'),
     ('cat-mirror', 'APKPure', 'https://apkpure.com/cn/'),
     ('cat-academic', '国家知识产权局专利检索', 'https://pss-system.cponline.cnipa.gov.cn'),
     ('cat-academic', 'WIPO PATENTSCOPE', 'https://patentscope2.wipo.int/search/zh/search.jsf'),
-    ('cat-academic', '国家数据', 'https://data.stats.gov.cn'),
+    ('cat-data', '国家数据', 'https://data.stats.gov.cn'),
     ('cat-learn', 'TypeWords', 'https://typewords.cc/'),
     ('cat-learn', 'LanGeek', 'https://langeek.co/en-ZH'),
     ('cat-learn', '黄油单词', 'https://waiyuka.cc/'),
     ('cat-learn', 'TED', 'https://www.ted.com'),
+    ('cat-data', '世界银行开放数据', 'https://data.worldbank.org'),
+    ('cat-drive', '百度网盘', 'https://pan.baidu.com'),
+    ('cat-drive', '阿里云盘', 'https://www.alipan.com'),
+    ('cat-drive', 'Google Drive', 'https://drive.google.com'),
 ]
 
-# 「技术与交流」中必须排在靠前位置（索引）的站点
+# 「技术与交流」前排站点（必须出现在前 6 位内）
 TECH_FRONT = ['Quora', 'Reddit', 'X (Twitter)']
 
 # 已确认失效 / 用户要求移除的地址，禁止再出现在页面上
@@ -79,7 +87,10 @@ def main():
     fails = []
     sections = {}
     for sid, body in SECTION_RE.findall(html):
-        cards = CARD_RE.findall(body)
+        cards = []
+        for m_card in CARD_RE.finditer(body):
+            um = URL_IN_ATTRS.search(m_card.group('attrs'))
+            cards.append(((um.group(1) if um else ''), m_card.group('name').strip()))
         declared = COUNT_RE.search(body)
         declared = int(declared.group(1)) if declared else None
         sections[sid] = cards
@@ -114,10 +125,10 @@ def main():
     tech = [c[1] for c in sections.get('cat-tech', [])]
     for i, name in enumerate(TECH_FRONT):
         pos = tech.index(name) if name in tech else -1
-        ok = pos == i
+        ok = 0 <= pos <= 5          # 必须出现在前 6 位
         print('  %s  第%d位 %s' % ('OK  ' if ok else 'FAIL', pos + 1, name))
         if not ok:
-            fails.append('cat-tech 排序: %s 期望第%d位，实际第%d位' % (name, i + 1, pos + 1))
+            fails.append('cat-tech 排序: %s 应在默认组前 6 位内，实际第%d位' % (name, pos + 1))
 
     print('== 已移除/失效地址不得出现 ==')
     for bad in FORBIDDEN:

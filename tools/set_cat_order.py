@@ -14,25 +14,27 @@ import io, json, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX = os.path.join(ROOT, 'index.html')
 
-# 用户指定：综合导航/AI大模型/北航网站/地图天气/学术检索/影音娱乐/技术与交流/学习提升/学习教程/翻译工具/…
+# 用户指定（2026-10-16）：自定义类别置顶（由 getFullCatOrderToday 保证），
+# 默认类别顺序如下；导航网站/镜像网站未点名，排在传统文化之后、云服务器之前
 NEW_ORDER = [
     'cat-general',       # 综合导航
     'cat-ai',            # AI大模型
     'cat-buaa',          # 北航网站
-    'cat-map',           # 地图天气
     'cat-academic',      # 学术检索
-    'cat-entertainment', # 影音娱乐
     'cat-tech',          # 技术与交流
-    'cat-learn',         # 学习提升
-    'cat-tutorial',      # 学习教程
-    'cat-aero',          # 航空与科普
+    'cat-map',           # 地图天气
+    'cat-tool',          # 在线工具
     'cat-translate',     # 翻译工具
-    # —— 以下为用户未点名的分类，按相关性接续，可随时再调 ——
-    'cat-navweb',        # 导航网站
-    'cat-efficiency',    # 效率提升
-    'cat-tool',          # 效率工具
+    'cat-learn',         # 在线学习
+    'cat-entertainment', # 影音娱乐
+    'cat-efficiency',    # 办公协作（用户称"在线协作"）
+    'cat-drive',         # 云盘与文件
+    'cat-data',          # 数据与统计
+    'cat-tutorial',      # 编程教程
+    'cat-aero',          # 航空与科普
     'cat-tradition',     # 传统文化
-    'cat-mirror',        # 镜像网站
+    'cat-navweb',        # 导航网站（未点名，按相关性接续）
+    'cat-mirror',        # 镜像网站（未点名，按相关性接续）
     'cat-cloud',         # 云服务器
 ]
 
@@ -107,7 +109,8 @@ def main():
     # 派生 data.js
     r = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'sync_data_js.py')],
                        capture_output=True, text=True, encoding='utf-8', errors='replace')
-    print(r.stdout.strip().splitlines()[0] if r.stdout else r.stderr[-300:])
+    first = r.stdout.strip().splitlines()[0] if r.stdout else r.stderr[-300:]
+    print('sync_data_js: %s' % first.encode('ascii', 'replace').decode('ascii'))
     return 0
 
 

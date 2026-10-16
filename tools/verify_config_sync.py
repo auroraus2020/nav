@@ -6,7 +6,12 @@ import io, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECTION_RE = re.compile(r'<section class="category-section" id="([^"]+)">(.*?)</section>', re.S)
-CARD_RE = re.compile(r'<a class="nav-card" href="([^"]+)"[^>]*>.*?<h3>(.*?)</h3>', re.S)
+CARD_RE = re.compile(
+    r'<a class="nav-card"(?P<attrs>[^>]*)>\s*'
+    r'<div class="icon icon-(?P<color>[a-z]+)">(?P<glyph>[^<]*)</div>\s*'
+    r'<div class="info"><h3>(?P<name>[^<]*)</h3>',
+    re.S)
+URL_IN_ATTRS = re.compile(r'href="([^"]+)"')
 NAME_RE = re.compile(r'<h2>(.*?)</h2>')
 ICON_RE = re.compile(r'<img src="([^"]+)"')
 
@@ -24,11 +29,15 @@ def main():
 
     html_cats = []
     for sid, body in SECTION_RE.findall(html):
+        sites = []
+        for m_card in CARD_RE.finditer(body):
+            um = URL_IN_ATTRS.search(m_card.group('attrs'))
+            sites.append((m_card.group('name').strip(), um.group(1) if um else ''))
         html_cats.append({
             'id': sid,
             'name': NAME_RE.search(body).group(1),
             'icon': ICON_RE.search(body).group(1),
-            'sites': [(c[1], c[0]) for c in CARD_RE.findall(body)],
+            'sites': sites,
         })
 
     fails = []

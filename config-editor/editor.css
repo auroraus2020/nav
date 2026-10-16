@@ -96,3 +96,13 @@ a{color:var(--accent);text-decoration:none}
 .site-table{font-size:.7rem}
 .site-table input[type=text]{font-size:.7rem}
 }
+
+/* 分类排序面板 */
+.order-list{display:flex;flex-direction:column;gap:.3rem;margin-top:.5rem}
+.order-item{display:flex;align-items:center;gap:.4rem;padding:.28rem .5rem;border:1px solid var(--rule);border-radius:8px;background:var(--bg);font-size:.8rem}
+.order-item .order-idx{width:1.6rem;color:var(--muted);font-size:.72rem}
+.order-item .order-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-item .badge{font-size:.62rem;padding:.05rem .3rem;border-radius:999px;background:rgba(37,99,235,.12);color:var(--accent)}
+td.col-vpn{width:44px;text-align:center}
+td.col-actions{white-space:nowrap;text-align:right}
+td.col-actions .btn.small{padding:.1rem .35rem;font-size:.7rem;margin-left:2px}

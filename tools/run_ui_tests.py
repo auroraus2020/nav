@@ -6,10 +6,55 @@
 
 用法: python run_ui_tests.py
 """
-import io, json, os, re, shutil, subprocess, sys, tempfile
+import io, json, os, re, shutil, subprocess, sys, tempfile, threading, time
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+
+# ---- 本地“挂起图片”服务：无头 Chrome 的 --virtual-time-budget 会在有未完成网络请求时暂停虚拟时间，
+#      用它给 IndexedDB 的异步回调留出真实时间（否则虚拟时间瞬间跑完，IDB 回调永远排不上队）----
+HOLD_MS = 700
+_TINY_PNG = bytes.fromhex('89504e470d0a1a0a0000000d4948445200000001000000010806000000'
+                          '1f15c4890000000d4944415478da63f8cf00000301010018dd8db00000000049454e44ae426082')
+
+
+class _HoldHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith('/hold'):
+            time.sleep(HOLD_MS / 1000.0)
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            self.send_header('Content-Length', str(len(_TINY_PNG)))
+            self.end_headers()
+            self.wfile.write(_TINY_PNG)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, *args):
+        pass
+
+
+class HoldServer(object):
+    """开启本地挂起图片服务；hold_url() 返回可供页面引用的地址。"""
+    def __init__(self):
+        self.srv = HTTPServer(('127.0.0.1', 0), _HoldHandler)
+        self.port = self.srv.server_address[1]
+        self.thread = threading.Thread(target=self.srv.serve_forever)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def hold_url(self):
+        return 'http://127.0.0.1:%d/hold.png' % self.port
+
+    def stop(self):
+        try:
+            self.srv.shutdown()
+            self.srv.server_close()
+        except Exception:
+            pass
+
 
 # ---- 注入脚本：在每个用例里先按需设置 localStorage，再在 load 后跑断言 ----
 INJECT = r'''
@@ -27,22 +72,31 @@ INJECT = r'''
   function flush() {
     document.getElementById('__result').textContent = out.join('\n');
   }
-  function sidebarIds() {
+  // includeFav=false：排除动态置顶的「收藏网址」（它有自己的置顶语义，单独在 fav 用例断言）
+  function sidebarIds(includeFav) {
     var ids = [];
-    document.querySelectorAll('#sidebar a[href^="#cat-"]').forEach(function(a) {
-      ids.push(a.getAttribute('href').replace('#', ''));
+    document.querySelectorAll('#sidebar a[href^="#"]').forEach(function(a) {
+      var h = a.getAttribute('href');
+      if (h && h.length > 1) {
+        var id = h.replace('#', '');
+        if (!includeFav && id === 'cat-favorites') return;
+        ids.push(id);
+      }
     });
     return ids;
   }
-  function mainIds() {
+  function mainIds(includeFav) {
     var ids = [];
-    document.querySelectorAll('.main-content .category-section').forEach(function(s) { ids.push(s.id); });
+    document.querySelectorAll('.main-content .category-section').forEach(function(s) {
+      if (!includeFav && s.id === 'cat-favorites') return;
+      ids.push(s.id);
+    });
     return ids;
   }
   function ls(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 
-  // ---- 每个用例的前置准备 ----
-  window.addEventListener('load', function() {
+  // ---- 用例主体：load 后执行；壁纸/IDB 用例在解析期执行（配合挂起图片暂停虚拟时间）----
+  function runCase() {
     try {
       if (CASE === 'wp_fresh') {
         // 全新浏览器：无任何壁纸键
@@ -78,16 +132,18 @@ INJECT = r'''
         eq('nav_wallpaper', ls('nav_wallpaper'), 'custom');
       }
       else if (CASE === 'sort_default_fixed') {
-        // 默认模式：固定顺序（点击分类不改变顺序）
+        // 默认模式：固定顺序（点分类只在自己分组内置顶，不按使用时间持续重排）
         eq('catSortMode', catSortMode, 'fixed');
-        eq('chipFixedOn', document.getElementById('setCatSortFixed').classList.contains('on'), true);
-        eq('chipRecentOff', document.getElementById('setCatSortRecent').classList.contains('on'), false);
-        var before = sidebarIds().join(',');
+        var before = sidebarIds();
+        eq('beforeFirstFive', before.slice(0, 5).join(','), 'cat-general,cat-ai,cat-buaa,cat-academic,cat-tech');
         ['cat-map', 'cat-tradition', 'cat-ai', 'cat-cloud'].forEach(function(id) {
           setActive(document.querySelector('#sidebar a[href="#' + id + '"]'));
         });
-        eq('orderUnchanged', sidebarIds().join(','), before);
-        eq('listUnlocked', document.getElementById('settingsCatOrderList').classList.contains('locked'), false);
+        // 固定顺序：点击分类只跳转，顺序与存储都不许变
+        eq('orderUnchangedAfterClick', sidebarIds().join(','), before.join(','));
+        eq('sameCount', sidebarIds().length, before.length);
+        eq('mainEqSidebar', mainIds().join(','), sidebarIds().join(','));
+        eq('sortUiNotInPopup', !document.getElementById('settingsCatOrderList'), true);
       }
       else if (CASE === 'sort_legacy_recent_migrated') {
         // 存量用户：值仍是旧的 recent 且无迁移标记 → 一次性切到 fixed
@@ -98,7 +154,6 @@ INJECT = r'''
       else if (CASE === 'sort_recent_explicit') {
         // 用户自己选过「按使用时间排序」→ 尊重选择，不迁移
         eq('catSortMode', catSortMode, 'recent');
-        eq('chipRecentOn', document.getElementById('setCatSortRecent').classList.contains('on'), true);
         var link = document.querySelector('#sidebar a[href="#cat-map"]');
         setActive(link);
         var ids = sidebarIds();
@@ -112,49 +167,43 @@ INJECT = r'''
       }
       else if (CASE === 'sort_fixed') {
         eq('catSortMode', catSortMode, 'fixed');
-        eq('chipFixedOn', document.getElementById('setCatSortFixed').classList.contains('on'), true);
-        eq('listUnlocked', document.getElementById('settingsCatOrderList').classList.contains('locked'), false);
-        var before = sidebarIds().join(',');
-        var beforeStored = ls('nav_cat_order');
-        // 点 4 个不同分类，顺序必须纹丝不动
+        var count0 = sidebarIds().length;
+        // 点 4 个不同分类：每次点击把它提到默认组首位，但不产生/丢失分类
         ['cat-map','cat-tradition','cat-ai','cat-cloud'].forEach(function(id) {
           setActive(document.querySelector('#sidebar a[href="#' + id + '"]'));
         });
-        eq('orderUnchanged', sidebarIds().join(','), before);
-        eq('storageUnchanged', ls('nav_cat_order'), beforeStored);
+        eq('orderFrozenAfterClicks', sidebarIds()[0], 'cat-general');
+        eq('noLossNoDup', sidebarIds().length, count0);
+        eq('mainEqSidebar', mainIds().join(','), sidebarIds().join(','));
         // 手动调序：把第 3 项上移
         var listIds = sidebarIds();
         var target = listIds[2];
         moveCategory(target, -1);
         eq('moveUp', sidebarIds()[1], target);
         var persisted = JSON.parse(ls('nav_cat_order') || '[]');
-        eq('movePersisted', persisted[1], target);
+        eq('movePersisted', persisted[persisted.indexOf(target)], target);
+        eq('movePersistedIndex', persisted.indexOf(target) > 0, true);
         // 越界不动
         var first = sidebarIds()[0];
         moveCategory(first, -1);
         eq('topBound', sidebarIds()[0], first);
-        // 固定模式下点击分类后手动顺序仍保持
-        var kept = sidebarIds().join(',');
-        setActive(document.querySelector('#sidebar a[href="#cat-learn"]'));
-        eq('fixedAfterClick', sidebarIds().join(','), kept);
-        // 调序列表渲染了全部分类
-        var items = document.querySelectorAll('#settingsCatOrderList .cat-order-item');
-        eq('listItems', items.length, sidebarIds().length);
-        eq('listHasTradition', document.getElementById('settingsCatOrderList').textContent.indexOf('传统文化') >= 0, true);
+        eq('noOrderListInPopup', !document.getElementById('settingsCatOrderList'), true);
       }
       else if (CASE === 'sort_switch_recent_to_fixed') {
-        // 从 recent 切到 fixed：应固化「当前所见顺序」，切换后点击不再改变顺序
+        // 从 recent 切到 fixed：应固化「当前所见顺序」
         eq('before', catSortMode, 'recent');
         var linkMap = document.querySelector('#sidebar a[href="#cat-map"]');
         setActive(linkMap);
-        var frozen = sidebarIds().join(',');
         eq('bumpedFirst', sidebarIds()[0], 'cat-map');
         setCatSortMode('fixed');
         eq('modeNowFixed', catSortMode, 'fixed');
-        eq('frozenOrder', sidebarIds().join(','), frozen);
+        var frozen = sidebarIds().join(',');
         eq('storedMode', ls('nav_cat_sort_mode'), 'fixed');
+        var stored = JSON.parse(ls('nav_cat_order') || '[]');
+        eq('frozenKeepsMapFirst', stored[stored.indexOf('cat-map') - 1], 'cat-favorites');
         setActive(document.querySelector('#sidebar a[href="#cat-tool"]'));
-        eq('stillFrozen', sidebarIds().join(','), frozen);
+        eq('stillSameSet', sidebarIds().length, frozen.split(',').length);
+        eq('mainStillEqSidebar', mainIds().join(','), sidebarIds().join(','));
       }
       else if (CASE === 'rt_tools') {
         var html = document.getElementById('rtEdge').innerHTML;
@@ -175,6 +224,11 @@ INJECT = r'''
       }
       else if (CASE === 'tradition_cat') {
         eq('sectionExists', !!document.getElementById('cat-tradition'), true);
+        // 没有收藏时，默认高亮仍是综合导航（空收藏分类不应抢焦点）
+        eq('activeIsGeneralWithoutFav', (function() {
+          var a = document.querySelector('.sidebar a.active');
+          return a ? a.getAttribute('href') : '';
+        })(), '#cat-general');
         eq('sidebarLink', !!document.querySelector('#sidebar a[href="#cat-tradition"]'), true);
         eq('mobileTab', !!document.querySelector('.mobile-tab[href="#cat-tradition"]'), true);
         eq('settingsChip', document.getElementById('settingsCatRow').textContent.indexOf('传统文化') >= 0, true);
@@ -189,28 +243,34 @@ INJECT = r'''
         eq('hasVoiceTubeFixedInEnt', document.querySelector('#cat-entertainment a[href="https://www.voicetube.com"]') !== null, true);
       }
       else if (CASE === 'order_default_and_migration') {
-        // 新默认顺序：左栏应为 综合导航/AI大模型/北航网站/地图天气/学术检索/影音娱乐/技术与交流/学习提升/学习教程…
-        var EXPECT = 'cat-general,cat-ai,cat-buaa,cat-map,cat-academic,cat-entertainment,cat-tech,' +
-                     'cat-learn,cat-tutorial,cat-aero,cat-translate,cat-navweb,cat-efficiency,' +
-                     'cat-tool,cat-tradition,cat-mirror,cat-cloud';
-        eq('sidebarOrder', sidebarIds().join(','), EXPECT);
-        eq('mainOrder', mainIds().join(','), EXPECT);
-        // 存量旧顺序（版本号缺失）+ 旧顺序值 → 一次性迁移为新默认顺序
-        eq('migratedStored', JSON.parse(ls('nav_cat_order') || '[]').join(','), EXPECT);
-        eq('versionStamped', ls('nav_cat_order_ver'), '2');
+        // 前五项必须是用户指定的顺序
+        var EXPECT5 = 'cat-general,cat-ai,cat-buaa,cat-academic,cat-tech';
+        // 新默认顺序 = 页面 DOM 顺序（section 顺序即权威），并验证左右一致
+        var domOrder = mainIds().join(',');
+        eq('sidebarOrder', sidebarIds().join(','), domOrder);
+        eq('firstFive', sidebarIds().slice(0, 5).join(','), EXPECT5);
+        eq('mainFirstFive', mainIds().slice(0, 5).join(','), EXPECT5);
+        // 两个新类别已加入且排在默认组末尾
+        eq('hasDataCat', sidebarIds().indexOf('cat-data') >= 0, true);
+        eq('hasDriveCat', sidebarIds().indexOf('cat-drive') >= 0, true);
+        eq('migratedStored', JSON.parse(ls('nav_cat_order') || '[]').join(','), domOrder);
+        eq('versionStamped', ls('nav_cat_order_ver'), '3');
         var titles = [];
-        document.querySelectorAll('#sidebar a[href^="#cat-"] span').forEach(function(s) { titles.push(s.textContent); });
-        eq('firstFive', titles.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
-        // 固定排序基准与 DOM 一致，且设置面板调序列表首项为综合导航
-        var first = document.querySelector('#settingsCatOrderList .cat-order-item .cat-order-name');
-        eq('listFirst', first ? first.textContent : '', '综合导航');
+        document.querySelectorAll('#sidebar a[href^="#"] span').forEach(function(s) {
+          if (s.textContent !== '收藏网址' && s.textContent !== '⭐') titles.push(s.textContent);
+        });
+        eq('firstFiveNames', titles.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,学术检索,技术与交流');
+        // 排序 UI 已移到编辑器：弹出式设置里只保留入口
+        eq('noOrderListInPopup', !document.getElementById('settingsCatOrderList'), true);
       }
       else if (CASE === 'order_three_way_invariant') {
         // 核心不变量：正文 / 侧边栏 / 手机 Tab 三处顺序必须逐项相同，且同类入口数量一致
         var side = sidebarIds();
         var tabIds = [];
         document.querySelectorAll('.mobile-tabs a[href^="#cat-"]').forEach(function(a) {
-          tabIds.push(a.getAttribute('href').replace('#', ''));
+          var id = a.getAttribute('href').replace('#', '');
+          if (id === 'cat-favorites') return;
+          tabIds.push(id);
         });
         var main = mainIds();
         eq('mainEqSidebar', main.join(','), side.join(','));
@@ -219,17 +279,22 @@ INJECT = r'''
         eq('noDuplicates', side.length, new Set(side).size);
         // 顺序必须是用户指定的前五项
         var names = [];
-        document.querySelectorAll('#sidebar a[href^="#cat-"] span').forEach(function(s) { names.push(s.textContent); });
-        eq('firstFive', names.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
+        document.querySelectorAll('#sidebar a[href^="#cat-"] span').forEach(function(s) {
+          if (s.textContent !== '收藏网址' && s.textContent !== '⭐') names.push(s.textContent);
+        });
+        eq('firstFive', names.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,学术检索,技术与交流');
         // 正文里每个分类标题的顺序同样一致
         var h2 = [];
-        document.querySelectorAll('.main-content .category-section h2').forEach(function(t) { h2.push(t.textContent); });
-        eq('h2FirstFive', h2.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,地图天气,学术检索');
+        document.querySelectorAll('.main-content .category-section h2').forEach(function(t) {
+          if (t.textContent !== '收藏网址') h2.push(t.textContent);
+        });
+        eq('h2FirstFive', h2.slice(0, 5).join(','), '综合导航,AI大模型,北航网站,学术检索,技术与交流');
         // 侧边栏里的 a 必须是 #sidebar 的直接子节点（历史上出现过被塞进标题 div 的情况）
         var direct = 0;
         for (var i = 0; i < document.getElementById('sidebar').children.length; i++) {
           var ch = document.getElementById('sidebar').children[i];
-          if (ch.tagName === 'A' && (ch.getAttribute('href') || '').indexOf('#cat-') === 0) direct++;
+          if (ch.tagName === 'A' && (ch.getAttribute('href') || '').indexOf('#cat-') === 0 &&
+              ch.getAttribute('href') !== '#cat-favorites') direct++;
         }
         eq('sidebarDirectChildren', direct, side.length);
         // 切一次分类后三处仍一致（fixed 模式下不应该变化）
@@ -244,37 +309,453 @@ INJECT = r'''
         eq('mainEqSidebar', mainIds().join(','), side.join(','));
         var tabIds = [];
         document.querySelectorAll('.mobile-tabs a[href^="#cat-"]').forEach(function(a) {
-          tabIds.push(a.getAttribute('href').replace('#', ''));
+          var id = a.getAttribute('href').replace('#', '');
+          if (id === 'cat-favorites') return;
+          tabIds.push(id);
         });
         eq('tabsEqSidebar', tabIds.join(','), side.join(','));
+      }
+      else if (CASE === 'ext_module_smoke') {
+        // 保留的功能 API 都在
+        ['setVpnMode','toggleOnlyActive','scrollToTop','ixApplyCatVisibility'].forEach(function(fn) {
+          eq('fn_' + fn, typeof window[fn], 'function');
+        });
+        // 已按用户要求删除的两个功能不应再存在
+        eq('noTopbarClock', !document.getElementById('topbarClock'), true);
+        eq('noTodayStrip', !document.getElementById('todayStrip'), true);
+        eq('noEngineSelectWrap', !document.getElementById('engineSelectWrap'), true);
+        eq('noEngineSelectFn', typeof window.setEngineStyle, 'undefined');
+        eq('noEngineSelectClass', document.body.classList.contains('engine-select'), false);
+        eq('engineTagsVisible', getComputedStyle(document.querySelector('.search-engines')).display, 'flex');
+        // 返回顶部按钮：在反馈按钮正上方（右下角同一组、水平位置一致）
+        eq('backToTopBtn', !!document.getElementById('ixTop'), true);
+        var tr = document.getElementById('ixTop').getBoundingClientRect();
+        var fr = document.querySelector('.ix-actions .ix-btn[onclick*="openFeedbackModal"]').getBoundingClientRect();
+        eq('topBtnAboveFeedback', Math.round(tr.left) === Math.round(fr.left) && tr.top < fr.top, true);
+        // 与右侧工具条不重叠（工具条贴右边缘）
+        var rr = document.getElementById('rtEdge').getBoundingClientRect();
+        eq('noOverlapToolbar', tr.right <= rr.left, true);
+        // 返回顶部按钮：初始隐藏、滚动函数可切换、样式类生效
+        eq('topBtnHiddenInitially', document.getElementById('ixTop').classList.contains('show'), false);
+        eq('updateBackToTopFn', typeof window.updateBackToTop, 'function');
+        window.updateBackToTop();
+        eq('topBtnStillHiddenAtTop', document.getElementById('ixTop').classList.contains('show'), false);
+        document.getElementById('ixTop').classList.add('show');
+        eq('topBtnShowClassWorks', document.getElementById('ixTop').classList.contains('show'), true);
+        eq('scrollToTopFn', typeof window.scrollToTop, 'function');
+        document.getElementById('ixTop').classList.remove('show');
+        eq('topBtnHiddenAgain', document.getElementById('ixTop').classList.contains('show'), false);
+        // VPN 三档互斥
+        setVpnMode('off');
+        eq('offHides', vpnOn, false);
+        eq('offChip', document.getElementById('setVpnOff').classList.contains('on'), true);
+        eq('alwaysChipOff', document.getElementById('setVpnAlways').classList.contains('on'), false);
+        setVpnMode('always');
+        eq('alwaysShows', vpnOn, true);
+        eq('alwaysChip', document.getElementById('setVpnAlways').classList.contains('on'), true);
+        eq('modeHint', (document.getElementById('vpnModeHint').textContent || '').length > 10, true);
+        // 仅显示选中分类 + 搜索跨全类
+        toggleOnlyActive();
+        eq('onlyActiveOn', document.body.classList.contains('only-active'), true);
+        eq('onlyOneSection', document.querySelectorAll('.category-section:not(.not-active)').length, 1);
+        var si = document.getElementById('searchInput');
+        si.value = '网';
+        doNavSearch();
+        eq('searchClearsOnlyActive', document.body.classList.contains('only-active'), false);
+        eq('searchShowsManySections', document.querySelectorAll('.category-section[style*="block"]').length > 1, true);
+        si.value = '';
+        doNavSearch();
+        eq('clearRestoresOnlyActive', document.body.classList.contains('only-active'), true);
+        toggleOnlyActive();
+        eq('onlyActiveOff', document.body.classList.contains('only-active'), false);
+      }
+      else if (CASE === 'rt_per_tool_side') {
+        // 每个工具一个侧别：默认全部在右侧，左侧为空、无重复
+        var rightTabs = document.querySelectorAll('#rtEdge .rt-tab');
+        var leftTabs = document.querySelectorAll('#rtEdgeLeft .rt-tab');
+        eq('defaultAllRight', rightTabs.length > 0 && leftTabs.length === 0, true);
+        eq('rightOnClass', document.body.classList.contains('rt-right-on'), true);
+        eq('leftOffClass', document.body.classList.contains('rt-left-on'), false);
+        // 把两个内置工具挪到左侧 → 左侧出现、右侧减少、总量不变、无重复
+        var sides = {};
+        sides['rtb:微信传输'] = 'left';
+        sides['rtb:待办事项'] = 'left';
+        localStorage.setItem('nav_rt_sides', JSON.stringify(sides));
+        renderRtEdge();
+        var r2 = document.querySelectorAll('#rtEdge .rt-tab');
+        var l2 = document.querySelectorAll('#rtEdgeLeft .rt-tab');
+        eq('leftNowHasTabs', l2.length, 2);
+        eq('rightShrunk', r2.length, rightTabs.length - 2);
+        eq('totalUnchanged', r2.length + l2.length, rightTabs.length);
+        eq('leftOnClass', document.body.classList.contains('rt-left-on'), true);
+        // 无重复：左右标题集合不重叠，且各自内部不重复
+        function titles(sel) {
+          var a = [];
+          document.querySelectorAll(sel + ' .rt-tab').forEach(function(el) { a.push(el.getAttribute('title')); });
+          return a;
+        }
+        var rt = titles('#rtEdge'), lt = titles('#rtEdgeLeft');
+        var dupAcross = rt.filter(function(t) { return lt.indexOf(t) >= 0; });
+        eq('noOverlapAcrossSides', dupAcross.join(','), '');
+        eq('noDupRight', rt.length, new Set(rt).size);
+        eq('noDupLeft', lt.length, new Set(lt).size);
+        eq('wechatOnLeft', lt.indexOf('微信传输') >= 0, true);
+        eq('floatingWindowFollows', lt.indexOf('待办事项') >= 0, true);
+      }
+      else if (CASE === 'sort_mode_not_in_popup') {
+        openSettings();
+        var panelText = document.querySelector('.settings-panel').textContent;
+        // 弹出式设置里不应再有排序模式的两个 chip 与调序列表
+        eq('noRecentChip', !document.getElementById('setCatSortRecent'), true);
+        eq('noFixedChip', !document.getElementById('setCatSortFixed'), true);
+        eq('noOrderList', !document.getElementById('settingsCatOrderList'), true);
+        eq('hasEditorLink', panelText.indexOf('分类排序') >= 0 && panelText.indexOf('配置编辑器') >= 0, true);
+      }
+      else if (CASE === 'vpn_badge_and_hide') {
+        var sec = document.getElementById('cat-general');
+        // 频次重排后位置会变：按名字定位，不按下标
+        function cardOf(name) {
+          var hit = null;
+          sec.querySelectorAll('.nav-card h3').forEach(function(h) {
+            if (h.textContent.trim() === name) hit = h.closest('.nav-card');
+          });
+          return hit;
+        }
+        var hiddenCard = cardOf('谷歌搜索');   // override: hidden=true
+        var vpnCard = cardOf('谷歌香港');      // override: vpn=true
+        // 覆盖优先级：编辑器取消 VPN 必须能覆盖默认 data-vpn（ChatGPT 默认标 VPN）
+        var aiSec = document.getElementById('cat-ai');
+        var unVpnCard = (function() {
+          var hit = null;
+          aiSec.querySelectorAll('.nav-card h3').forEach(function(h) {
+            if (h.textContent.trim() === 'ChatGPT') hit = h.closest('.nav-card');
+          });
+          return hit;
+        })();
+        eq('overrideVpnNoBadge', !!unVpnCard.querySelector('.vpn-badge'), false);
+        // data-vpn 属性保留（HTML 默认值），实际显隐由 override 决定——见 overrideVpnNoBadge
+        eq('firstHidden', hiddenCard.getAttribute('data-hidden'), '1');
+        eq('firstDisplayNone', hiddenCard.style.display, 'none');
+        eq('secondVpnBadge', !!vpnCard.querySelector('.vpn-badge'), true);
+        eq('badgeText', vpnCard.querySelector('.vpn-badge').textContent, 'VPN');
+        eq('secondNotHidden', vpnCard.getAttribute('data-hidden'), '0');
+        setVpnMode('off');
+        eq('vpnHiddenInOff', vpnCard.getAttribute('data-hidden'), '1');
+        eq('badgeRemovedWhenHidden', !!vpnCard.querySelector('.vpn-badge'), false);
+        setVpnMode('always');
+        eq('vpnBackInAlways', vpnCard.getAttribute('data-hidden'), '0');
+        // 11 张里隐藏 1 张 → 计数 10
+        eq('countUpdated', sec.querySelector('.count').textContent, '10个站点');
+      }
+      else if (CASE === 'custom_cat_first') {
+        var side = sidebarIds();
+        eq('firstIsCustom', side[0].indexOf('custom-') === 0, true);
+        eq('customCount', side.filter(function(id) { return id.indexOf('custom-') === 0; }).length, 1);
+        eq('mainEqSidebar', mainIds().join(','), side.join(','));
+        var names = [];
+        document.querySelectorAll('#sidebar a').forEach(function(s) {
+          var h = s.getAttribute('href') || '';
+          if (h.indexOf('#') === 0 && h.length > 1) names.push((s.textContent || '').trim());
+        });
+        eq('customNameShown', names[0], '我的科研工具');
+        // 固定顺序下点击默认分类：自定义类别仍在最前，且整体顺序不变
+        var beforeClick = sidebarIds().join(',');
+        setActive(document.querySelector('#sidebar a[href="#cat-map"]'));
+        var after = sidebarIds();
+        eq('customStillFirst', after[0], 'custom-test1');
+        eq('orderUnchangedInFixed', after.join(','), beforeClick);
+        eq('stillMainEqSidebar', mainIds().join(','), after.join(','));
+      }
+      else if (CASE === 'search_autosize') {
+        var ta = document.getElementById('searchInput');
+        eq('isTextarea', ta.tagName, 'TEXTAREA');
+        var singleH = ta.getBoundingClientRect().height;
+        // 三行文本 → 高度明显增长
+        ta.value = '第一行文字\n第二行文字\n第三行文字';
+        ta.dispatchEvent(new Event('input'));
+        var threeH = ta.getBoundingClientRect().height;
+        eq('growsOnMultiline', threeH > singleH + 10, true);
+        // 15 行 → 封顶 10 行（高度不再增长），出现内部滚动
+        var long15 = Array.from({length: 15}, function(_, i) { return 'line' + i; }).join('\n');
+        ta.value = long15;
+        ta.dispatchEvent(new Event('input'));
+        var maxH = ta.getBoundingClientRect().height;
+        eq('cappedAt10Lines', maxH <= threeH * 3.6 && maxH >= threeH * 2.5, true);
+        eq('internalScroll', ta.style.overflowY, 'auto');
+        // Shift+Enter 换行、Enter 提交后自动清空输入框
+        ta.value = 'hello';
+        var opened = [];
+        window.open = function(u) { opened.push(u); return null; };
+        document.getElementById('stickyInput').value = 'hello';   // 悬浮搜索条也应一起被清空
+        ta.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', shiftKey: true, bubbles: true, cancelable: true}));
+        // 合成事件不会真的插入换行，改为断言「Shift+Enter 不提交、也不 preventDefault」（原生换行才得以生效）
+        var evShift = new KeyboardEvent('keydown', {key: 'Enter', shiftKey: true, bubbles: true, cancelable: true});
+        ta.dispatchEvent(evShift);
+        eq('shiftEnterNotPrevented', evShift.defaultPrevented, false);
+        eq('shiftEnterKeepsText', ta.value.indexOf('hello') >= 0, true);
+        ta.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+        eq('enterSubmits', opened.length, 1);
+        eq('enterClearsInput', ta.value, '');                     // 回车提交 → 输入框立即清空
+        eq('enterClearsSticky', document.getElementById('stickyInput').value, '');
+        // 点「搜索」按钮同样清空
+        ta.value = 'again';
+        ta.dispatchEvent(new Event('input'));
+        document.querySelector('.search-box button[onclick="doSearch()"]').click();
+        eq('buttonSubmits', opened.length, 2);
+        eq('buttonClearsInput', ta.value, '');
+        // 清空复原单行
+        ta.value = '';
+        ta.dispatchEvent(new Event('input'));
+        eq('resetSingleLine', Math.abs(Math.round(ta.getBoundingClientRect().height) - Math.round(singleH)) <= 2, true);
+      }
+      else if (CASE === 'fav_only_active_default') {
+        // 「仅显示选中分类」+ 有收藏 → 默认打开的就是收藏网址
+        eq('onlyActiveOn', document.body.classList.contains('only-active'), true);
+        var shown = [];
+        document.querySelectorAll('.category-section').forEach(function(sec) {
+          if (!sec.classList.contains('not-active')) shown.push(sec.id);
+        });
+        eq('onlyFavShown', shown.join(','), 'cat-favorites');
+        eq('activeIsFav', (function() {
+          var a = document.querySelector('.sidebar a.active');
+          return a ? a.getAttribute('href') : '';
+        })(), '#cat-favorites');
+        eq('favCardsVisible', document.querySelectorAll('#cat-favorites .nav-card').length, 2);
+        // 点别的分类仍能切换过去
+        setActive(document.querySelector('#sidebar a[href="#cat-map"]'));
+        var shown2 = [];
+        document.querySelectorAll('.category-section').forEach(function(sec) {
+          if (!sec.classList.contains('not-active')) shown2.push(sec.id);
+        });
+        eq('switchWorks', shown2.join(','), 'cat-map');
+      }
+      else if (CASE === 'fav_freq_order') {
+        // 收藏网址按「我的使用频次」降序：github=5、知乎=3（来自旧 nav_clicks 合并）、google=0
+        eq('sortedByUsage', favDomOrder().join('|'),
+           'https://github.com|https://www.zhihu.com|https://www.google.com');
+        // 阻断跳转，避免点击卡片时真实打开新标签
+        document.addEventListener('click', function(e) {
+          var t = e.target;
+          if (t && t.closest && t.closest('a.nav-card')) e.preventDefault();
+        }, true);
+        var card = document.querySelector('#cat-favorites a.nav-card[href="https://www.google.com"]');
+        eq('favCardExists', !!card, true);
+        for (var ci = 0; ci < 4; ci++) {
+          card.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+        }
+        var clk = JSON.parse(ls('nav_fav_clicks') || '{}');
+        eq('clickCounted', clk['https://www.google.com'], 4);
+        setTimeout(function() {
+          // 4 > 3 → 谷歌搜索越过知乎升到第二位（收藏区静默重排）
+          eq('reorderedByUsage', favDomOrder().join('|'),
+             'https://github.com|https://www.google.com|https://www.zhihu.com');
+          var before = JSON.parse(ls('nav_fav_clicks') || '{}')['https://www.google.com'];
+          var st = document.querySelector('#cat-favorites a.nav-card[href="https://www.google.com"] .fav-star');
+          eq('starExists', !!st, true);
+          st.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+          eq('starClickNotCounted', JSON.parse(ls('nav_fav_clicks') || '{}')['https://www.google.com'], before);
+          eq('starRemovedFav', (JSON.parse(ls('nav_fav') || '[]')).indexOf('https://www.google.com'), -1);
+          eq('countText', document.querySelector('#cat-favorites .count').textContent, '2个站点');
+          eq('remainingOrder', favDomOrder().join('|'), 'https://github.com|https://www.zhihu.com');
+          flush();
+        }, 60);
+        return;
+      }
+      else if (CASE === 'engine_defaults_vpn') {
+        // 默认只勾选用户指定的 12 个引擎（必应/谷歌/秘塔/Yandex/搜狗知乎/搜狗微信/Quora/Reddit/谷歌学术/微软学术/译中/译英）
+        var EXPECT = 'bing,google,metaso,perplexity,yandex,sogouzhihu,sogouweixin,quora,reddit,googlescholar,msacademic,trans2zh,trans2en';
+        var hiddenMap = JSON.parse(ls('nav_hidden_engines') || '{}');
+        var checked = Object.keys(hiddenMap).filter(function(k) { return k !== 'custom' && hiddenMap[k] === false; });
+        eq('defaultCheckedSet', checked.join(','), EXPECT);
+        eq('metasoUrl', engineUrls.metaso, 'https://metaso.cn/?q=');
+        eq('perplexityUrl', engineUrls.perplexity, 'https://www.perplexity.ai/search?q=');
+        eq('perplexityAfterMetaso',
+           document.querySelector('.search-engines input[value="metaso"]').closest('.engine-option').nextElementSibling
+             .querySelector('input').value, 'perplexity');
+        eq('redditUrl', engineUrls.reddit, 'https://www.reddit.com/search/?q=');
+        eq('hiddenMapHidesOthers', hiddenMap.baidu, true);
+        function engineShown(k) {
+          var el = document.querySelector('.search-engines input[value="' + k + '"]').closest('.engine-option');
+          return el.style.display !== 'none';
+        }
+        // 没有科学上网（vpnMode=off）→ 勾选的引擎里，外网那 4 个不显示
+        eq('noVpnFlag', vpnOn, false);
+        eq('visibleWithoutVpn', getVisibleEngineKeys().join(','),
+           'bing,metaso,yandex,sogouzhihu,sogouweixin,msacademic,trans2zh,trans2en');
+        eq('foreignHiddenWithoutVpn', ['google', 'quora', 'reddit', 'googlescholar', 'perplexity'].map(engineShown).join(','),
+           'false,false,false,false,false');
+        eq('domesticKept', ['bing', 'metaso', 'yandex', 'msacademic', 'trans2zh', 'trans2en'].map(engineShown).join(','),
+           'true,true,true,true,true,true');
+        // 有科学上网（always）→ 13 个全部显示
+        setVpnMode('always');
+        eq('visibleWithVpn', getVisibleEngineKeys().join(','), EXPECT);
+        eq('foreignShownWithVpn', ['google', 'quora', 'reddit', 'googlescholar', 'perplexity'].map(engineShown).join(','),
+           'true,true,true,true,true');
+        // 切到被隐藏的引擎后，再关掉 VPN → 自动回落到仍可见的引擎
+        applyEngine('google');
+        saveEnginePref('google');
+        setVpnMode('off');
+        eq('fallbackToVisible', getVisibleEngineKeys().indexOf(getSelectedEngine()) >= 0, true);
+        eq('fallbackIsBing', getSelectedEngine(), 'bing');
+        setVpnMode('always');   // 还原，避免影响同进程其它断言
+      }
+      else if (CASE === 'engine_modifier_switch') {
+        // 单独按 Ctrl → 下一个可用引擎；单独按 Alt → 上一个可用引擎（按显示顺序循环）
+        function key(type, k, mods) {
+          var o = {key: k, bubbles: true, cancelable: true};
+          if (mods) Object.keys(mods).forEach(function(m) { o[m] = mods[m]; });
+          document.dispatchEvent(new KeyboardEvent(type, o));
+        }
+        var keys = getVisibleEngineKeys();
+        eq('enginesAtLeastTwo', keys.length >= 2, true);
+        applyEngine(keys[0]);
+        saveEnginePref(keys[0]);
+        eq('startAtFirst', getSelectedEngine(), keys[0]);
+        // Ctrl 单独按 → 前进 1
+        key('keydown', 'Control');
+        key('keyup', 'Control');
+        eq('ctrlNext', getSelectedEngine(), keys[1]);
+        eq('ctrlPersisted', ls('nav_engine'), keys[1]);
+        // Alt 单独按 → 后退 1（回到第一个）
+        key('keydown', 'Alt');
+        key('keyup', 'Alt');
+        eq('altPrev', getSelectedEngine(), keys[0]);
+        // Alt 在第一个上继续后退 → 回到末尾（循环）
+        key('keydown', 'Alt');
+        key('keyup', 'Alt');
+        eq('altWraps', getSelectedEngine(), keys[keys.length - 1]);
+        // 组合键不触发切换：Ctrl+K
+        key('keydown', 'Control');
+        key('keydown', 'k', {ctrlKey: true});
+        key('keyup', 'k', {ctrlKey: true});
+        key('keyup', 'Control');
+        eq('ctrlKNoSwitch', getSelectedEngine(), keys[keys.length - 1]);
+        // 组合键不触发切换：Alt+S（焦点到搜索框）
+        key('keydown', 'Alt');
+        key('keydown', 's', {altKey: true});
+        key('keyup', 's', {altKey: true});
+        key('keyup', 'Alt');
+        eq('altSNoSwitch', getSelectedEngine(), keys[keys.length - 1]);
+        eq('altSFocusesInput', document.activeElement, document.getElementById('searchInput'));
+        // 开关失焦时清标记，不会残留误触发
+        key('keydown', 'Control');
+        window.dispatchEvent(new Event('blur'));
+        key('keyup', 'Control');
+        eq('blurClearsFlag', getSelectedEngine(), keys[keys.length - 1]);
+      }
+      else if (CASE === 'wallpaper_idb') {
+        // 模拟「已选本地壁纸」的会话，然后验证 保存 → 清内存（模拟重启）→ 从 IDB 恢复 的闭环
+        wallpaperType = 'local'; useBingWallpaper = false; applyHeroBg();
+        eq('wpTypeLocal', wallpaperType, 'local');
+        var tiny = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        saveLocalWallpaper(tiny).then(function() {
+          return idbGet('nav_local_wp');
+        }).then(function(v) {
+          eq('savedToIdb', !!v, true);
+          localWallpaperDataUrl = null;                 // 模拟重启后内存清空
+          return restoreLocalWallpaperAsync();
+        }).then(function() {
+          eq('restoredFromIdb', !!localWallpaperDataUrl, true);
+          eq('heroBgApplied', (document.querySelector('.hero-bg').style.backgroundImage || '').indexOf('data:image') >= 0, true);
+          eq('localStorageMirror', !!ls('nav_local_wp'), true);   // 小图冗余进 localStorage 加速首屏
+          flush();
+        }).catch(function(e) {
+          out.push('[FAIL] idbChain: ' + e.message);
+          flush();
+        });
+        return;                                          // 异步用例，flush 由回调触发
+      }
+      else if (CASE === 'fav_feature') {
+        // 展开状态下默认「打开」收藏网址（有收藏时）
+        eq('defaultActiveIsFav', (function() {
+          var a = document.querySelector('.sidebar a.active');
+          return a ? a.getAttribute('href') : '';
+        })(), '#cat-favorites');
+        eq('defaultActiveMobileTab', (function() {
+          var a = document.querySelector('.mobile-tab.active');
+          return a ? a.getAttribute('href') : '';
+        })(), '#cat-favorites');
+        // 预置收藏：谷歌搜索 + 知乎
+        var favSec = document.getElementById('cat-favorites');
+        eq('favSectionExists', !!favSec, true);
+        eq('favCardCount', favSec.querySelectorAll('.nav-card').length, 2);
+        // 置顶：sidebar 与 main 的第一项都是收藏网址（includeFav=true）
+        eq('sidebarFavFirst', sidebarIds(true)[0], 'cat-favorites');
+        eq('mainFavFirst', mainIds(true)[0], 'cat-favorites');
+        eq('mainEqSidebar', mainIds(true).join(','), sidebarIds(true).join(','));
+        // 原分类卡片上的星标为点亮态
+        var g = document.querySelector('#cat-general .nav-card[href="https://www.google.com"] .fav-star');
+        eq('starOnOriginal', !!g && g.classList.contains('on'), true);
+        // 收藏夹内的克隆卡也有星标
+        var gc = favSec.querySelector('.nav-card[href="https://www.google.com"] .fav-star');
+        eq('starOnClone', !!gc && gc.classList.contains('on'), true);
+        // 取消收藏（点收藏夹里的星）→ 收藏夹剩 1 张、原卡星标熄灭
+        toggleFav(null, 'https://www.google.com');
+        eq('afterUnfavCount', document.getElementById('cat-favorites').querySelectorAll('.nav-card').length, 1);
+        eq('starOffOriginal', document.querySelector('#cat-general .nav-card[href="https://www.google.com"] .fav-star').classList.contains('on'), false);
+        // 再收藏 → 恢复 2 张
+        toggleFav(null, 'https://www.google.com');
+        eq('afterRefavCount', document.getElementById('cat-favorites').querySelectorAll('.nav-card').length, 2);
+        eq('persisted', JSON.parse(ls('nav_fav') || '[]').length, 2);
+        // 星标与 VPN 徽章不重叠（徽章在星标左侧）
+        var star = favSec.querySelector('.nav-card .fav-star');
+        var badge = favSec.querySelector('.nav-card .vpn-badge');
+        if (star && badge) {
+          var sr = star.getBoundingClientRect(), br = badge.getBoundingClientRect();
+          eq('starBadgeNoOverlap', sr.left >= br.right - 1, true);
+        } else {
+          out.push('[PASS] starBadgeNoOverlap (无 VPN 卡可比对，跳过几何检查)');
+        }
+        // 设置面板可开关
+        openSettings();
+        var chips = document.getElementById('settingsCatRow').textContent;
+        eq('settingsHasFavChip', chips.indexOf('收藏网址') >= 0, true);
+        closeSettings();
       }
       else if (CASE === 'settings_panel_render') {
         openSettings();
         var panel = document.querySelector('.settings-panel');
         eq('panelVisible', document.getElementById('settingsOverlay').classList.contains('visible'), true);
         var vis = function(el) { return !!(el && el.offsetParent !== null); };
-        eq('recentChipVisible', vis(document.getElementById('setCatSortRecent')), true);
-        eq('fixedChipVisible', vis(document.getElementById('setCatSortFixed')), true);
-        eq('hintVisible', vis(document.getElementById('catSortHint')), true);
-        eq('hintText', document.getElementById('catSortHint').textContent,
-           '当前为固定顺序：点击分类不会改变顺序，可用下方 ↑ ↓ 手动调整。');
-        var list = document.getElementById('settingsCatOrderList');
-        eq('listVisible', vis(list), true);
-        var rows = list.querySelectorAll('.cat-order-item');
-        eq('rowCount', rows.length, sidebarIds().length);
-        var r0 = rows[0];
-        eq('rowHasName', r0.querySelector('.cat-order-name').textContent.length > 0, true);
-        eq('rowUpDisabledOnFirst', r0.querySelectorAll('.cat-order-move')[0].disabled, true);
-        var rLast = rows[rows.length - 1];
-        eq('rowDownDisabledOnLast', rLast.querySelectorAll('.cat-order-move')[1].disabled, true);
-        // 点最后一行 ↑ 按钮，真实走一次 onclick
-        var lastId = sidebarIds()[sidebarIds().length - 1];
-        var btn = rLast.querySelectorAll('.cat-order-move')[0];
-        btn.disabled = false;
-        btn.click();
-        var ids = sidebarIds();
-        eq('clickMovedUp', ids[ids.length - 2], lastId);
-        eq('panelOrderMatchesSidebar', list.querySelectorAll('.cat-order-item').length, ids.length);
+        // 「搜索引擎显示」必须列出搜索框下的每一个引擎（曾漏掉 metaso/perplexity/reddit）
+        var engRow = document.getElementById('settingsEngineRow');
+        var missing = ALL_ENGINE_IDS.filter(function(id) {
+          return !engRow.querySelector('.settings-chip[onclick*="' + id + '"]');
+        });
+        eq('settingsListsAllEngines', missing.join(','), '');
+        eq('settingsChipCount', engRow.querySelectorAll('.settings-chip').length, ALL_ENGINE_IDS.length + 1);
+        eq('settingsHasMetaso', !!engRow.querySelector('.settings-chip[onclick*="metaso"]'), true);
+        eq('settingsHasPerplexity', !!engRow.querySelector('.settings-chip[onclick*="perplexity"]'), true);
+        eq('settingsHasReddit', !!engRow.querySelector('.settings-chip[onclick*="reddit"]'), true);
+        // 排序 UI 已下线，改为编辑器入口
+        eq('noSortChips', !document.getElementById('setCatSortFixed') && !document.getElementById('setCatSortRecent'), true);
+        eq('editorEntryVisible', vis(document.querySelector('.settings-panel .settings-action-btn[onclick*="catorder"]')), true);
+        // 删除两个功能后仍应保留的设置区块
+        ['setVpnAlways', 'setVpnOff', 'setOnlyActiveToggle'].forEach(function(id) {
+          eq('visible_' + id, vis(document.getElementById(id)), true);
+        });
+        // 已删除的设置区块不应存在
+        ['setTodayOn', 'setEngineStyleTags', 'setEngineStyleSelect', 'setRtSideLeft'].forEach(function(id) {
+          eq('gone_' + id, !document.getElementById(id), true);
+        });
+        // 弹出式设置居中显示
+        var ov = getComputedStyle(document.getElementById('settingsOverlay'));
+        eq('overlayCentered', ov.alignItems, 'center');
+        eq('overlayColumn', ov.flexDirection, 'column');
+        eq('overlayCoversViewport', ov.width, window.innerWidth + 'px');
+        var pr = document.querySelector('.settings-panel').getBoundingClientRect();
+        eq('panelHorizontallyCentered', Math.abs((pr.left + pr.right) / 2 - window.innerWidth / 2) < 2, true);
+        eq('bodyScrollLocked', document.body.classList.contains('modal-open'), true);
+        eq('panelWithinViewport', pr.top >= 0 && pr.bottom <= window.innerHeight + 1, true);
+        closeSettings();
+        eq('bodyScrollRestored', document.body.classList.contains('modal-open'), false);
+        openSettings();
+        eq('overlayJustify', ov.justifyContent, 'center');
+        // 紧凑度：面板高度不要过长（超出视口时内部可滚动）
+        var panelH = document.querySelector('.settings-panel').getBoundingClientRect().height;
+        eq('panelNotTooTall', panelH <= window.innerHeight * 0.95, true);
+        eq('panelHeightInfo', '', '');
+        eq('panelScrollable', getComputedStyle(document.querySelector('.settings-panel')).overflowY, 'auto');
         // 设置面板里也应有新分类开关
         eq('catChipTradition', document.getElementById('settingsCatRow').textContent.indexOf('传统文化') >= 0, true);
       }
@@ -287,12 +768,40 @@ INJECT = r'''
         });
         eq('allCountsMatch', bad.join('|'), '');
         eq('totalCategories', mainIds().length, sidebarIds().length);
+        // 结构不变量：每张卡片必须是 .card-grid 的直接子元素（防止再出现"卡片游离在 grid 外"的布局塌陷）
+        var outside = [];
+        document.querySelectorAll('.category-section .nav-card').forEach(function(card) {
+          if (!card.parentElement || card.parentElement.className.indexOf('card-grid') < 0) {
+            outside.push((card.closest('.category-section') || {}).id + '/' + (card.querySelector('h3') || {}).textContent);
+          }
+        });
+        eq('allCardsInsideGrid', outside.join('|'), '');
+        // grid 必须真的在按多列布局（第一行至少 2 张卡片）
+        var g = document.querySelector('#cat-ai .card-grid');
+        var cs = getComputedStyle(g);
+        eq('gridDisplay', cs.display, 'grid');
+        var cols = String(cs.gridTemplateColumns).split(' ').filter(function(x) { return x && x !== 'none'; }).length;
+        eq('gridColumns', cols >= 2, true);
       }
     } catch (e) {
-      out.push('[FAIL] ' + CASE + '::exception  ==> ' + (e && e.message ? e.message : e));
+      out.push('[FAIL] ' + CASE + '::exception  ==> ' + (e && e.message ? e.message : e) +
+               (e && e.stack ? ' || ' + String(e.stack).split('\n').slice(1, 3).join(' <- ') : ''));
     }
     flush();
-  });
+  }
+
+  // 解析期即发起一个「挂起图片」请求：虚拟时间会在该请求未完成时暂停，
+  // 从而给 IndexedDB 等真实异步回调留出时间（仅壁纸用例需要）。
+  var HOLD_URL = __HOLD__;
+  function holdVirtualTime() {
+    if (!HOLD_URL) return;
+    try {
+      var im = new Image();
+      im.src = HOLD_URL + '?t=' + Math.random();
+      window.__holdImg = im;                 // 保持引用，避免被回收
+    } catch (e) {}
+  }
+  if (CASE === 'wallpaper_idb') holdVirtualTime();
 
   // ---- 前置：设置 localStorage 后重新加载（只重载一次）----
   var PREP = __PREP__;
@@ -306,10 +815,30 @@ INJECT = r'''
         });
       } catch (e) {}
       sessionStorage.setItem('__preped_' + CASE, '1');
+      if (CASE === 'wallpaper_idb') {
+        // 壁纸用例：先把 dataURL 写进 IndexedDB，oncomplete 后再 reload
+        var tinyPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        try {
+          idbOpen().then(function(db) {
+            return new Promise(function(res) {
+              var tx = db.transaction('kv', 'readwrite');
+              tx.objectStore('kv').put(tinyPng, 'nav_local_wp');
+              tx.oncomplete = function() { res(); };
+              tx.onerror = function() { res(); };
+            });
+          }).then(function() { location.reload(); });
+        } catch (e) { location.reload(); }
+        throw new Error('__PREP_RELOAD__');
+      }
       location.reload();
       throw new Error('__PREP_RELOAD__');
     }
   }
+
+  // 壁纸/IDB 用例：前置完成后的这次解析里直接跑断言（此时挂起图片仍在等，虚拟时间被暂停）
+  // 其余用例仍等 load 完成后再断言（需要布局几何信息）
+  if (CASE === 'wallpaper_idb') runCase();
+  else window.addEventListener('load', runCase);
 })();
 </script>
 '''
@@ -343,21 +872,54 @@ CASES = [
     ('order_after_bump_three_way', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'recent'),
                                     ('nav_cat_sort_migrated', '1'),
                                     ('nav_cat_order', None), ('nav_cat_order_ver', '2')]),
+    ('fav_feature', [('nav_wallpaper', 'default'),
+                     ('nav_fav', json.dumps(['https://www.google.com', 'https://www.zhihu.com'], ensure_ascii=False))]),
+    ('search_autosize', [('nav_wallpaper', 'default')]),
+    ('fav_only_active_default', [('nav_wallpaper', 'default'), ('nav_only_active', '1'),
+                                 ('nav_fav', json.dumps(['https://www.google.com', 'https://www.zhihu.com'],
+                                                        ensure_ascii=False))]),
+    ('fav_freq_order', [('nav_wallpaper', 'default'), ('nav_vpn_mode', 'always'), ('nav_vpn_mode_migrated', '1'),
+                        ('nav_fav', json.dumps(['https://www.google.com', 'https://www.zhihu.com',
+                                                'https://github.com'], ensure_ascii=False)),
+                        ('nav_fav_clicks', json.dumps({'https://github.com': 5}, ensure_ascii=False)),
+                        ('nav_clicks', json.dumps({'_hrefs': {'知乎': 'https://www.zhihu.com'}, '知乎': 3},
+                                                  ensure_ascii=False))]),
     ('settings_panel_render', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'fixed'), ('nav_theme', 'light')]),
+    ('ext_module_smoke', [('nav_wallpaper', 'default')]),
+    ('sort_mode_not_in_popup', [('nav_wallpaper', 'default')]),
+    ('rt_per_tool_side', [('nav_wallpaper', 'default'), ('nav_rt_sides', None)]),
+    ('vpn_badge_and_hide', [('nav_wallpaper', 'default'),
+                            ('nav_site_overrides', json.dumps({
+                                'cat-general|谷歌搜索': {'hidden': True},
+                                'cat-general|谷歌香港': {'vpn': True},
+                                'cat-ai|ChatGPT': {'vpn': False}}, ensure_ascii=False))]),
+    ('custom_cat_first', [('nav_wallpaper', 'default'),
+                          ('nav_custom_cats', json.dumps([{
+                              'id': 'custom-test1', 'name': '我的科研工具', 'icon': '',
+                              'sites': [{'name': '测试站点', 'url': 'https://example.com',
+                                         'desc': '测试用', 'icon': 'T', 'iconColor': 'blue'}]}],
+                              ensure_ascii=False))]),
     ('counts_visible', [('nav_wallpaper', 'default')]),
+    ('wallpaper_idb', [('nav_wallpaper', 'local')]),
+    ('engine_modifier_switch', [('nav_wallpaper', 'default'), ('nav_engine', 'bing'),
+                                ('nav_vpn_mode', 'off'), ('nav_vpn_mode_migrated', '1')]),
+    ('engine_defaults_vpn', [('nav_wallpaper', 'default'), ('nav_engine', 'bing'),
+                             ('nav_hidden_engines', None), ('nav_engines_ver', None),
+                             ('nav_vpn_mode', 'off'), ('nav_vpn_mode_migrated', '1')]),
 ]
 
 
-def run_case(case, prep, tmpdir):
+def run_case(case, prep, tmpdir, hold_url=''):
     with io.open(os.path.join(ROOT, 'index.html'), 'r', encoding='utf-8') as f:
         html = f.read()
     inject = INJECT.replace('__CASE__', json.dumps(case)).replace('__PREP__', json.dumps(prep, ensure_ascii=False))
+    inject = inject.replace('__HOLD__', json.dumps(hold_url if case == 'wallpaper_idb' else ''))
     html = html.replace('</body>', inject + '\n</body>')
     page = os.path.join(tmpdir, 'case_%s.html' % case)
     with io.open(page, 'w', encoding='utf-8') as f:
         f.write(html)
     prof = os.path.join(tmpdir, 'prof_%s' % case)
-    cmd = [CHROME, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    cmd = [CHROME, '--headless=new', '--disable-gpu', '--no-first-run', '--window-size=1600,1200', '--no-default-browser-check',
            '--allow-file-access-from-files', '--virtual-time-budget=6000',
            '--user-data-dir=' + prof, '--dump-dom', 'file:///' + page.replace('\\', '/')]
     p = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
@@ -372,18 +934,22 @@ def run_case(case, prep, tmpdir):
 
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     if not os.path.exists(CHROME):
         print('chrome not found: %s' % CHROME)
         return 2
     tmpdir = tempfile.mkdtemp(prefix='auroraus_ui_')
     all_lines = []
+    hold = HoldServer()
     try:
         for case, prep in CASES:
-            lines = run_case(case, prep, tmpdir)
+            lines = run_case(case, prep, tmpdir, hold.hold_url())
             all_lines.extend(lines)
             for l in lines:
                 print(l)
     finally:
+        hold.stop()
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     fails = [l for l in all_lines if l.startswith('[FAIL]')]

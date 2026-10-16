@@ -20,8 +20,10 @@ print('CHIPS:', chips)
 print('DATA :', data)
 
 bad = 0
+# cat-favorites 为运行时动态置顶分类（静态 DOM 中不存在），比对时从各侧排除
+strip_fav = lambda ids: [x for x in ids if x != 'cat-favorites']
 for label, got in [('DEFAULT_CAT_ORDER', const), ('设置面板 chips', chips), ('data.js', data)]:
-    if got != dom:
+    if strip_fav(got) != strip_fav(dom):
         bad += 1
         print('!! %s 与 DOM 顺序不一致' % label)
 if bad:

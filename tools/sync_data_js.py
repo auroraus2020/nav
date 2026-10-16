@@ -14,9 +14,9 @@ DATA_JS = os.path.join(ROOT, 'config-editor', 'data.js')
 SECTION_RE = re.compile(r'<section class="category-section" id="([^"]+)">(.*?)</section>', re.S)
 HEAD_RE = re.compile(r'<h2>(.*?)</h2>.*?<img src="([^"]+)"', re.S)
 CARD_RE = re.compile(
-    r'<a class="nav-card" href="([^"]+)"[^>]*>\s*'
-    r'<div class="icon icon-([a-z]+)">(.*?)</div>\s*'
-    r'<div class="info"><h3>(.*?)</h3><p>(.*?)</p>',
+    r'<a class="nav-card"(?P<attrs>[^>]*)>\s*'
+    r'<div class="icon icon-(?P<color>[a-z]+)">(?P<glyph>[^<]*)</div>\s*'
+    r'<div class="info"><h3>(?P<name>[^<]*)</h3><p>(?P<desc>[^<]*)</p>',
     re.S)
 
 
@@ -41,14 +41,21 @@ def main():
         name = re.search(r'<h2>(.*?)</h2>', body).group(1) if head is None else head.group(1)
         icon = re.search(r'<img src="([^"]+)"', body).group(1)
         sites = []
-        for url, color, glyph, sname, desc in CARD_RE.findall(body):
-            sites.append({
-                'name': sname.strip(),
-                'url': url,
-                'desc': desc.strip(),
-                'icon': glyph.strip(),
-                'iconColor': color,
-            })
+        for m_card in CARD_RE.finditer(body):
+            attrs = m_card.group('attrs')
+            um = re.search(r'href="([^"]+)"', attrs)
+            if not um:
+                continue
+            site = {
+                'name': m_card.group('name').strip(),
+                'url': um.group(1),
+                'desc': m_card.group('desc').strip(),
+                'icon': m_card.group('glyph').strip(),
+                'iconColor': m_card.group('color'),
+            }
+            if 'data-vpn="1"' in attrs:
+                site['vpn'] = True
+            sites.append(site)
         cats.append({'id': sid, 'name': name, 'icon': icon, 'sites': sites})
 
     out = (
