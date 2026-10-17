@@ -3239,6 +3239,8 @@
     </div>
   </div>
 
+  <!-- 壁纸清单：一个 1KB 的小文件，替代旧的「逐张探测下载」 -->
+  <script src="assets/wallpapers.js"></script>
   <script>
     var engineUrls = {
       bing: 'https://cn.bing.com/search?q=',
@@ -4302,18 +4304,27 @@
     }
     window.autosizeSearch = autosizeSearch;
 
+    // 滚动高亮左侧分类：每帧最多算一次，而且高亮没变就不碰 DOM。
+    // （旧版每个 scroll 事件都跑一遍 19 个 getBoundingClientRect，等于每帧强制同步布局一次，长页面滚动会掉帧）
+    var scrollTickPending = 0;
+    var activeSectionId = '';
     function updateActiveOnScroll() {
-      var sections = document.querySelectorAll('.category-section');
-      var current = '';
-      sections.forEach(function(sec) {
-        var rect = sec.getBoundingClientRect();
-        if (rect.top <= 120) current = sec.id;
-      });
-      if (current) {
+      if (scrollTickPending) return;
+      scrollTickPending = 1;
+      var raf = window.requestAnimationFrame || function(f) { return setTimeout(f, 16); };
+      raf(function() {
+        scrollTickPending = 0;
+        var sections = document.querySelectorAll('.category-section');
+        var current = '';
+        for (var i = 0; i < sections.length; i++) {
+          if (sections[i].getBoundingClientRect().top <= 120) current = sections[i].id;
+        }
+        if (!current || current === activeSectionId) return;
+        activeSectionId = current;
         document.querySelectorAll('.sidebar a, .mobile-tab').forEach(function(a) {
           a.classList.toggle('active', a.getAttribute('href') === '#' + current);
         });
-      }
+      });
     }
     window.addEventListener('scroll', updateActiveOnScroll, { passive: true });
 
@@ -4329,12 +4340,35 @@
     var useBingWallpaper = true;
     var bingWallpaperUrl = '';
     var customWallpaperUrl = '';
-    var localWallpaperDataUrl = '';
+    /* 本地壁纸：Blob 存 IndexedDB，渲染只用 object URL。
+       绝不把多 MB 的 base64 塞进 CSSOM / localStorage —— 那是「选了本地图就卡死」的根因：
+       7~27MB 的 data URL 每次刷新都要解析一遍，还把 localStorage 5MB 配额吃光，导致后续所有设置写入变慢甚至失败。 */
+    var LOCAL_WP_KEY = 'nav_local_wp_blob';          // IndexedDB 键（Blob）
+    var LOCAL_WP_LEGACY_KEY = 'nav_local_wp';        // 旧版：base64 字符串（LS + IDB 都可能存过）
+    var LOCAL_WP_MAX_EDGE = 2560;                    // 处理后最长边
+    var LOCAL_WP_TARGET_BYTES = 1200 * 1024;         // 处理后目标体积
+    var LOCAL_WP_MAX_RAW = 40 * 1024 * 1024;         // 原始文件上限，超过直接拒收（避免解码卡死）
+    var localWallpaperUrl = '';                      // 渲染用 object URL
+    var localWallpaperBytes = 0;                     // 处理后体积
 
     var landscapePool = ['assets/wp_01.jpg','assets/wp_02.jpg','assets/wp_03.jpg','assets/wp_04.jpg','assets/wp_05.jpg','assets/wp_06.jpg','assets/wp_07.jpg','assets/wp_08.jpg','assets/wp_09.jpg','assets/wp_10.jpg','assets/wp_11.jpg','assets/wp_12.jpg'];
     var wpScanDone = false;
+    // 壁纸清单（assets/wallpapers.js，由 tools/gen_wallpapers.py 生成）
+    var WP_MANIFEST = (window.__AURORAUS_WALLPAPERS && window.__AURORAUS_WALLPAPERS.files) || null;
 
     function scanWpAssets(callback) {
+      // 有清单就直接用：不再 new Image() 逐张探测（旧逻辑首次访问要白白下载 20+ 张壁纸 ≈ 8MB）
+      if (WP_MANIFEST && WP_MANIFEST.length) {
+        landscapePool = WP_MANIFEST.slice(0);
+        try {
+          localStorage.setItem('nav_wp_max', String(landscapePool.length));
+          localStorage.setItem('nav_wp_pool', JSON.stringify(landscapePool));
+          localStorage.setItem('nav_wp_last_scan', new Date().toDateString());
+        } catch(e) {}
+        wpScanDone = true;
+        callback();
+        return;
+      }
       var lastScan = localStorage.getItem('nav_wp_last_scan') || '';
       if (lastScan === new Date().toDateString() && wpScanDone) { callback(); return; }
       var known = parseInt(localStorage.getItem('nav_wp_max') || '12');
@@ -4431,69 +4465,102 @@
     }
 
     function randomPickWp() {
-      var max = parseInt(localStorage.getItem('nav_wp_max')) || landscapePool.length || 12;
+      // 有清单就按清单随机（不用再猜 wp_NN.jpg 是否存在，gif 也能正常选到）
+      var pool = (landscapePool && landscapePool.length) ? landscapePool : null;
+      var max = pool ? pool.length : (parseInt(localStorage.getItem('nav_wp_max')) || landscapePool.length || 12);
       var tries = 0;
+      function applyPicked(url, idx) {
+        bingWallpaperUrl = url;
+        try {
+          localStorage.setItem('nav_landscape_date', new Date().toDateString());
+          localStorage.setItem('nav_landscape_idx', String(idx));
+          localStorage.setItem('nav_bing_wp_url', url);
+        } catch(e) {}
+        updateHeroBg();
+      }
       function tryPick() {
         if (tries++ > 50) { showMsg('未找到可用壁纸', true); return; }
-        var idx = Math.floor(Math.random() * max) + 1;
-        var num = idx < 10 ? '0' + idx : '' + idx;
-        var img = new Image();
-        img.onload = function() {
-          var url = this.src;
-          bingWallpaperUrl = url;
-          try {
-            localStorage.setItem('nav_landscape_date', new Date().toDateString());
-            localStorage.setItem('nav_landscape_idx', String(idx - 1));
-            localStorage.setItem('nav_bing_wp_url', url);
-          } catch(e) {}
-          updateHeroBg();
-        };
-        img.onerror = function() {
-          var gifImg = new Image();
-          gifImg.onload = function() {
-            var url = this.src;
-            bingWallpaperUrl = url;
-            try {
-              localStorage.setItem('nav_landscape_date', new Date().toDateString());
-              localStorage.setItem('nav_landscape_idx', String(idx - 1));
-              localStorage.setItem('nav_bing_wp_url', url);
-            } catch(e) {}
-            updateHeroBg();
+        var idx = Math.floor(Math.random() * max);
+        var num = (idx + 1) < 10 ? '0' + (idx + 1) : '' + (idx + 1);
+        if (pool) {
+          var url = pool[idx];
+          var img = new Image();
+          img.onload = function() { applyPicked(url, idx); };
+          img.onerror = function() {
+            // 清单里的文件被删了：跳过，别浪费一轮下载
+            landscapePool.splice(idx, 1);
+            if (!landscapePool.length) { showMsg('未找到可用壁纸', true); return; }
+            max = landscapePool.length;
+            tryPick();
           };
+          img.src = url;
+          return;
+        }
+        var img2 = new Image();
+        img2.onload = function() { applyPicked(this.src, idx); };
+        img2.onerror = function() {
+          var gifImg = new Image();
+          gifImg.onload = function() { applyPicked(this.src, idx); };
           gifImg.onerror = function() { tryPick(); };
           gifImg.src = 'assets/wp_' + num + '.gif';
         };
-        img.src = 'assets/wp_' + num + '.jpg';
+        img2.src = 'assets/wp_' + num + '.jpg';
       }
       tryPick();
+    }
+
+    /* 背景图换 URL 就要重新解码，成本远高于普通样式；所以做「值没变就不写」的守卫。
+       key 用 '' 表示回落到 CSS 里的默认图，'none' 表示明确不要图。 */
+    function setHeroBgImage(bg, key, cssValue) {
+      if (bg.__heroBgKey === key) return;
+      bg.__heroBgKey = key;
+      bg.style.backgroundImage = cssValue;
+    }
+    function setHeroBgOpacity(bg, val) {
+      var s = (val === null || val === undefined) ? '' : String(val);
+      if (bg.__heroBgOp === s) return;
+      bg.__heroBgOp = s;
+      bg.style.opacity = s;
+    }
+    // 壁纸是「好看但不急」的东西：等首屏（搜索框 + 卡片）先画出来再贴图，核心内容不被大图拖慢
+    var heroBgPending = 0;
+    function scheduleHeroBgApply() {
+      if (heroBgPending) return;
+      heroBgPending = 1;
+      var run = function() { heroBgPending = 0; try { updateHeroBg(); } catch(e) {} };
+      var raf = window.requestAnimationFrame || function(f) { return setTimeout(f, 16); };
+      raf(function() { setTimeout(run, 0); });
     }
 
     function updateHeroBg() {
       var bg = document.querySelector('.hero-bg');
       if (!bg) return;
+      var isDark = document.body.classList.contains('dark');
+      var bgUrl = '', opacity = null, noImage = false;
       if (wallpaperType === 'earth' && earthWallpaperUrl) {
         // 地球实况：一张图铺满整个首屏（cover 按比例放大、裁掉溢出，既不留白也不变形）
-        bg.style.backgroundImage = 'url(' + earthWallpaperUrl + ')';
+        bgUrl = earthWallpaperUrl;
         bg.style.backgroundSize = 'cover';
         bg.style.backgroundPosition = 'center center';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.94' : '0.98';
-      } else if (wallpaperType === 'local' && localWallpaperDataUrl) {
-        bg.style.backgroundImage = 'url(' + localWallpaperDataUrl + ')';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.60';
+        opacity = isDark ? 0.94 : 0.98;
+      } else if (wallpaperType === 'local' && localWallpaperUrl) {
+        bgUrl = localWallpaperUrl;
+        opacity = isDark ? 0.35 : 0.60;
       } else if (wallpaperType === 'custom' && customWallpaperUrl) {
-        bg.style.backgroundImage = 'url(' + customWallpaperUrl + ')';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.60';
+        bgUrl = customWallpaperUrl;
+        opacity = isDark ? 0.35 : 0.60;
       } else if (useBingWallpaper && bingWallpaperUrl) {
-        bg.style.backgroundImage = 'url(' + bingWallpaperUrl + ')';
-        bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.60';
+        bgUrl = bingWallpaperUrl;
+        opacity = isDark ? 0.35 : 0.60;
       } else if (useBingWallpaper) {
-        bg.style.backgroundImage = 'none';
-        bg.style.opacity = '0';
-      } else {
-        // 默认壁纸：清掉内联样式，回落到 CSS 里的 assets/hero_bg_light.jpg
-        bg.style.backgroundImage = '';
-        bg.style.opacity = '';
+        noImage = true;
+        opacity = 0;
       }
+      // 默认壁纸：清掉内联样式，回落到 CSS 里的 assets/hero_bg_light.jpg
+      if (noImage) setHeroBgImage(bg, 'none', 'none');
+      else if (bgUrl) setHeroBgImage(bg, bgUrl, 'url("' + bgUrl + '")');
+      else setHeroBgImage(bg, '', '');
+      setHeroBgOpacity(bg, opacity);
       // 图源说明只在「地球实况」真正生效时出现
       if (typeof syncEarthClass === 'function') syncEarthClass();
     }
@@ -4504,7 +4571,7 @@
 
     // ---------- 🌍 地球实况壁纸：NASA GIBS 真实色卫星图，跟随「地球正午」取景 ----------
     var EARTH_KEY = 'nav_earth_cache';
-    var EARTH_VER = '9';                      // 改取景/尺寸/选图逻辑后递增，旧缓存自动作废
+    var EARTH_VER = '10';                     // 改取景/尺寸/选图/缓存格式后递增，旧缓存自动作废（10=壁纸改存 Blob）
     // 纬度固定 -60..70（南极圈外到北冰洋边）；经度跟随正午经线跨 150°：
     // 实测 180° 时右边缘有约 9% 的黑带，收到 150° 后≈1%，且仍比 120° 宽得多。
     var EARTH_LAT_MIN = -60, EARTH_LAT_MAX = 70, EARTH_LON_SPAN = 150;
@@ -4601,7 +4668,7 @@
               return blobToDataUrl(res.blob).then(function(dataUrl) {
                 return earthImageUsable(dataUrl).then(function(ok) {
                   if (!ok) throw new Error('blank');
-                  return { dataUrl: dataUrl, time: res.time, lastMod: res.lm || '' };
+                  return { blob: res.blob, dataUrl: dataUrl, time: res.time, lastMod: res.lm || '' };
                 });
               });
             })
@@ -4621,18 +4688,25 @@
       return m ? m[1] : '';
     }
     // 地球实况（中国区域）
+    // 渲染统一走 object URL（壁纸图 800KB+，做成 base64 会让 CSS 字符串膨胀 33% 且每次刷新重解析）
+    var earthObjUrl = '';
+    function setEarthUrl(url) {
+      // 同上：不 revoke 正在使用的 object URL，避免换帧瞬间破图
+      earthObjUrl = (url && url.indexOf('blob:') === 0) ? url : '';
+      earthWallpaperUrl = url || '';
+    }
     function fetchFy4Image() {
       return fy4FetchRegion().then(function(res) {
-        earthWallpaperUrl = res.dataUrl;
+        setEarthUrl(URL.createObjectURL(res.blob));
         fy4PickedTime = res.time || res.lastMod || '';
         earthPickedDay = fy4DayOf(res.time);
         earthPickedLayer = 'FY4B_AGRI_REGI_GCLR';
         try {
           idbSet(EARTH_KEY, { ver: EARTH_VER, kind: 'fy4', time: fy4PickedTime, day: earthPickedDay,
-                              bucket: earthBucket(), dataUrl: res.dataUrl, ts: Date.now() });
+                              bucket: earthBucket(), blob: res.blob, ts: Date.now() });
         } catch(e) {}
-        if (wallpaperType === 'earth') applyHeroBg();
-        return res.dataUrl;
+        if (wallpaperType === 'earth') scheduleHeroBgApply();
+        return earthWallpaperUrl;
       });
     }
     // 「一定要最新」：GIBS 各产品的当日镶嵌出炉时间不同（实测 SNPP 当天常还是全黑，
@@ -4771,19 +4845,20 @@
         var url = earthUrlFor(cand.day, undefined, cand.layer);
         return fetch(url, { mode: 'cors', cache: 'force-cache' })
           .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
-          .then(blobToDataUrl)
-          .then(function(dataUrl) {
-            return earthImageUsable(dataUrl).then(function(ok) {
-              if (!ok) throw new Error('blank');
-              earthWallpaperUrl = dataUrl;
-              earthPickedDay = cand.day;
-              earthPickedLayer = cand.layer;
-              try {
-                idbSet(EARTH_KEY, { ver: EARTH_VER, day: cand.day, bucket: bucket,
-                                    layer: cand.layer, dataUrl: dataUrl, ts: Date.now() });
-              } catch(e) {}
-              if (wallpaperType === 'earth') applyHeroBg();
-              return dataUrl;
+          .then(function(blob) {
+            return blobToDataUrl(blob).then(function(dataUrl) {
+              return earthImageUsable(dataUrl).then(function(ok) {
+                if (!ok) throw new Error('blank');
+                setEarthUrl(URL.createObjectURL(blob));
+                earthPickedDay = cand.day;
+                earthPickedLayer = cand.layer;
+                try {
+                  idbSet(EARTH_KEY, { ver: EARTH_VER, day: cand.day, bucket: bucket,
+                                      layer: cand.layer, blob: blob, ts: Date.now() });
+                } catch(e) {}
+                if (wallpaperType === 'earth') scheduleHeroBgApply();
+                return earthWallpaperUrl;
+              });
             });
           })
           .catch(function() { return tryAt(i + 1); });
@@ -4811,12 +4886,14 @@
     function initEarthWallpaper() {
       var bucket = earthBucket();
       var afterCache = function(cached) {
-        if (cached && cached.dataUrl && cached.ver === EARTH_VER) {
-          earthWallpaperUrl = cached.dataUrl;
+        // 新缓存存 Blob；旧缓存是 base64 dataUrl（ver 不匹配就自动作废，这里只做兼容兜底）
+        if (cached && cached.ver === EARTH_VER && (cached.blob instanceof Blob || cached.dataUrl)) {
+          if (cached.blob instanceof Blob) setEarthUrl(URL.createObjectURL(cached.blob));
+          else setEarthUrl(cached.dataUrl);
           earthPickedDay = cached.day || '';
           earthPickedLayer = cached.layer || '';
           fy4PickedTime = cached.time || '';
-          if (wallpaperType === 'earth') applyHeroBg();
+          if (wallpaperType === 'earth') scheduleHeroBgApply();
           var fresh = cached.ts && (Date.now() - cached.ts) < 10 * 60 * 1000;
           if (fresh && cached.bucket === bucket) return;      // 10 分钟内 → 直接用缓存
         }
@@ -4876,11 +4953,8 @@
         var cwp = localStorage.getItem('nav_custom_wp');
         if (cwp) { customWallpaperUrl = cwp; }
       } catch(e) {}
-      try {
-        var lwp = localStorage.getItem('nav_local_wp');
-        if (lwp) { localWallpaperDataUrl = lwp; }
-      } catch(e) {}
-      // IndexedDB 里的新壁纸异步恢复（IDB 就绪后覆盖并刷新背景）
+      // 本地壁纸不再同步从 localStorage 读（旧版把几 MB 的 base64 存在那儿，每次刷新都要解析一遍）
+      // 统一走 IndexedDB 的 Blob + object URL：异步恢复，并等首屏画完再贴图
       if (typeof restoreLocalWallpaperAsync === 'function') {
         try { restoreLocalWallpaperAsync(); } catch(e) {}
       }
@@ -5266,32 +5340,42 @@
       }
     }
 
+    // 选本地图片：直接把 File 交给存储层 —— 不再 FileReader → 十几 MB 的 base64 字符串，
+    // 也不再把它写进 CSSOM / localStorage；解码缩放走异步编码，先让提示上屏再干活。
     function handleLocalWp(e) {
-      var file = e.target.files[0];
+      var file = e.target && e.target.files && e.target.files[0];
+      if (e.target) { try { e.target.value = ''; } catch(err) {} }
       if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        if (wallpaperType !== 'local') {
-          wallpaperType = 'local';
-          useBingWallpaper = false;
-          document.getElementById('setWpBing').classList.remove('on');
-          document.getElementById('setWpDefault').classList.remove('on');
-          document.getElementById('setWpCustom').classList.remove('on');
-          document.getElementById('setWpLocal').classList.add('on');
-          document.getElementById('customWpInput').style.display = 'none';
-          try { localStorage.setItem('nav_wallpaper', 'local'); } catch(e) {}
-        }
-        localWallpaperDataUrl = ev.target.result;
-        applyHeroBg();
-        document.getElementById('wpStatusHint').textContent = '正在保存本地图片…';
-        saveLocalWallpaper(ev.target.result, function(fail) {
-          document.getElementById('wpStatusHint').textContent = fail
-            ? '⚠️ 本地图片保存失败（浏览器存储空间不足），刷新后可能丢失'
-            : '✅ 已加载并保存本地图片：' + file.name + '（重启浏览器后依然生效）';
+      var hint = document.getElementById('wpStatusHint');
+      if (file.size > LOCAL_WP_MAX_RAW) {
+        if (hint) hint.textContent = '⚠️ 图片太大（约 ' + Math.round(file.size / 1048576) + 'MB），请选 40MB 以内的图片';
+        return;
+      }
+      if (wallpaperType !== 'local') {
+        wallpaperType = 'local';
+        useBingWallpaper = false;
+        ['setWpBing', 'setWpDefault', 'setWpCustom', 'setWpEarth', 'setWpLocal'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.toggle('on', id === 'setWpLocal');
         });
-      };
-      reader.readAsDataURL(file);
-      e.target.value = '';
+        var ci = document.getElementById('customWpInput');
+        if (ci) ci.style.display = 'none';
+        var li = document.getElementById('localWpInput');
+        if (li && li.nextElementSibling) li.nextElementSibling.style.display = '';
+        var wr = document.getElementById('wpExportRow');
+        if (wr) wr.style.display = '';
+        try { localStorage.setItem('nav_wallpaper', 'local'); } catch(err) {}
+      }
+      if (hint) hint.textContent = '正在处理图片…（原始 ' + Math.round(file.size / 1024) + 'KB）';
+      setTimeout(function() {          // 让提示先画出来，再做解码/缩放，避免"点完像卡住"
+        saveLocalWallpaper(file, function(err, blob) {
+          var h = document.getElementById('wpStatusHint');
+          if (!h) return;
+          h.textContent = err
+            ? '⚠️ 保存失败：' + (err.message || '浏览器存储空间不足') + '（刷新后可能丢失）'
+            : '✅ 已启用本地壁纸：' + file.name + '（处理后 ' + Math.round(blob.size / 1024) + 'KB，重启浏览器仍生效）';
+        });
+      }, 30);
     }
 
     function handleImportFile(e) {
@@ -5414,11 +5498,9 @@
           }
 
           if (typeof data._base64Wallpaper === 'string' && data._base64Wallpaper.length > 100) {
-            localWallpaperDataUrl = data._base64Wallpaper;
+            // 导入的壁纸同样是 Blob 入库，绝不再落回 localStorage
             if (typeof saveLocalWallpaper === 'function') {
-              saveLocalWallpaper(data._base64Wallpaper);
-            } else {
-              try { localStorage.setItem('nav_local_wp', data._base64Wallpaper); } catch(e) {}
+              try { saveLocalWallpaper(data._base64Wallpaper); } catch(e) {}
             }
           }
           var settings = data.settings;
@@ -5497,23 +5579,32 @@
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
         var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+      // 大对象在 IndexedDB 里，也要一起清（否则"恢复默认"后本地壁纸/卫星缓存还在）
+      try {
+        idbDel(LOCAL_WP_KEY);
+        idbDel(LOCAL_WP_LEGACY_KEY);
+        idbDel(EARTH_KEY);
+        localWpSetUrl('');
+      } catch(e) {}
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
     }
 
     function exportConfig() {
-      var data = buildConfigData();
-      var json = JSON.stringify(data, null, 2);
-      var blob = new Blob([json], {type: 'application/json'});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'auroraus_config_' + new Date().toISOString().slice(0,10) + '.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert('配置导出成功！已下载 auroraus_config_' + new Date().toISOString().slice(0,10) + '.json');
+      buildConfigDataAsync().then(function(data) {
+        var json = JSON.stringify(data, null, 2);
+        var blob = new Blob([json], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'auroraus_config_' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert('配置导出成功！已下载 auroraus_config_' + new Date().toISOString().slice(0,10) + '.json');
+      });
+      return true;
     }
 
     // 只负责组装导出数据（与下载动作分离，便于自检与测试）
@@ -5606,16 +5697,22 @@
         if (favClkExport && Object.keys(favClkExport).length) data.favClicks = favClkExport;
       } catch(e) {}
 
+      return data;
+    }
+
+    // 导出用的异步版本：壁纸在 IndexedDB 里是 Blob，需要时才转成 base64 附在末尾
+    function buildConfigDataAsync() {
+      var data = buildConfigData();
       var includeBase64 = false;
       try { includeBase64 = localStorage.getItem('nav_wp_export') === '1'; } catch(e) {}
-      if (includeBase64) {
-        try {
-          var lwp = localStorage.getItem('nav_local_wp');
-          if (lwp && lwp.length > 100) data._base64Wallpaper = lwp;
-        } catch(e) {}
-      }
-
-      return data;
+      if (!includeBase64) return Promise.resolve(data);
+      return idbGet(LOCAL_WP_KEY).then(function(blob) {
+        if (!(blob instanceof Blob)) return data;
+        return blobToDataUrl(blob).then(function(d) {
+          data._base64Wallpaper = d;
+          return data;
+        });
+      }).catch(function() { return data; });
     }
 
     function saveWpExport() {
@@ -5905,66 +6002,183 @@
       });
     }
 
-    // 压缩本地壁纸：dataURL 最长边 > 2560 或体积 > 4MB 时，等比重采样 + JPEG 0.88
-    function compressWallpaperIfNeeded(dataUrl) {
-      return new Promise(function(resolve) {
-        try {
-          if (dataUrl.length < 5500000) { resolve(dataUrl); return; }   // 约 4MB 原始以内直接存
-          var img = new Image();
-          img.onload = function() {
-            try {
-              var maxEdge = 2560;
-              var scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
-              var cv = document.createElement('canvas');
-              cv.width = Math.round(img.width * scale);
-              cv.height = Math.round(img.height * scale);
-              cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-              resolve(cv.toDataURL('image/jpeg', 0.88));
-            } catch(e) { resolve(dataUrl); }
-          };
-          img.onerror = function() { resolve(dataUrl); };
-          img.src = dataUrl;
-        } catch(e) { resolve(dataUrl); }
+    function idbDel(key) {
+      return idbOpen().then(function(db) {
+        return new Promise(function(resolve) {
+          try {
+            var tx = db.transaction('kv', 'readwrite');
+            tx.objectStore('kv').delete(key);
+            tx.oncomplete = function() { resolve(true); };
+            tx.onerror = function() { resolve(false); };
+          } catch(e) { resolve(false); }
+        });
       });
     }
 
-    // 写入本地壁纸：IndexedDB 为主；小于 3MB 的同时冗余写 localStorage（加速首屏、兼容旧读取）
-    function saveLocalWallpaper(dataUrl, cb) {
-      return compressWallpaperIfNeeded(dataUrl).then(function(url) {   // 返回 Promise 供调用方链式等待
-        localWallpaperDataUrl = url;
-        var small = url.length < 4100000;
-        if (small) { try { localStorage.setItem('nav_local_wp', url); } catch(e) {} }
-        else { try { localStorage.removeItem('nav_local_wp'); } catch(e) {} }   // 大图不挤占配额
-        return idbSet('nav_local_wp', url).then(function() {
-          // 回读校验，失败立即提示而不是静默丢失
-          return idbGet('nav_local_wp');
-        }).then(function(back) {
-          if (back !== url && cb) cb(false);
-        }).catch(function() {
-          if (cb) cb(false);
-        });
-      }).catch(function() { if (cb) cb(false); });
+    // ---------- 本地壁纸：Blob 存储 + object URL 渲染 ----------
+    // 旧版 dataURL / base64 字符串 → Blob。多 MB 的字符串不再进入 CSSOM 或 localStorage。
+    function dataUrlToBlob(dataUrl) {
+      return new Promise(function(resolve, reject) {
+        try {
+          var s = String(dataUrl || '');
+          var m = /^data:([^;,]*)(;base64)?,/.exec(s);
+          if (!m) { reject(new Error('不是有效图片数据')); return; }
+          var mime = m[1] || 'image/jpeg';
+          var body = s.slice(m[0].length);
+          if (m[2]) {
+            var bin = atob(body);
+            var len = bin.length;
+            var buf = new Uint8Array(len);
+            for (var i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+            resolve(new Blob([buf], { type: mime }));
+          } else {
+            resolve(new Blob([decodeURIComponent(body)], { type: mime }));
+          }
+        } catch(e) { reject(e); }
+      });
     }
-
-    // 启动恢复：IDB 优先，localStorage 旧值自动迁移
-    function restoreLocalWallpaperAsync() {
-      return idbGet('nav_local_wp').then(function(v) {
-        if (v) {
-          localWallpaperDataUrl = v;
-          return null;                       // IDB 有权威数据
-        }
-        var old = ixLS('nav_local_wp');
-        if (old) {
-          localWallpaperDataUrl = old;
-          return idbSet('nav_local_wp', old).then(function() {
-            try { localStorage.removeItem('nav_local_wp'); } catch(e) {}   // 释放配额
-            return null;
+    function decodeImageBlob(blob) {
+      if (window.createImageBitmap) {
+        return createImageBitmap(blob).catch(function() { return decodeImageBlobViaImg(blob); });
+      }
+      return decodeImageBlobViaImg(blob);
+    }
+    function decodeImageBlobViaImg(blob) {
+      return new Promise(function(resolve, reject) {
+        var url = URL.createObjectURL(blob);
+        var img = new Image();
+        img.onload = function() { resolve({ img: img, url: url }); };
+        img.onerror = function() { URL.revokeObjectURL(url); reject(new Error('浏览器无法解码这张图片')); };
+        img.src = url;
+      });
+    }
+    // 统一处理：限制最长边 2560、体积压到 ~1.2MB 以内，返回 Blob。
+    // 已经够小（≤2560 且 ≤1.2MB）就原样保留，避免无谓重编码掉画质。
+    function normalizeWallpaperBlob(blob) {
+      return new Promise(function(resolve, reject) {
+        if (!blob || !blob.size) { reject(new Error('图片为空')); return; }
+        if (blob.size > LOCAL_WP_MAX_RAW) { reject(new Error('图片超过 40MB')); return; }
+        decodeImageBlob(blob).then(function(src) {
+          var width = src.width || (src.img && src.img.naturalWidth) || 0;
+          var height = src.height || (src.img && src.img.naturalHeight) || 0;
+          var release = function() {
+            if (src && src.close) { try { src.close(); } catch(e) {} }
+            else if (src && src.url) { try { URL.revokeObjectURL(src.url); } catch(e) {} }
+          };
+          if (!width || !height) { release(); reject(new Error('图片尺寸异常')); return; }
+          var maxEdge = Math.max(width, height);
+          if (maxEdge <= LOCAL_WP_MAX_EDGE && blob.size <= LOCAL_WP_TARGET_BYTES) {
+            release(); resolve(blob); return;   // 小图（含动图）保持原样
+          }
+          try {
+            var scale = Math.min(1, LOCAL_WP_MAX_EDGE / maxEdge);
+            var cv = document.createElement('canvas');
+            cv.width = Math.max(1, Math.round(width * scale));
+            cv.height = Math.max(1, Math.round(height * scale));
+            var ctx = cv.getContext('2d');
+            ctx.drawImage(src.img || src, 0, 0, cv.width, cv.height);
+            release();
+            var quals = [0.86, 0.78, 0.68, 0.58];
+            var step = function(i) {
+              cv.toBlob(function(out) {          // toBlob 是异步编码，不阻塞主线程
+                if (!out) { reject(new Error('图片编码失败')); return; }
+                if (out.size <= LOCAL_WP_TARGET_BYTES || i >= quals.length - 1) { resolve(out); return; }
+                step(i + 1);
+              }, 'image/jpeg', quals[i]);
+            };
+            step(0);
+          } catch(e) { release(); reject(e); }
+        }, function(err) { reject(err || new Error('浏览器无法解码这张图片')); });
+      });
+    }
+    function localWpSetUrl(url) {
+      // 不主动 revoke 旧的 object URL：它可能还挂在 CSS 背景上，提前释放会变成破图；
+      // 每次替换最多多留一张 ≤1.2MB 的图，换壁纸这种低频操作不值得冒破图风险。
+      localWallpaperUrl = url || '';
+    }
+    // 旧数据迁移：localStorage.nav_local_wp / IndexedDB 里的 base64 字符串 → Blob（迁完即删，释放配额）
+    function migrateLegacyLocalWp() {
+      var legacyLS = '';
+      try { legacyLS = localStorage.getItem(LOCAL_WP_LEGACY_KEY) || ''; } catch(e) {}
+      var cleanupLS = function() { try { localStorage.removeItem(LOCAL_WP_LEGACY_KEY); } catch(e) {} };
+      var fromLS = function() {
+        if (!legacyLS) return Promise.resolve(null);
+        return dataUrlToBlob(legacyLS).then(function(raw) {
+          // 解不了（罕见格式/损坏）也别把 base64 一直留在 localStorage 里拖慢一切：
+          // 6MB 以内就原样存成 Blob 保个底，更大的直接放弃（本来也显示不出来）
+          return normalizeWallpaperBlob(raw).catch(function() {
+            return raw.size <= 6 * 1024 * 1024 ? raw : null;
           });
+        }).then(function(blob) {
+          if (!blob) return null;
+          return idbSet(LOCAL_WP_KEY, blob).then(function() { return blob; });
+        }).catch(function() { return null; });
+      };
+      // 不管走哪条分支成功，只要本地还留着旧 base64 就清掉（它是吃配额、拖慢所有设置的元凶）
+      var finish = function(blob) {
+        if (legacyLS) {
+          return idbGet(LOCAL_WP_KEY).then(function(v) {
+            var bl = blob || (v instanceof Blob ? v : null);
+            // 实在迁不动（超 6MB 又解不出来）也删：它显示不出来，留着只会继续拖慢页面
+            cleanupLS();
+            return bl;
+          }).catch(function() { cleanupLS(); return blob || null; });
+        }
+        return Promise.resolve(blob || null);
+      };
+      return idbGet(LOCAL_WP_LEGACY_KEY).then(function(old) {
+        if (typeof old === 'string' && old.length > 100) {
+          return dataUrlToBlob(old).then(normalizeWallpaperBlob).then(function(blob) {
+            return idbSet(LOCAL_WP_KEY, blob).then(function() {
+              return idbDel(LOCAL_WP_LEGACY_KEY).then(function() { return blob; });
+            });
+          }).catch(function() { return idbDel(LOCAL_WP_LEGACY_KEY).then(function() { return null; }); });
         }
         return null;
-      }).then(function() {
-        if (wallpaperType === 'local' && localWallpaperDataUrl) applyHeroBg();
-      }).catch(function() {});
+      }).then(function(blob) {
+        return blob || fromLS();
+      }).then(finish).catch(function() { return finish(null); });
+    }
+    // 写入：src 可以是 File/Blob，也可以是 base64 dataURL（导入配置时会用到）
+    function saveLocalWallpaper(src, cb) {
+      var done = function(err, blob) { if (cb) { try { cb(err || null, blob || null); } catch(e) {} } };
+      var prep = (typeof src === 'string') ? dataUrlToBlob(src) : Promise.resolve(src);
+      return prep.then(function(blob) {
+        return normalizeWallpaperBlob(blob);
+      }).then(function(blob) {
+        localWallpaperBytes = blob.size;
+        return idbSet(LOCAL_WP_KEY, blob).then(function() {
+          return idbGet(LOCAL_WP_KEY);        // 回读校验，失败要明说而不是静默丢失
+        }).then(function(back) {
+          if (!(back instanceof Blob) || Math.abs((back.size || 0) - blob.size) > 8) {
+            throw new Error('写入浏览器存储失败（可能空间不足）');
+          }
+          localWpSetUrl(URL.createObjectURL(back));
+          if (wallpaperType === 'local') scheduleHeroBgApply();
+          done(null, back);
+          return back;
+        });
+      }).catch(function(err) {
+        done(err || new Error('保存失败'));
+        return null;
+      });
+    }
+    // 启动恢复：新键（Blob）优先，旧键/旧 localStorage 自动迁移；贴图排在首屏之后
+    function restoreLocalWallpaperAsync() {
+      var useBlob = function(blob) {
+        if (!blob) return null;
+        localWallpaperBytes = blob.size || 0;
+        localWpSetUrl(URL.createObjectURL(blob));
+        if (wallpaperType === 'local') scheduleHeroBgApply();
+        return blob;
+      };
+      return migrateLegacyLocalWp().then(function(migrated) {
+        if (migrated) return useBlob(migrated);
+        return idbGet(LOCAL_WP_KEY).then(function(v) {
+          if (v instanceof Blob) return useBlob(v);
+          return null;
+        });
+      }).catch(function() { return null; });
     }
 
     function scrollToTop() {
@@ -8464,6 +8678,26 @@
         else openSettings();
       }
     });
+
+    /* ---------- 缓存：让「不变的大文件」不用每次重下 ----------
+       壁纸/图标/字体共 9MB，都是每次访问都一样的东西。Service Worker 把它们缓存到本地：
+       第二次打开直接命中缓存（秒开、省流量），页面 HTML 仍走网络优先，改了文件刷新就是最新的。
+       file:// 下浏览器不提供 Service Worker，此时靠本地磁盘，本来就快。 */
+    (function() {
+      function registerOfflineCache() {
+        try {
+          if (!('serviceWorker' in navigator)) return false;
+          if (location.protocol !== 'http:' && location.protocol !== 'https:') return false;
+          navigator.serviceWorker.register('sw.js').catch(function(err) {
+            if (window.console && console.warn) console.warn('[cache] Service Worker 注册失败（不影响使用）：', err && err.message);
+          });
+          return true;
+        } catch(e) { return false; }
+      }
+      window.registerOfflineCache = registerOfflineCache;
+      if (document.readyState === 'complete') registerOfflineCache();
+      else window.addEventListener('load', registerOfflineCache);
+    })();
   </script>
 
 </body>

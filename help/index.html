@@ -343,12 +343,13 @@
       <table>
         <tr><th>模式</th><th>说明</th></tr>
         <tr><td><strong>🌍 地球实况</strong>（默认）</td><td>固定使用<strong>国家卫星气象中心（NSMC）「风云四号B 中国区域云图（真彩合成）」</strong>（产品页 <code>id=FY4B_AGRI_IMG_REGI_GCLR_GLL</code>）：<strong>每 15 分钟一帧</strong>，每次打开都取<strong>最新那一帧</strong>（右下角写北京时间的观测时刻），不会出现「前一天」或别的图。<br><strong>怎么取图：</strong>读该产品自己的清单 <code>FY4B-china-72h.xml</code>（带 CORS），取最新全尺寸帧并换成官方缩略图 <code>…JPG-thumb.JPG</code>（<strong>1719×1080 / 约 860KB</strong>，与原图逐像素一致，只是缩小）；清单抽风时按「现在往前 30 分钟」的规律 URL 逐个回退 15 分钟重试。<br><strong>显示：</strong>折叠状态下首屏 <code>100vh</code>，<code>background-size: cover</code> 按原比例铺满（不留白、不变形）；<strong>点「展开导航」后首屏回到常高</strong>，卡片立刻出现。背景不透明度 0.98（深色 0.94）。<br><strong>缓存：</strong>图片存 IndexedDB（10 分钟内秒开），超时或跨整点在后台静默换新帧，页面挂着时每 5 分钟对表。<br><strong>兜底：</strong>气象局完全取不到时才退回 NASA GIBS 当日真彩（MODIS Terra → NOAA-20 → SNPP 逐个试、全黑跳过），并在控制台留一条 <code>console.warn</code> 方便排查「图源不对」。</td></tr>
-        <tr><td><strong>在线风景壁纸</strong></td><td>每天从你放在 <code>assets/</code> 文件夹里的风景图里随机选一张。支持 <code>.jpg</code> 和 <code>.gif</code> 动图。把图片按 <code>wp_01.jpg</code>、<code>wp_13.gif</code> 这样命名放进去就行。</td></tr>
+        <tr><td><strong>在线风景壁纸</strong></td><td>每天从你放在 <code>assets/</code> 文件夹里的风景图里随机选一张。支持 <code>.jpg</code> 和 <code>.gif</code> 动图。把图片按 <code>wp_01.jpg</code>、<code>wp_13.gif</code> 这样命名放进去，再跑 <code>python tools/gen_wallpapers.py</code> 让页面知道有新图就行。</td></tr>
         <tr><td><strong>默认壁纸</strong></td><td>用导航页自带的那张背景图（<code>assets/hero_bg_light.jpg</code>）。<strong>新访客的默认壁纸已改为「🌍 地球实况」</strong>——什么都不设置就能看到当天真实的地球云图；没手动选过壁纸的老用户会被<strong>自动迁移一次</strong>到地球实况，之后以你的手动选择为准（你选过的自定义 / 本地 / 实时卫星图等都不会被覆盖）。想回到这张静态图，点一下这个选项即可。</td></tr>
         <tr><td><strong>自定义网络壁纸</strong></td><td>在输入框里贴一个图片的网络地址（URL），网页背景就换成那张图。支持 JPG、PNG、GIF动图。这个地址会随 JSON 导出分享给朋友。</td></tr>
-        <tr><td><strong>本地图片壁纸</strong></td><td>点 📁 <strong>选择本地图片</strong>，从你电脑/手机里选一张图。图片存在你的浏览器里，别人看不到。如果想把本地壁纸也分享出去，勾选下面的"导出JSON时包含本地壁纸"复选框即可。</td></tr>
+        <tr><td><strong>本地图片壁纸</strong></td><td>点 📁 <strong>选择本地图片</strong>，从你电脑/手机里选一张图。图片存在你的浏览器里，别人看不到。如果想把本地壁纸也分享出去，勾选下面的"导出JSON时包含本地壁纸"复选框即可。<br><strong>性能处理（为了不卡）：</strong>选好后会自动缩放到<strong>最长边 2560px</strong>并压到<strong>约 1.2MB</strong>（单张照片通常 200~400ms 处理完，处理时面板上有提示），然后以 <strong>Blob 形式存进浏览器 IndexedDB</strong>，渲染时用 object URL —— 不再把几 MB 的 base64 塞进页面样式和 localStorage。旧版留在 localStorage 里的 base64 会在首次打开时<strong>自动迁移成 Blob 并删除旧数据</strong>（迁移后你会发现设置改起来更快了）；<strong>超过 40MB</strong> 的图片会直接提示换一张。</td></tr>
       </table>
-    </div>
+      <div class="tip"><strong>🖼️ 新增风景壁纸：</strong><code>assets/</code> 里加了 <code>wp_34.jpg</code> 之类的图之后，跑一次 <code>python tools/gen_wallpapers.py</code> 更新壁纸清单 <code>assets/wallpapers.js</code>。页面读这个 1KB 的小清单就知道有哪些壁纸，<strong>不会再去逐张下载探测</strong>（旧做法首次访问会白下二十多张大图）。校验：<code>python tools/verify_site_integrity.py</code> 会在清单和文件不一致时报错。</div>
+      <div class="tip"><strong>⚡ 缓存（第二次打开更快）：</strong>站点注册了一个 Service Worker（<code>sw.js</code>）：<strong>壁纸 / 图标 / 字体这些「每次访问都不变的大文件」（约 9MB）会被缓存到本地</strong>，第二次打开直接命中缓存、不再走网络（实测同一张壁纸 14ms → 3ms）。<strong>页面本体与配置走「网络优先」</strong>，你改了站内文件刷新就是最新版，不会被旧缓存卡住；断网时也能打开上次看过的内容。<br>注意：<code>file://</code> 直接双击打开的本地页面浏览器不允许用 Service Worker，此时图片本来就来自本地磁盘，依旧是快的；想用缓存请用 <code>http(s)</code> 方式访问（本地可用 <code>python -m http.server</code>）。想强制重建缓存：<kbd>Ctrl</kbd>+<kbd>F5</kbd> 或清除该站点的网站数据。</div>
 
     <!-- 七 -->
     <h2 id="homepage">七、怎么把导航页设为浏览器首页</h2>

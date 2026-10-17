@@ -1,0 +1,29 @@
+# 缓存策略（Netlify / Cloudflare Pages 等支持 _headers 的静态托管直接生效）
+# 目的：不变的大文件（壁纸/图标/字体）让浏览器与 CDN 长期缓存，页面本体永远取最新。
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache
+
+/sw.js
+  Cache-Control: no-cache
+
+*/wallpapers.js
+  Cache-Control: public, max-age=86400
+
+/configs/*
+  Cache-Control: public, max-age=600
+
+/help/*
+  Cache-Control: public, max-age=3600
+
+/config-editor/*
+  Cache-Control: public, max-age=3600
+
+/tools/*
+  Cache-Control: no-store

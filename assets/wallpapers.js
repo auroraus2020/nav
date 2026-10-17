@@ -1,0 +1,41 @@
+/* 自动生成，请勿手改：python tools/gen_wallpapers.py
+   壁纸清单：让前端不必逐张探测下载就能知道 assets 里有哪些壁纸 */
+window.__AURORAUS_WALLPAPERS = {
+  "version": 1,
+  "files": [
+    "assets/wp_01.jpg",
+    "assets/wp_02.jpg",
+    "assets/wp_03.jpg",
+    "assets/wp_04.jpg",
+    "assets/wp_05.jpg",
+    "assets/wp_06.jpg",
+    "assets/wp_07.jpg",
+    "assets/wp_08.jpg",
+    "assets/wp_09.jpg",
+    "assets/wp_10.jpg",
+    "assets/wp_11.jpg",
+    "assets/wp_12.jpg",
+    "assets/wp_13.jpg",
+    "assets/wp_14.jpg",
+    "assets/wp_15.jpg",
+    "assets/wp_16.jpg",
+    "assets/wp_17.jpg",
+    "assets/wp_18.jpg",
+    "assets/wp_19.jpg",
+    "assets/wp_20.jpg",
+    "assets/wp_21.jpg",
+    "assets/wp_22.jpg",
+    "assets/wp_23.jpg",
+    "assets/wp_24.jpg",
+    "assets/wp_25.jpg",
+    "assets/wp_26.jpg",
+    "assets/wp_27.jpg",
+    "assets/wp_28.jpg",
+    "assets/wp_29.jpg",
+    "assets/wp_30.jpg",
+    "assets/wp_31.jpg",
+    "assets/wp_32.jpg",
+    "assets/wp_33.jpg",
+    "assets/wp_44.gif"
+  ]
+};
