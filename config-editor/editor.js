@@ -22,7 +22,7 @@
   var hiddenEngines = getLSJ('nav_hidden_engines', {});
   var hiddenCats = getLSJ('nav_hidden_cats', {});
   var theme = getLS('nav_theme', 'light');
-  var wallpaper = getLS('nav_wallpaper', 'bing');
+  var wallpaper = getLS('nav_wallpaper', 'earth');
   var customWallpaper = getLS('nav_custom_wp', '');
   var freqVisible = getLS('nav_freq_visible', '1') !== '0';
   var freqCount = parseInt(getLS('nav_freq_count', '8')) || 8;
@@ -645,6 +645,7 @@
       '</div></div>';
 
     htm += '<div class="setting-card"><h4>壁纸</h4><div class="setting-row">' +
+      '<span class="chip' + (wallpaper === 'earth' ? ' on' : '') + '" onclick="setSetting(\'wallpaper\',\'earth\')">🌍 地球实况</span>' +
       '<span class="chip' + (wallpaper === 'bing' ? ' on' : '') + '" onclick="setSetting(\'wallpaper\',\'bing\')">🌄 必应每日</span>' +
       '<span class="chip' + (wallpaper === 'default' ? ' on' : '') + '" onclick="setSetting(\'wallpaper\',\'default\')">🎨 默认</span>' +
       '<span class="chip' + (wallpaper === 'custom' ? ' on' : '') + '" onclick="setSetting(\'wallpaper\',\'custom\')">🔗 自定义URL</span>' +
@@ -1033,7 +1034,7 @@
     localStorage.removeItem('nav_note_content');
     localStorage.removeItem('nav_pomo_stats');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
-    hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'bing';
+    hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'earth';
     customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;
     rtEnabled = true; rtCustom = [];
     document.body.className = '';

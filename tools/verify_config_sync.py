@@ -13,7 +13,7 @@ CARD_RE = re.compile(
     re.S)
 URL_IN_ATTRS = re.compile(r'href="([^"]+)"')
 NAME_RE = re.compile(r'<h2>(.*?)</h2>')
-ICON_RE = re.compile(r'<img src="([^"]+)"')
+ICON_RE = re.compile(r'<img[^>]*\ssrc="([^"]+)"')
 
 
 def main():

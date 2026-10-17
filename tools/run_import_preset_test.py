@@ -50,7 +50,7 @@ INJECT = r'''
       return bad.join('|');
     }
     eq('noDuplicateCards', dupCheck(), '');
-    eq('wallpaperDefault', localStorage.getItem('nav_wallpaper'), 'default');
+    eq('wallpaperDefault', localStorage.getItem('nav_wallpaper'), 'earth');
     eq('sortModeFixed', localStorage.getItem('nav_cat_sort_mode'), 'fixed');
     var order = JSON.parse(localStorage.getItem('nav_cat_order') || '[]');
     eq('orderHasTradition', order.indexOf('cat-tradition') >= 0, true);

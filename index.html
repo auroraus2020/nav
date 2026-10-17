@@ -1,4 +1,3 @@
-<!--Auroraus 2026.06.15 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -121,6 +120,11 @@
       padding: 0.25rem 0.6rem; border: 1px solid var(--rule); border-radius: 8px;
       transition: all 0.2s; white-space: nowrap;
     }
+    /* 设置面板顶部的「✉️ 意见与反馈」是 button，需要清掉浏览器默认样式 */
+    button.settings-help-link {
+      background: var(--bg2); cursor: pointer; font-family: var(--font); line-height: 1.5;
+    }
+    button.settings-help-link:hover { background: rgba(59,130,246,0.05); }
     .settings-help-link:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.05); }
     .settings-input {
       padding: 0.35rem 0.6rem; border: 1px solid var(--rule); border-radius: 8px;
@@ -195,7 +199,13 @@
     .rt-tab:hover { background:rgba(37,99,235,.08); color:var(--accent); border-color:var(--accent); }
     .rt-tab .rt-label { display:none; }
     .rt-tab:hover .rt-label { display:block; position:absolute; right:44px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.78); color:#fff; font-size:.72rem; padding:.2rem .55rem; border-radius:4px; white-space:nowrap; pointer-events:none; }
-    @media (max-width:1023px) { .rt-edge { display:none !important; } }
+    /* 用户要求：只有横向分辨率低于 600px 才隐藏快捷工具（600~1023 仍然显示，页面留出让位内边距） */
+    @media (max-width:599px) { .rt-edge { display:none !important; } }
+    @media (min-width:600px) and (max-width:1023px) {
+      body.rt-right-on .page-wrapper { padding-right: 3.4rem; }
+      body.rt-left-on .page-wrapper { padding-left: 3.4rem; }
+      body.rt-right-on .ix-actions { right: 3.1rem; }
+    }
 
     /* === Hero === */
     .hero {
@@ -213,7 +223,22 @@
       background: var(--hero-overlay);
       z-index: 1;
     }
+    /* 地球实况：折叠状态（只有搜索框时）首屏占满一屏；展开导航后恢复常高，卡片立刻可见 */
+    body.wp-earth .hero { min-height: clamp(380px, 42vw, 720px); }
+    body.all-hidden.wp-earth .hero { min-height: 100vh; }
+    body.wp-earth .hero-bg { background-size: cover; background-position: center center; }
+    /* 遮罩压淡：用户要求"清晰度高一点"，卫星云图直接看清 */
+    body.wp-earth .hero-overlay {
+      background: linear-gradient(180deg, rgba(241,245,249,0.02) 0%, rgba(241,245,249,0.42) 100%);
+    }
+    body.dark.wp-earth .hero-overlay {
+      background: linear-gradient(180deg, rgba(7,14,26,0.02) 0%, rgba(7,14,26,0.46) 100%);
+    }
     .hero-content { position: relative; z-index: 2; max-width: 680px; width: 100%; }
+    /* 大屏把搜索框放宽：分辨率越大越宽（内容仍是居中的一列，不会散） */
+    @media (min-width: 1200px) { .hero-content { max-width: 760px; } }
+    @media (min-width: 1500px) { .hero-content { max-width: 820px; } }
+    @media (min-width: 1800px) { .hero-content { max-width: 860px; } }
     .hero h1 {
       font-size: 2.2rem; font-weight: 700; margin-bottom: 1.2rem;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -224,6 +249,11 @@
       background: var(--bg2); border: 1px solid var(--rule); border-radius: 50px; padding: 0.35rem;
       box-shadow: var(--search-shadow); transition: border-color 0.3s, box-shadow 0.3s, max-width 0.35s;
     }
+    /* 放在 .search-box 之后才能覆盖它的 680px（同优先级，后写生效）
+       比原来的 680 宽一点、但没到 960 那么夸张：1200→760 / 1500→820 / 1800→860 */
+    @media (min-width: 1200px) { .search-box { max-width: 760px; } }
+    @media (min-width: 1500px) { .search-box { max-width: 820px; } }
+    @media (min-width: 1800px) { .search-box { max-width: 860px; } }
     .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
     .search-box.expanded { max-width: 840px; }
     .search-box.tall { padding-top: 0.6rem; padding-bottom: 0.6rem; }
@@ -246,7 +276,7 @@
       display: block; resize: none; font-family: var(--font); line-height: 1.4;
       height: 2.42rem;                 /* 单行高度与原 input 一致 */
       min-height: 2.42rem; max-height: 16.4rem;   /* 约 10 行封顶（1.4×10 + 上下 padding） */
-      overflow-y: auto; scrollbar-width: thin;
+      overflow-y: hidden; overflow-x: hidden; scrollbar-width: thin;
       word-break: break-all; white-space: pre-wrap;
       transition: height 0.12s ease;
     }
@@ -279,17 +309,178 @@
     .engine-option.engine-custom-btn.active { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .engine-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
 
+    /* === 右上角两行：第一行 需VPN开关 + 主题切换；第二行 日期时间 + 天气按钮 === */
+    .hero-corner {
+      position: absolute; top: 0.9rem; right: 1.4rem; z-index: 12;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 0.42rem;
+      max-width: calc(100% - 7rem);
+      padding: 0.42rem 0.5rem; border-radius: 18px;
+      background: color-mix(in srgb, var(--bg2) 58%, transparent);
+      border: 1px solid color-mix(in srgb, var(--rule) 72%, transparent);
+      box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    body.dark .hero-corner { background: rgba(15, 23, 42, 0.52); border-color: rgba(148, 163, 184, 0.22); }
+    .hc-row { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; min-height: 40px; }
+    .hero-corner > *, .hero-corner .hc-row > * {
+      position: static !important; top: auto !important; right: auto !important; left: auto !important;
+    }
+    /* 右上角圆形按钮（主题 / 天气）：同尺寸，天气图标更大更醒目 */
+    .hero-corner .theme-toggle, .hero-tool-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--rule);
+      background: var(--bg2); color: var(--muted); font-size: 1.18rem;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+      padding: 0; line-height: 1; flex-shrink: 0;
+    }
+    .hero-tool-btn { font-size: 1.42rem; }
+    .hero-corner .theme-toggle:hover, .hero-tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-tool-btn.on { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.12); }
+
+    /* === 需 VPN 站点：右上角（时钟左侧）的两态快捷开关 === */
+    .vpn-quick {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.72rem; color: var(--muted); user-select: none; line-height: 1;
+    }
+    .vpn-quick .vpn-quick-label { white-space: nowrap; font-size: 0.76rem; }
+    .vpn-quick-seg {
+      display: inline-flex; align-items: center; padding: 2px; border-radius: 999px;
+      background: var(--bg2); border: 1px solid var(--rule);
+    }
+    .vpn-quick-btn {
+      border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.72rem;
+      padding: 0.22rem 0.6rem; border-radius: 999px; cursor: pointer; transition: background .16s, color .16s;
+      line-height: 1.2;
+    }
+    .vpn-quick-btn:hover { color: var(--ink); }
+    .vpn-quick-btn.on { background: var(--accent); color: #fff; font-weight: 600; }
+    .vpn-quick-btn.on.muted-on { background: #64748b; }
+    @media (max-width: 640px) {
+      .hero-corner { top: 0.5rem; right: 0.55rem; gap: 0.3rem; padding: 0.3rem 0.36rem; border-radius: 14px; max-width: calc(100% - 4.5rem); }
+      .hero-corner .hc-row { gap: 0.3rem; min-height: 34px; }
+      .hero-corner .theme-toggle, .hero-tool-btn { width: 34px; height: 34px; font-size: 1rem; }
+      .hero-tool-btn { font-size: 1.2rem; }
+      .vpn-quick { font-size: 0.68rem; }
+      .vpn-quick .vpn-quick-label { display: none; }
+    }
+
+    /* === 右上角：日期 / 周几 / 当地时间（在需VPN开关与主题切换之间） === */
+    .hero-clock {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.86rem; color: var(--muted); line-height: 1;
+      background: color-mix(in srgb, var(--bg2) 78%, transparent);
+      border: 1px solid var(--rule); border-radius: 999px;
+      padding: 0.36rem 0.82rem; user-select: none; backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+    body.dark .hero-clock { background: rgba(17,24,39,0.55); }
+    .hero-clock .hc-date { font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
+    .hero-clock .hc-week { color: var(--accent); font-weight: 700; }
+    .hero-clock .hc-time { font-variant-numeric: tabular-nums; letter-spacing: 0.03em; font-weight: 600; color: var(--ink); }
+    .hero-clock .hc-sep { opacity: 0.45; }
+    @media (max-width: 1023px) {
+      .hero-clock { font-size: 0.8rem; padding: 0.3rem 0.62rem; gap: 0.38rem; }
+      .hero-clock .hc-sep { display: none; }
+    }
+
+    /* === 地球实况图源说明（右下角，浅淡不抢眼；可点开原始图源） === */
+    .earth-credit {
+      display: none; position: absolute; right: 1rem; bottom: 0.6rem; z-index: 4;
+      font-size: 0.64rem; letter-spacing: 0.01em;
+      color: var(--muted); opacity: 0.72; cursor: pointer; user-select: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: opacity .16s, color .16s;
+    }
+    .earth-credit:hover { opacity: 1; color: var(--accent); }
+    body.wp-earth .earth-credit { display: block; }
+    /* 风云四号B 中国区域云图是 16:9 横图：首屏加高一点，中国主体就不会被裁掉 */
+    body.dark .earth-credit { opacity: 0.62; }
+    body.dark .earth-credit:hover { opacity: 1; }
+    @media (max-width: 640px) { .earth-credit { font-size: 0.58rem; right: 0.6rem; bottom: 0.4rem; } }
+
+    /* === 待办未完成：工具条徽标 + 顶部提醒条 === */
+    .rt-tab .rt-badge {
+      position: absolute; top: -3px; right: -3px; min-width: 15px; height: 15px; padding: 0 3px;
+      border-radius: 999px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+      box-shadow: 0 1px 4px rgba(239,68,68,0.55); pointer-events: none;
+    }
+    .rt-tab.rt-has-todo { animation: rtTodoPulse 2.4s ease-in-out infinite; }
+    @keyframes rtTodoPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.0); }
+      50% { box-shadow: 0 0 0 3px rgba(239,68,68,0.22); }
+    }
+    .todo-alert {
+      position: fixed; top: 0.9rem; left: 50%; transform: translateX(-50%) translateY(-8px);
+      z-index: 320; display: none; align-items: center; gap: 0.55rem;
+      background: linear-gradient(135deg, #ef4444, #f97316); color: #fff;
+      border-radius: 999px; padding: 0.42rem 0.6rem 0.42rem 0.9rem; font-size: 0.78rem; font-weight: 600;
+      box-shadow: 0 8px 22px rgba(239,68,68,0.35); cursor: pointer;
+      opacity: 0; transition: opacity .3s, transform .3s;
+    }
+    .todo-alert.show { display: flex; opacity: 1; transform: translateX(-50%) translateY(0); }
+    .todo-alert .ta-x {
+      background: rgba(255,255,255,0.22); border: 0; color: #fff; width: 20px; height: 20px;
+      border-radius: 50%; cursor: pointer; font-size: 0.7rem; line-height: 1; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .todo-alert .ta-x:hover { background: rgba(255,255,255,0.38); }
+
+    /* === 高级搜索：搜索框里的 🔬 按钮 + 浮层面板（不占布局高度、不进设置窗口） === */
+    /* 未启用：淡灰无底；启用：实心强调色 + 阴影 —— 一眼看出开关。选择器必须带上 .search-box，
+       否则会被 `.search-box button`（特异性 0-1-1）的渐变底色盖掉。 */
+    .search-box .adv-btn {
+      flex-shrink: 0; width: 34px; height: 34px; min-width: 34px; padding: 0; margin-right: 0.28rem;
+      border-radius: 50%; border: 1px solid transparent; background: transparent; box-shadow: none;
+      color: var(--muted); font-size: 0.95rem; font-weight: 400; cursor: pointer; opacity: 0.55;
+      display: flex; align-items: center; justify-content: center;
+      transition: color .16s, background .16s, border-color .16s, box-shadow .16s, transform .16s, opacity .16s;
+    }
+    .search-box .adv-btn:hover {
+      opacity: 1; color: var(--accent); background: var(--bg3); border-color: var(--rule); transform: none;
+    }
+    .search-box .adv-btn.on {
+      opacity: 1; color: #fff; border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 2px 8px rgba(59,130,246,0.35);
+    }
+    .search-box .adv-btn.on:hover { transform: scale(1.05); box-shadow: 0 3px 12px rgba(59,130,246,0.45); }
+    body.dark .search-box .adv-btn.on { color: #fff; box-shadow: 0 2px 10px rgba(59,130,246,0.5); }
+    .adv-panel {
+      display: none; position: fixed; z-index: 260; width: min(620px, 92vw);
+      background: var(--bg2); border: 1px solid var(--rule); border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0,0,0,0.22); padding: 0.9rem 1rem;
+      overflow-y: auto;
+    }
+    .adv-panel.open { display: block; }
+    .adv-panel .adv-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.55rem; font-size: 0.85rem; color: var(--ink); }
+    .adv-panel .adv-sub { font-size: 0.7rem; color: var(--muted); font-weight: 400; }
+    .adv-panel .adv-close { margin-left: auto; cursor: pointer; color: var(--muted); font-size: 0.9rem; padding: 0 0.2rem; }
+    .adv-panel .adv-close:hover { color: var(--accent); }
+    .adv-panel .adv-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; padding-bottom: 0.55rem; border-bottom: 1px dashed var(--rule); }
+    .adv-panel .adv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem 0.6rem; margin-bottom: 0.2rem; }
+    .adv-panel .adv-field { display: flex; flex-direction: column; gap: 0.22rem; font-size: 0.74rem; color: var(--muted); }
+    .adv-panel .adv-field .settings-input { width: 100%; }
+    .adv-panel .adv-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-top: 0.5rem; }
+    .adv-panel .adv-cap { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+    .adv-panel .adv-date { width: auto; min-width: 8.2rem; padding: 0.25rem 0.4rem; }
+    @media (max-width: 640px) {
+      .adv-panel { padding: 0.75rem; }
+      .adv-panel .adv-grid { grid-template-columns: 1fr; }
+      .adv-panel .adv-date { min-width: 0; flex: 1; }
+    }
+
     /* === Frequent Sites === */
+    /* 常用站点：已挪到内容区顶部（不再是 hero 里的搜索区元素），做成一条轻量横条 */
     .frequent-section {
-      max-width: 560px; margin: 1rem auto 0; display: none;
+      margin: 0 0 1.6rem; padding: 0 0 0.9rem; display: none;
+      border-bottom: 1px dashed var(--rule);
     }
     .frequent-section.visible { display: block; }
     .frequent-title {
       font-size: 0.7rem; color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.06em; margin-bottom: 0.5rem; text-align: center;
+      letter-spacing: 0.06em; margin-bottom: 0.5rem; text-align: left;
     }
     .frequent-grid {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem;
+      display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.4rem;
     }
     .frequent-chip {
       display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.7rem;
@@ -386,14 +577,13 @@
     .icon-cyan { background: rgba(6,182,212,0.12); color: #0891b2; }
     .icon-indigo { background: rgba(99,102,241,0.12); color: #4f46e5; }
 
-
     /* === 右下角操作按钮组：返回顶部 + 意见反馈 === */
     .ix-actions {
       /* 右移留出工具条宽度、抬高避开工具条底部，保证与工具条不重叠 */
       position: fixed; bottom: 1.1rem; right: 3.1rem; z-index: 300;
       display: flex; flex-direction: column; gap: 0.5rem; align-items: center;
     }
-    @media (max-width: 1023px) { .ix-actions { right: 1rem; bottom: 1rem; } }
+    @media (max-width: 599px) { .ix-actions { right: 1rem; bottom: 1rem; } }
     .ix-btn {
       width: 40px; height: 40px; border-radius: 50%; background: var(--bg2);
       border: 1px solid var(--rule); color: var(--muted); font-size: 1.05rem;
@@ -445,8 +635,7 @@
     @media (min-width: 1024px) and (max-width: 1499px) {
       .page-wrapper { padding-left: 56px; padding-right: 56px; }
     }
-    @media (max-width: 1023px) { #rtEdgeLeft { display: none !important; } }
-
+    @media (max-width: 599px) { #rtEdgeLeft { display: none !important; } }
 
     /* === Feedback === */
     .feedback-link {
@@ -464,6 +653,8 @@
       background: rgba(0,0,0,0.35); align-items: center; justify-content: center;
       animation: fadeIn 0.2s ease;
     }
+    /* 意见反馈弹窗是从设置面板里打开的，必须压在设置面板（z-index 200）之上 */
+    #feedbackModal { z-index: 420; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .modal-overlay.visible { display: flex; }
     .modal-box {
@@ -737,7 +928,7 @@
       background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
     }
     .todo-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
-    @media (max-width: 1023px) { .todo-window { display: none !important; } }
+    @media (max-width: 599px) { .todo-window { display: none !important; } }
 
     /* === Notepad Floating Window === */
     .note-window {
@@ -808,7 +999,7 @@
       background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
     }
     .note-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
-    @media (max-width: 1023px) { .note-window { display: none !important; } }
+    @media (max-width: 599px) { .note-window { display: none !important; } }
 
     /* === Pomodoro Floating Window === */
     .pomo-window {
@@ -876,7 +1067,7 @@
       background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
     }
     .pomo-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
-    @media (max-width: 1023px) { .pomo-window { display: none !important; } }
+    @media (max-width: 599px) { .pomo-window { display: none !important; } }
 
     /* === Unit Converter Floating Window === */
     .conv-window {
@@ -948,13 +1139,104 @@
       background: linear-gradient(135deg, transparent 50%, var(--rule) 50%, var(--rule) 60%, transparent 60%);
     }
     .conv-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%, var(--accent) 60%, transparent 60%); }
-    @media (max-width: 1023px) { .conv-window { display: none !important; } }
+    @media (max-width: 599px) { .conv-window { display: none !important; } }
+
+    /* === Weather Floating Window === */
+    .weather-window {
+      display: none; position: fixed; top: 80px; right: 60px; width: 366px;
+      z-index: 187; background: rgba(255,255,255,0.95); border: 1px solid var(--rule);
+      border-radius: 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      overflow: hidden; flex-direction: column;
+    }
+    body.dark .weather-window { background: rgba(17,24,39,0.95); }
+    .weather-window.visible { display: flex; }
+    .weather-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule);
+      cursor: move; user-select: none; gap: 0.35rem; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(139,92,246,0.10));
+    }
+    .weather-header > span { font-size: 0.86rem; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
+    .weather-header-actions { display: flex; gap: 0.2rem; align-items: center; }
+    .weather-msn-btn {
+      border: 1px solid var(--rule); background: var(--bg2); color: var(--muted);
+      border-radius: 999px; font-size: 0.66rem; padding: 0.18rem 0.5rem; cursor: pointer; font-family: var(--font);
+    }
+    .weather-msn-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .weather-body { padding: 0.75rem 0.85rem 0.55rem; max-height: min(70vh, 520px); overflow-y: auto; }
+    .weather-body::-webkit-scrollbar { width: 4px; }
+    .weather-body::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+    .weather-hero { display: flex; align-items: center; gap: 0.7rem; }
+    .weather-emoji { font-size: 2.6rem; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.14)); }
+    .weather-hero-main { flex: 1; min-width: 0; }
+    .weather-temp { font-size: 2.1rem; font-weight: 800; color: var(--ink); line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .weather-temp small { font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+    .weather-desc { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+    .weather-city { font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+    .weather-feels {
+      font-size: 0.66rem; padding: 0.06rem 0.34rem; border-radius: 999px;
+      background: var(--bg3); border: 1px solid var(--rule); color: var(--muted);
+    }
+    .weather-range-box {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;
+      padding: 0.32rem 0.5rem; border-radius: 12px; background: var(--bg3); border: 1px solid var(--rule);
+      flex-shrink: 0;
+    }
+    .weather-range-box .wr-k { font-size: 0.6rem; color: var(--muted); }
+    .weather-range-box .wr-v { font-size: 0.74rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .weather-range { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+    .weather-sec-title {
+      font-size: 0.64rem; color: var(--muted); font-weight: 700; letter-spacing: 0.06em;
+      margin: 0.62rem 0 0.32rem; padding-top: 0.5rem; border-top: 1px dashed var(--rule);
+    }
+    .weather-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.5rem;
+    }
+    .weather-cell { display: flex; align-items: baseline; justify-content: space-between; gap: 0.35rem; font-size: 0.72rem; }
+    .weather-cell .wc-k { color: var(--muted); white-space: nowrap; }
+    .weather-cell .wc-v { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+    .weather-aqi { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .weather-aqi .aqi-dot, .weather-rows .aqi-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+    .weather-rows { display: flex; flex-direction: column; gap: 0.3rem; }
+    .weather-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; font-size: 0.72rem; }
+    .weather-row .wr-label { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+    .weather-row .wr-val {
+      color: var(--ink); font-weight: 700; text-align: right; display: inline-flex; align-items: center;
+      gap: 0.25rem; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .weather-row .wr-val.wr-na { font-weight: 600; color: var(--muted); flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+    .wr-sub { display: block; width: 100%; font-size: 0.64rem; font-weight: 500; color: var(--muted); margin-top: 0.1rem; }
+    .weather-cloth {
+      display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.74rem; color: var(--ink);
+      background: var(--bg3); border: 1px solid var(--rule); border-radius: 12px; padding: 0.45rem 0.55rem;
+      line-height: 1.45;
+    }
+    .weather-cloth .wc-icon { font-size: 1.05rem; line-height: 1.1; }
+    .weather-updated { font-size: 0.62rem; color: var(--muted); text-align: right; margin-top: 0.45rem; opacity: 0.8; }
+    .weather-foot {
+      display: flex; gap: 0.3rem; padding: 0.45rem 0.55rem 0.55rem; border-top: 1px solid var(--rule);
+      align-items: center; flex-shrink: 0;
+    }
+    .weather-foot input {
+      flex: 1; min-width: 0; padding: 0.3rem 0.5rem; border: 1px solid var(--rule); border-radius: 8px;
+      background: var(--bg2); color: var(--ink); font-size: 0.72rem; outline: none; font-family: var(--font);
+    }
+    .weather-foot input:focus { border-color: var(--accent); }
+    .weather-mini-btn {
+      border: 1px solid var(--rule); background: var(--bg2); color: var(--muted); border-radius: 8px;
+      font-size: 0.7rem; padding: 0.28rem 0.5rem; cursor: pointer; white-space: nowrap; font-family: var(--font);
+    }
+    .weather-mini-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .weather-loading { font-size: 0.74rem; color: var(--muted); text-align: center; padding: 1.2rem 0; }
+    @media (max-width: 599px) { .weather-window { display: none !important; } }
   </style>
   <script>
     var _hmt = _hmt || [];
     (function() {
       var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?ac6e171eb4ded069b81cd6f50f3d1032";
+      hm.async = true;
+  hm.src = "https://hm.baidu.com/hm.js?ac6e171eb4ded069b81cd6f50f3d1032";
       var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
@@ -972,18 +1254,42 @@
   <!-- Hero -->
   <section class="hero">
     <button class="settings-btn" onclick="openSettings()" title="设置" aria-label="设置">⚙️</button>
-    <button class="theme-toggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
+    <div class="hero-corner" id="heroCorner">
+      <div class="hc-row" id="hcRowTop">
+        <div class="vpn-quick" id="vpnQuickRow" title="需 VPN 的站点与搜索引擎：显示还是隐藏。点一下即固定为对应模式（设置面板里还能选自动判断）">
+          <span class="vpn-quick-label">🌐 需 VPN</span>
+          <span class="vpn-quick-seg">
+            <button type="button" class="vpn-quick-btn" id="vpnQuickShow" onclick="setVpnMode('always',this)" title="显示需 VPN 的站点与搜索引擎（固定为「一直显示」）">显示</button>
+            <button type="button" class="vpn-quick-btn" id="vpnQuickHide" onclick="setVpnMode('off',this)" title="隐藏需 VPN 的站点与搜索引擎（固定为「一直隐藏」）">隐藏</button>
+          </span>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
+      </div>
+      <div class="hc-row" id="hcRowBottom">
+        <div class="hero-clock" id="heroClock" title="当前日期 / 星期 / 本地时间">
+          <span class="hc-date" id="hcDate">—</span>
+          <span class="hc-sep">·</span>
+          <span class="hc-week" id="hcWeek">—</span>
+          <span class="hc-sep">·</span>
+          <span class="hc-time" id="hcTime">--:--:--</span>
+        </div>
+        <button class="hero-tool-btn" id="heroWeatherBtn" onclick="toggleWeatherWindow()" title="天气（点一下看温度 / 湿度 / 能见度 / 空气质量 / 穿衣建议）" aria-label="天气">🌤️</button>
+      </div>
+    </div>
     <div class="hero-bg"></div>
     <div class="hero-overlay"></div>
+    <div class="earth-credit" id="earthCredit" onclick="openEarthSource()" title="点击打开原始图源">🌍 图源 NASA GIBS（VIIRS 真彩色）· 正午经线约 —</div>
     <div class="hero-content">
       <h1>AURORAUS导航</h1>
       <div class="search-box">
         <textarea id="searchInput" rows="1" placeholder="输入关键词，必应搜索..." autocomplete="off" spellcheck="false"></textarea>
+        <button type="button" class="adv-btn" id="advBtn" onclick="toggleAdvPanel(event)" title="高级搜索：精确短语 / 站内 / 文件类型 / 排除词 / 时间范围">🔬</button>
         <button onclick="doSearch()" title="网页搜索（快捷键 Enter）">搜索</button>
       </div>
       <div class="search-engines">
         <label class="engine-option active"><input type="radio" name="engine" value="bing" checked>🔵必应</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="google">🟢谷歌</label>
+        <label class="engine-option"><input type="radio" name="engine" value="baidu">🔴百度</label>
         <label class="engine-option"><input type="radio" name="engine" value="metaso">🧠秘塔AI</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="perplexity">🔎Perplexity</label>
         <label class="engine-option"><input type="radio" name="engine" value="yandex">🔴Yandex</label>
@@ -995,7 +1301,6 @@
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="msacademic">🟣微软学术</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="trans2zh">🔤译中</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="trans2en">🔤译英</label>
-        <label class="engine-option"><input type="radio" name="engine" value="baidu">🔴百度</label>
         <label class="engine-option"><input type="radio" name="engine" value="sogou">🟠搜狗</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="gscholar2">🟣谷歌学术②</label>
         <label class="engine-option desktop-only"><input type="radio" name="engine" value="xmol">🟢XMOL</label>
@@ -1018,35 +1323,111 @@
       <button class="hero-toggle-btn" onclick="toggleAllContent()" id="heroToggleBtn" title="收起/展开全部导航内容">
         <span class="toggle-icon">▲</span> 收起导航
       </button>
-      <div class="frequent-section" id="frequentSection">
-        <div class="frequent-title">常用站点</div>
-        <div class="frequent-grid" id="frequentGrid"></div>
-      </div>
     </div>
   </section>
 
   <!-- Mobile Tabs -->
   <nav class="mobile-tabs">
     <a class="mobile-tab active" href="#cat-general" onclick="setActive(this)"><img src="assets/icon_nav.jpg" alt="">综合导航</a>
-    <a class="mobile-tab" href="#cat-ai" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt="">AI大模型</a>
-    <a class="mobile-tab" href="#cat-buaa" onclick="setActive(this)"><img src="assets/icon_buaa.jpg" alt="">北航网站</a>
-    <a class="mobile-tab" href="#cat-map" onclick="setActive(this)"><img src="assets/icon_map.jpg" alt="">地图天气</a>
-    <a class="mobile-tab" href="#cat-academic" onclick="setActive(this)"><img src="assets/icon_academic.jpg" alt="">学术检索</a>
-    <a class="mobile-tab" href="#cat-entertainment" onclick="setActive(this)"><img src="assets/icon_entertainment.jpg" alt="">影音娱乐</a>
-    <a class="mobile-tab" href="#cat-tech" onclick="setActive(this)"><img src="assets/icon_tech.jpg" alt="">技术与交流</a>
-    <a class="mobile-tab" href="#cat-learn" onclick="setActive(this)"><img src="assets/icon_learn.jpg" alt="">在线学习</a>
-    <a class="mobile-tab" href="#cat-tutorial" onclick="setActive(this)"><img src="assets/icon_tutorial.jpg" alt="">编程教程</a>
-    <a class="mobile-tab" href="#cat-aero" onclick="setActive(this)"><img src="assets/icon_aero.jpg" alt="">航空与科普</a>
-    <a class="mobile-tab" href="#cat-translate" onclick="setActive(this)"><img src="assets/icon_tool.jpg" alt="">翻译工具</a>
-    <a class="mobile-tab" href="#cat-navweb" onclick="setActive(this)"><img src="assets/icon_nav.jpg" alt="">导航网站</a>
-    <a class="mobile-tab" href="#cat-efficiency" onclick="setActive(this)"><img src="assets/icon_efficiency.jpg" alt="">办公协作</a>
-    <a class="mobile-tab" href="#cat-tool" onclick="setActive(this)"><img src="assets/icon_tool.jpg" alt="">在线工具</a>
-    <a class="mobile-tab" href="#cat-tradition" onclick="setActive(this)"><img src="assets/icon_tradition.jpg" alt="">传统文化</a>
-    <a class="mobile-tab" href="#cat-mirror" onclick="setActive(this)"><img src="assets/icon_mirror.jpg" alt="">镜像网站</a>
-    <a class="mobile-tab" href="#cat-cloud" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt="">云服务器</a>
-    <a class="mobile-tab" href="#cat-data" onclick="setActive(this)"><img src="assets/icon_academic.jpg" alt="">数据与统计</a>
-    <a class="mobile-tab" href="#cat-drive" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt="">云盘与文件</a>
+    <a class="mobile-tab" href="#cat-ai" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">AI大模型</a>
+    <a class="mobile-tab" href="#cat-buaa" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_buaa.jpg" alt="">北航网站</a>
+    <a class="mobile-tab" href="#cat-map" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_map.jpg" alt="">地图天气</a>
+    <a class="mobile-tab" href="#cat-academic" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt="">学术检索</a>
+    <a class="mobile-tab" href="#cat-entertainment" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_entertainment.jpg" alt="">影音娱乐</a>
+    <a class="mobile-tab" href="#cat-tech" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tech.jpg" alt="">技术与交流</a>
+    <a class="mobile-tab" href="#cat-learn" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_learn.jpg" alt="">在线学习</a>
+    <a class="mobile-tab" href="#cat-tutorial" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tutorial.jpg" alt="">编程教程</a>
+    <a class="mobile-tab" href="#cat-aero" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_aero.jpg" alt="">航空与科普</a>
+    <a class="mobile-tab" href="#cat-translate" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt="">翻译工具</a>
+    <a class="mobile-tab" href="#cat-navweb" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_nav.jpg" alt="">导航网站</a>
+    <a class="mobile-tab" href="#cat-efficiency" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_efficiency.jpg" alt="">办公协作</a>
+    <a class="mobile-tab" href="#cat-tool" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt="">在线工具</a>
+    <a class="mobile-tab" href="#cat-tradition" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tradition.jpg" alt="">传统文化</a>
+    <a class="mobile-tab" href="#cat-mirror" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_mirror.jpg" alt="">镜像网站</a>
+    <a class="mobile-tab" href="#cat-cloud" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">云服务器</a>
+    <a class="mobile-tab" href="#cat-data" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt="">数据与统计</a>
+    <a class="mobile-tab" href="#cat-drive" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">云盘与文件</a>
   </nav>
+
+  <!-- 高级搜索浮层：搜索框里的 🔬 按钮打开（fixed 定位，贴在搜索框下方、不被 hero 裁切） -->
+  <div class="adv-panel" id="advPanel" role="dialog" aria-label="高级搜索">
+    <div class="adv-head">
+      <strong>🔬 高级搜索</strong>
+      <span class="adv-sub">仅对 必应 / 百度 / 谷歌 / Yandex 生效</span>
+      <span class="adv-close" onclick="closeAdvPanel()" title="关闭">✕</span>
+    </div>
+
+    <div class="adv-top">
+      <div class="settings-toggle" id="setAdvToggle" onclick="toggleSearchAdv()">
+        <div class="sw"></div> 启用高级搜索
+      </div>
+      <span class="settings-chip" id="setAdvExact" onclick="toggleAdvOption('exact')" title="给关键词整句加英文双引号，只搜这个完整短语">整句精确匹配</span>
+    </div>
+
+    <div class="adv-grid">
+      <label class="adv-field">
+        <span>包含全部关键词</span>
+        <input type="text" class="settings-input" id="advAllInput" placeholder="空格分隔，全部都要包含" oninput="saveSearchAdvField('all', this.value)">
+      </label>
+      <label class="adv-field">
+        <span>包含任意一个关键词</span>
+        <input type="text" class="settings-input" id="advAnyInput" placeholder="空格分隔，命中任意一个即可" oninput="saveSearchAdvField('any', this.value)">
+      </label>
+      <label class="adv-field">
+        <span>不包含以下关键词</span>
+        <input type="text" class="settings-input" id="advNoneInput" placeholder="空格分隔，自动加 - 排除" oninput="saveSearchAdvField('none', this.value)">
+      </label>
+      <label class="adv-field">
+        <span>站内搜索（限定网站）</span>
+        <input type="text" class="settings-input" id="advSiteInput" placeholder="如 zhihu.com，可带路径" oninput="saveSearchAdvField('site', this.value)">
+      </label>
+    </div>
+
+    <div class="adv-line">
+      <span class="adv-cap">关键词位置</span>
+      <span class="settings-chip" data-advpos="any" onclick="setAdvPos('any')">网页任何位置</span>
+      <span class="settings-chip" data-advpos="title" onclick="setAdvPos('title')">仅在标题</span>
+      <span class="settings-chip" data-advpos="url" onclick="setAdvPos('url')">仅在网址</span>
+    </div>
+
+    <div class="adv-line">
+      <span class="adv-cap">文档格式</span>
+      <span class="settings-chip" data-advft="" onclick="setAdvFiletype('')">全部格式</span>
+      <span class="settings-chip" data-advft="pdf" onclick="setAdvFiletype('pdf')">PDF</span>
+      <span class="settings-chip" data-advft="doc" onclick="setAdvFiletype('doc')">DOC</span>
+      <span class="settings-chip" data-advft="xls" onclick="setAdvFiletype('xls')">XLS</span>
+      <span class="settings-chip" data-advft="ppt" onclick="setAdvFiletype('ppt')">PPT</span>
+      <span class="settings-chip" data-advft="rtf" onclick="setAdvFiletype('rtf')">RTF</span>
+    </div>
+
+    <div class="adv-line">
+      <span class="adv-cap">时间范围</span>
+      <span class="settings-chip" data-advtime="" onclick="setAdvTime('')">全部时间</span>
+      <span class="settings-chip" data-advtime="day" onclick="setAdvTime('day')">一天内</span>
+      <span class="settings-chip" data-advtime="week" onclick="setAdvTime('week')">一周内</span>
+      <span class="settings-chip" data-advtime="month" onclick="setAdvTime('month')">一月内</span>
+      <span class="settings-chip" data-advtime="year" onclick="setAdvTime('year')">一年内</span>
+    </div>
+
+    <div class="adv-line">
+      <span class="adv-cap">自定义时段</span>
+      <input type="date" class="settings-input adv-date" id="advFromInput" onchange="saveSearchAdvField('from', this.value)">
+      <span class="adv-cap">至</span>
+      <input type="date" class="settings-input adv-date" id="advToInput" onchange="saveSearchAdvField('to', this.value)">
+      <span class="settings-chip" onclick="clearAdvDates()" title="清空自定义时段">清除</span>
+    </div>
+
+    <div class="adv-line">
+      <span class="adv-cap">每页条数</span>
+      <span class="settings-chip" data-advpages="" onclick="setAdvPages('')">默认</span>
+      <span class="settings-chip" data-advpages="10" onclick="setAdvPages('10')">10</span>
+      <span class="settings-chip" data-advpages="20" onclick="setAdvPages('20')">20</span>
+      <span class="settings-chip" data-advpages="30" onclick="setAdvPages('30')">30</span>
+      <span class="settings-chip" data-advpages="50" onclick="setAdvPages('50')">50</span>
+    </div>
+
+    <p class="settings-hint" id="advHint"></p>
+  </div>
 
   <!-- Desktop: Sidebar + Content -->
   <div class="body-flex" id="bodyFlex">
@@ -1056,32 +1437,37 @@
         分类导航
       </div>
       <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="折叠/展开侧边栏" id="sidebarToggleBtn">◀</button>
-      <a class="active" href="#cat-general" onclick="setActive(this)"><img src="assets/icon_nav.jpg" alt=""><span>综合导航</span></a>
-      <a href="#cat-ai" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt=""><span>AI大模型</span></a>
-      <a href="#cat-buaa" onclick="setActive(this)"><img src="assets/icon_buaa.jpg" alt=""><span>北航网站</span></a>
-      <a href="#cat-map" onclick="setActive(this)"><img src="assets/icon_map.jpg" alt=""><span>地图天气</span></a>
-      <a href="#cat-academic" onclick="setActive(this)"><img src="assets/icon_academic.jpg" alt=""><span>学术检索</span></a>
-      <a href="#cat-entertainment" onclick="setActive(this)"><img src="assets/icon_entertainment.jpg" alt=""><span>影音娱乐</span></a>
-      <a href="#cat-tech" onclick="setActive(this)"><img src="assets/icon_tech.jpg" alt=""><span>技术与交流</span></a>
-      <a href="#cat-learn" onclick="setActive(this)"><img src="assets/icon_learn.jpg" alt=""><span>在线学习</span></a>
-      <a href="#cat-tutorial" onclick="setActive(this)"><img src="assets/icon_tutorial.jpg" alt=""><span>编程教程</span></a>
-      <a href="#cat-aero" onclick="setActive(this)"><img src="assets/icon_aero.jpg" alt=""><span>航空与科普</span></a>
-      <a href="#cat-translate" onclick="setActive(this)"><img src="assets/icon_tool.jpg" alt=""><span>翻译工具</span></a>
-      <a href="#cat-navweb" onclick="setActive(this)"><img src="assets/icon_nav.jpg" alt=""><span>导航网站</span></a>
-      <a href="#cat-efficiency" onclick="setActive(this)"><img src="assets/icon_efficiency.jpg" alt=""><span>办公协作</span></a>
-      <a href="#cat-tool" onclick="setActive(this)"><img src="assets/icon_tool.jpg" alt=""><span>在线工具</span></a>
-      <a href="#cat-tradition" onclick="setActive(this)"><img src="assets/icon_tradition.jpg" alt=""><span>传统文化</span></a>
-      <a href="#cat-mirror" onclick="setActive(this)"><img src="assets/icon_mirror.jpg" alt=""><span>镜像网站</span></a>
-      <a href="#cat-cloud" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt=""><span>云服务器</span></a>
-      <a href="#cat-data" onclick="setActive(this)"><img src="assets/icon_academic.jpg" alt=""><span>数据与统计</span></a>
-      <a href="#cat-drive" onclick="setActive(this)"><img src="assets/icon_ai.jpg" alt=""><span>云盘与文件</span></a>
+      <a class="active" href="#cat-general" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_nav.jpg" alt=""><span>综合导航</span></a>
+      <a href="#cat-ai" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt=""><span>AI大模型</span></a>
+      <a href="#cat-buaa" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_buaa.jpg" alt=""><span>北航网站</span></a>
+      <a href="#cat-map" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_map.jpg" alt=""><span>地图天气</span></a>
+      <a href="#cat-academic" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt=""><span>学术检索</span></a>
+      <a href="#cat-entertainment" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_entertainment.jpg" alt=""><span>影音娱乐</span></a>
+      <a href="#cat-tech" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tech.jpg" alt=""><span>技术与交流</span></a>
+      <a href="#cat-learn" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_learn.jpg" alt=""><span>在线学习</span></a>
+      <a href="#cat-tutorial" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tutorial.jpg" alt=""><span>编程教程</span></a>
+      <a href="#cat-aero" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_aero.jpg" alt=""><span>航空与科普</span></a>
+      <a href="#cat-translate" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt=""><span>翻译工具</span></a>
+      <a href="#cat-navweb" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_nav.jpg" alt=""><span>导航网站</span></a>
+      <a href="#cat-efficiency" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_efficiency.jpg" alt=""><span>办公协作</span></a>
+      <a href="#cat-tool" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt=""><span>在线工具</span></a>
+      <a href="#cat-tradition" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_tradition.jpg" alt=""><span>传统文化</span></a>
+      <a href="#cat-mirror" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_mirror.jpg" alt=""><span>镜像网站</span></a>
+      <a href="#cat-cloud" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt=""><span>云服务器</span></a>
+      <a href="#cat-data" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt=""><span>数据与统计</span></a>
+      <a href="#cat-drive" onclick="setActive(this)"><img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt=""><span>云盘与文件</span></a>
     </aside>
 
     <main class="main-content">
+      <!-- 常用站点：从搜索区挪到这里，避免搜索框下方堆一排东西 -->
+      <div class="frequent-section" id="frequentSection">
+        <div class="frequent-title">常用站点</div>
+        <div class="frequent-grid" id="frequentGrid"></div>
+      </div>
       <!-- ========== 综合导航 ========== -->
       <section class="category-section" id="cat-general">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_nav.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_nav.jpg" alt="">
           <h2>综合导航</h2>
           <span class="count">11个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1119,9 +1505,9 @@
             <div class="icon icon-green">W</div>
             <div class="info"><h3>搜狗微信</h3><p>微信公众号文章搜索</p><span class="url">weixin.sogou.com</span></div>
           </a>
-          <a class="nav-card" href="https://ya.ru" target="_blank" rel="noopener">
+          <a class="nav-card" href="https://yandex.tr" target="_blank" rel="noopener">
             <div class="icon icon-red">Y</div>
-            <div class="info"><h3>Yandex</h3><p>俄罗斯最大搜索引擎</p><span class="url">ya.ru</span></div>
+            <div class="info"><h3>Yandex</h3><p>俄罗斯最大搜索引擎</p><span class="url">yandex.tr</span></div>
           </a>
           <a class="nav-card" data-vpn="1" href="https://duckduckgo.com" target="_blank" rel="noopener">
             <div class="icon icon-orange">D</div>
@@ -1137,7 +1523,7 @@
       <!-- ========== AI大模型 ========== -->
       <section class="category-section" id="cat-ai">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_ai.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">
           <h2>AI大模型</h2>
           <span class="count">17个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1217,7 +1603,7 @@
       <!-- ========== 北航网站 ========== -->
       <section class="category-section" id="cat-buaa">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_buaa.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_buaa.jpg" alt="">
           <h2>北航网站</h2>
           <span class="count">9个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1265,7 +1651,7 @@
       <!-- ========== 学术检索 ========== -->
       <section class="category-section" id="cat-academic">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_academic.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt="">
           <h2>学术检索</h2>
           <span class="count">26个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1381,7 +1767,7 @@
       <!-- ========== 技术与交流 ========== -->
       <section class="category-section" id="cat-tech">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_tech.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_tech.jpg" alt="">
           <h2>技术与交流</h2>
           <span class="count">23个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1485,7 +1871,7 @@
       <!-- ========== 地图天气 ========== -->
       <section class="category-section" id="cat-map">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_map.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_map.jpg" alt="">
           <h2>地图天气</h2>
           <span class="count">16个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1561,7 +1947,7 @@
       <!-- ========== 效率工具 ========== -->
       <section class="category-section" id="cat-tool">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_tool.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt="">
           <h2>在线工具</h2>
           <span class="count">25个站点</span>
           
@@ -1674,7 +2060,7 @@
       <!-- ========== 翻译工具 ========== -->
       <section class="category-section" id="cat-translate">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_tool.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_tool.jpg" alt="">
           <h2>翻译工具</h2>
           <span class="count">12个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1734,7 +2120,7 @@
       <!-- ========== 学习提升 ========== -->
       <section class="category-section" id="cat-learn">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_learn.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_learn.jpg" alt="">
           <h2>在线学习</h2>
           <span class="count">19个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1822,7 +2208,7 @@
       <!-- ========== 影音娱乐 ========== -->
       <section class="category-section" id="cat-entertainment">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_entertainment.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_entertainment.jpg" alt="">
           <h2>影音娱乐</h2>
           <span class="count">19个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1910,7 +2296,7 @@
       <!-- ========== 效率提升 ========== -->
       <section class="category-section" id="cat-efficiency">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_efficiency.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_efficiency.jpg" alt="">
           <h2>办公协作</h2>
           <span class="count">15个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -1982,7 +2368,7 @@
       <!-- ========== 云盘与文件 ========== -->
       <section class="category-section" id="cat-drive">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_ai.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">
           <h2>云盘与文件</h2>
           <span class="count">11个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2038,7 +2424,7 @@
       <!-- ========== 数据与统计 ========== -->
       <section class="category-section" id="cat-data">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_academic.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_academic.jpg" alt="">
           <h2>数据与统计</h2>
           <span class="count">13个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2102,7 +2488,7 @@
       <!-- ========== 学习教程 ========== -->
       <section class="category-section" id="cat-tutorial">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_tutorial.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_tutorial.jpg" alt="">
           <h2>编程教程</h2>
           <span class="count">12个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2162,7 +2548,7 @@
       <!-- ========== 航空与科普 ========== -->
       <section class="category-section" id="cat-aero">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_aero.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_aero.jpg" alt="">
           <h2>航空与科普</h2>
           <span class="count">19个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2250,7 +2636,7 @@
       <!-- ========== 传统文化 ========== -->
       <section class="category-section" id="cat-tradition">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_tradition.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_tradition.jpg" alt="">
           <h2>传统文化</h2>
           <span class="count">19个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2338,7 +2724,7 @@
       <!-- ========== 导航网站 ========== -->
       <section class="category-section" id="cat-navweb">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_nav.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_nav.jpg" alt="">
           <h2>导航网站</h2>
           <span class="count">15个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2410,7 +2796,7 @@
       <!-- ========== 镜像网站 ========== -->
       <section class="category-section" id="cat-mirror">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_mirror.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_mirror.jpg" alt="">
           <h2>镜像网站</h2>
           <span class="count">14个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2478,7 +2864,7 @@
       <!-- ========== 云服务器 ========== -->
       <section class="category-section" id="cat-cloud">
         <div class="category-header" onclick="toggleCategory(this)">
-          <img src="assets/icon_ai.jpg" alt="">
+          <img loading="lazy" decoding="async" src="assets/icon_ai.jpg" alt="">
           <h2>云服务器</h2>
           <span class="count">8个站点</span>
           <span class="toggle-arrow">▼</span>
@@ -2662,6 +3048,30 @@
     <div class="conv-resize-handle" id="convResizeHandle"></div>
   </div>
 
+  <!-- === Weather Floating Window === -->
+  <div class="weather-window" id="weatherWindow">
+    <div class="weather-header" id="weatherHeader">
+      <span>🌤️ 天气</span>
+      <div class="weather-header-actions">
+        <button class="weather-msn-btn" onclick="openMsnWeather('overview')" title="在 MSN 打开这个城市的天气预报（MSN 只做跳转展示，数据来自 Open-Meteo）">MSN 详情</button>
+        <button class="todo-btn-icon todo-close" onclick="closeWeatherWindow()" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="weather-body" id="weatherBody">
+      <div class="weather-loading">正在获取天气…</div>
+    </div>
+    <div class="weather-foot">
+      <input type="text" id="weatherCityInput" placeholder="城市（如 北京 / Shanghai）" onkeydown="if(event.key==='Enter')searchWeatherCity()">
+      <button class="weather-mini-btn" onclick="searchWeatherCity()" title="搜索这个城市">搜索</button>
+      <button class="weather-mini-btn" onclick="openMsnWeather('maps')" title="打开 MSN 天气地图">🗺️ 地图</button>
+    </div>
+  </div>
+
+  <div class="todo-alert" id="todoAlert" onclick="toggleTodoWindow()" title="点击打开待办">
+    <span class="ta-text">你还有待办未完成</span>
+    <button class="ta-x" onclick="event.stopPropagation();hideTodoAlert()" title="暂时收起">✕</button>
+  </div>
+
   <footer>
     <p>AURORAUS导航 &copy; 2026 | 汇聚优质资源，发现精彩世界</p>
     <p style="margin-top:0.4rem;">贡献者：<a href="https://originalfileserver.aminer.cn/sys/aminer/history/AI-history-1.mp4" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-weight:600;">Auroraus</a></p>
@@ -2669,7 +3079,6 @@
 
   <div class="ix-actions">
     <button class="ix-btn ix-top" id="ixTop" onclick="scrollToTop()" title="返回顶部" aria-label="返回顶部">↑</button>
-    <button class="ix-btn" onclick="openFeedbackModal()" title="意见反馈" aria-label="反馈">💬</button>
   </div>
 
   <div class="engine-modal-overlay" id="engineModal" onclick="if(event.target===this)closeEngineModal()">
@@ -2706,6 +3115,7 @@
           <a href="help/" target="_blank" class="settings-help-link" title="使用帮助">❓ 帮助</a>
           <a href="config-editor/" target="_blank" class="settings-help-link" title="可视化配置编辑器" style="color:var(--accent2);border-color:var(--accent2);">🖊️ 编辑器</a>
           <a href="https://www.bilibili.com/opus/1219266229527642119" target="_blank" class="settings-help-link" title="交流讨论">💬 交流</a>
+          <button class="settings-help-link" id="settingsFeedbackBtn" onclick="openFeedbackModal()" title="意见与反馈（邮箱 / 建议）">✉️ 意见与反馈</button>
         </div>
       </div>
 
@@ -2726,12 +3136,15 @@
       <div class="settings-section full">
         <h4>🖼️ 壁纸来源</h4>
         <div class="settings-row" style="flex-wrap:wrap;gap:0.5rem;">
+          <span class="settings-chip" onclick="setWallpaper('earth',this)" id="setWpEarth">🌍 地球实况</span>
           <span class="settings-chip" onclick="setWallpaper('bing',this)" id="setWpBing">在线风景壁纸</span>
           <span class="settings-chip on" onclick="setWallpaper('default',this)" id="setWpDefault">默认壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('custom',this)" id="setWpCustom">自定义网络壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('local',this)" id="setWpLocal">本地图片壁纸</span>
           <button class="settings-action-btn" id="randomWpBtn" style="font-size:0.72rem;padding:0.25rem 0.6rem;" onclick="randomPickWp()" title="从assets库中随机切换一张壁纸">🎲 换一张</button>
         </div>
+
+
         <div class="settings-row" style="margin-top:0.4rem;gap:0.4rem;align-items:center;">
           <input type="text" id="customWpInput" class="settings-input" placeholder="输入网络图片URL..." oninput="saveCustomWp()" style="flex:1;">
           <input type="file" id="localWpInput" accept="image/*" style="display:none" onchange="handleLocalWp(event)">
@@ -2758,14 +3171,15 @@
         <div class="settings-row">
           <span class="settings-chip" onclick="setNavFold('show',this)" id="setNavShow">展开导航</span>
           <span class="settings-chip" onclick="setNavFold('hide',this)" id="setNavHide">折叠导航</span>
+          <span class="settings-chip" onclick="setNavFold('autofold',this)" id="setNavAuto" title="保持现在的展开状态，但每次刷新/重新打开页面都自动折叠">刷新后自动折叠</span>
         </div>
+        <p class="settings-hint" style="margin-top:0.15rem;">「刷新后自动折叠」＝平时可以随手展开，但每次刷新或重新打开页面都会自动回到折叠状态（适合开机先看搜索框）。</p>
       </div>
 
       <div class="settings-section wide">
         <h4>🔍 搜索引擎显示</h4>
         <div class="settings-row" id="settingsEngineRow"></div>
       </div>
-
 
       <div class="settings-section wide">
         <h4>🌐 需 VPN 站点的显示方式</h4>
@@ -2793,7 +3207,6 @@
         </div>
         <p class="settings-hint">开启后主页面只显示当前选中分类的网站（点左侧分类即切换）；在搜索框里搜索时仍会显示所有分类中匹配的网站。默认关闭。</p>
       </div>
-
 
 
       <div class="settings-section wide">
@@ -2836,7 +3249,7 @@
       sogou: 'https://www.sogou.com/web?query=',
       sogouweixin: 'https://weixin.sogou.com/weixin?type=2&query=',
       sogouzhihu: 'https://zhihu.sogou.com/zhihu?query=',
-      yandex: 'https://ya.ru/search/?text=',
+      yandex: 'https://yandex.tr/search/?text=',
       gscholar2: 'https://sc.panda985.com/scholar?hl=zh-cn&q=',
       xmol: 'https://www.x-mol.com/paper/search/q?option=',
       googlescholar: 'https://scholar.google.com/scholar?hl=zh-CN&q=',
@@ -2862,10 +3275,10 @@
     };
 
     // 全部搜索引擎 id（顺序 = 搜索框下的显示顺序；新增引擎时同步这里与下方 .engine-option 标签）
-    var ALL_ENGINE_IDS = ['bing','google','metaso','perplexity','yandex','sogouzhihu','sogouweixin','quora','reddit','googlescholar','msacademic','trans2zh','trans2en','baidu','sogou','gscholar2','xmol','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','kiphub','wikipedia'];
+    var ALL_ENGINE_IDS = ['bing','google','baidu','metaso','perplexity','yandex','sogouzhihu','sogouweixin','quora','reddit','googlescholar','msacademic','trans2zh','trans2en','sogou','gscholar2','xmol','buaaebsco','baiduxueshu','douyin','xiaohongshu','bilibili','zhihu','weibo','github','baidumap','wikihow','scihub','kiphub','wikipedia'];
     // 默认「勾选显示」的引擎（其余默认隐藏）；默认值只在此处定义一次
-    var DEFAULT_VISIBLE_ENGINES = ['bing','google','metaso','perplexity','yandex','sogouzhihu','sogouweixin','quora','reddit','googlescholar','msacademic','trans2zh','trans2en'];
-    var ENGINES_DEFAULTS_VER = '2';
+    var DEFAULT_VISIBLE_ENGINES = ['bing','google','baidu','metaso','perplexity','yandex','sogouzhihu','sogouweixin','quora','reddit','googlescholar','msacademic','trans2zh','trans2en'];
+    var ENGINES_DEFAULTS_VER = '3';
     function defaultHiddenEngines() {
       var m = {};
       ALL_ENGINE_IDS.forEach(function(k) { m[k] = DEFAULT_VISIBLE_ENGINES.indexOf(k) < 0; });
@@ -2915,16 +3328,315 @@
       var input = document.getElementById('searchInput');
       var query = input.value.trim();
       if (!query) return;
-      var engine = getSelectedEngine();
-      var url = engineUrls[engine] + encodeURIComponent(query);
-      if (engine === 'custom') {
-        url = engineUrls['custom'].replace(/%s/g, encodeURIComponent(query));
-      }
-      window.open(url, '_blank');
+      window.open(buildSearchUrl(getSelectedEngine(), query), '_blank');
       clearSearchInput();          // 回车 / 点「搜索」提交后立即清空输入框（含悬浮搜索条）
     }
 
+    // ---------- 高级搜索（参考百度高级搜索；只对 必应/百度/谷歌/ Yandex 生效） ----------
+    var ADV_KEY = 'nav_search_adv';
+    var ADV_ENGINES = { bing: 1, baidu: 1, google: 1, yandex: 1 };
+    var ADV_TIME_PARAMS = {
+      day:   { g: 'd', bing: 1440,   bd: 1 },
+      week:  { g: 'w', bing: 10080,  bd: 7 },
+      month: { g: 'm', bing: 43200,  bd: 30 },
+      year:  { g: 'y', bing: 525600, bd: 365 }
+    };
+    function advDefaults() {
+      return { on: false, exact: false, all: '', any: '', none: '', site: '',
+               pos: 'any', filetype: '', time: '', from: '', to: '', pages: '' };
+    }
+    function loadSearchAdv() {
+      var d = advDefaults();
+      var raw = {};
+      try { raw = JSON.parse(ixLS(ADV_KEY) || '{}') || {}; } catch(e) { raw = {}; }
+      Object.keys(d).forEach(function(k) { if (raw[k] !== undefined) d[k] = raw[k]; });
+      // 一次性迁移：高级搜索默认「不启用」（保留用户填过的条件，只把开关关掉）
+      if (ixLS('nav_search_adv_ver') !== '2') {
+        d.on = false;
+        ixSet('nav_search_adv_ver', '2');
+        var save = JSON.parse(JSON.stringify(d));
+        ixSet(ADV_KEY, JSON.stringify(save));
+      }
+      d.on = !!d.on;
+      d.exact = !!d.exact;
+      ['all', 'any', 'none', 'site', 'filetype', 'time', 'from', 'to', 'pages'].forEach(function(k) {
+        d[k] = String(d[k] == null ? '' : d[k]);
+      });
+      if (['any', 'title', 'url'].indexOf(d.pos) < 0) d.pos = 'any';
+      return d;
+    }
+    function saveSearchAdv(adv) { ixSet(ADV_KEY, JSON.stringify(adv)); }
+    function advEngineOk(engine) { return !!ADV_ENGINES[engine]; }
+    function advDateStamp(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : ''; }
+    // 关键词分隔符：空格 / 英文逗号句号 / 中文逗号句号顿号 都算
+    function advSplitWords(s) {
+      return String(s || '').split(/[\s,，;；、]+/).filter(function(w) { return !!w; });
+    }
+    function advPad2(n) { return (n < 10 ? '0' : '') + n; }
+    function advDayStamp(d) { return '' + d.getFullYear() + advPad2(d.getMonth() + 1) + advPad2(d.getDate()); }
+
+    // 按各引擎的语法拼关键词：位置前缀逐词套用（Bing/Google 不认 intitle:(A OR B) 这种写法）
+    function advKeywordExpr(adv, engine) {
+      var pre = '';
+      if (adv.pos === 'title') pre = (engine === 'yandex' ? 'title:' : 'intitle:');
+      else if (adv.pos === 'url') pre = (engine === 'yandex' ? 'url:' : 'inurl:');
+      var out = [];
+      var allWords = advSplitWords(adv.all);
+      var anyWords = advSplitWords(adv.any);
+      if (allWords.length) {
+        if (adv.exact) out.push(pre + '"' + allWords.join(' ') + '"');
+        else allWords.forEach(function(w) { out.push(pre + w); });
+      }
+      if (anyWords.length) {
+        var ors = anyWords.map(function(w) { return pre + w; });
+        out.push(ors.length > 1 ? '(' + ors.join(' OR ') + ')' : ors[0]);
+      }
+      return out;
+    }
+
+    // 各引擎的文件类型语法：Yandex 用 mime:，其余 filetype:
+    function advFiletypeToken(adv, engine) {
+      if (!adv.filetype) return '';
+      return (engine === 'yandex' ? 'mime:' : 'filetype:') + adv.filetype;
+    }
+
+    // Yandex 不支持时间 URL 参数，但支持 date:YYYYMMDD..YYYYMMDD 操作符
+    function advYandexDateToken(adv) {
+      var from = advDateStamp(adv.from), to = advDateStamp(adv.to);
+      if (from && to) return 'date:' + from.replace(/-/g, '') + '..' + to.replace(/-/g, '');
+      var t = adv.time && ADV_TIME_PARAMS[adv.time];
+      if (!t) return '';
+      var end = new Date();
+      var start = new Date(end.getTime() - t.bd * 86400000);
+      return 'date:' + advDayStamp(start) + '..' + advDayStamp(end);
+    }
+
+    // 把高级表单拼成完整关键词（生成搜索框里的 q 值）
+    function buildSearchQuery(rawQuery, adv, engine) {
+      adv = adv || loadSearchAdv();
+      engine = engine || 'bing';
+      if (!adv.on) return rawQuery;
+      var parts = advKeywordExpr(adv, engine);
+      advSplitWords(adv.none).forEach(function(w) { parts.push('-' + w); });
+      if (adv.site) {
+        var host = String(adv.site).replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/\s+/g, '');
+        if (host) parts.push('site:' + host);
+      }
+      var ft = advFiletypeToken(adv, engine);
+      if (ft) parts.push(ft);
+      if (engine === 'yandex') {
+        var yd = advYandexDateToken(adv);
+        if (yd) parts.push(yd);
+      }
+      var q = String(rawQuery || '').trim();
+      if (parts.length) q = q ? (q + ' ' + parts.join(' ')) : parts.join(' ');
+      return q;
+    }
+
+    // 组装最终搜索 URL；高级搜索只作用于 ADV_ENGINES 里的四个引擎
+    function buildSearchUrl(engine, rawQuery) {
+      var adv = loadSearchAdv();
+      var use = adv.on && advEngineOk(engine);
+      var q = use ? buildSearchQuery(rawQuery, adv, engine) : rawQuery;
+      var encoded = encodeURIComponent(q);
+      var prefix = engineUrls[engine];
+      var url;
+      if (engine === 'custom' || typeof prefix !== 'string') {
+        url = String(prefix || engineUrls['custom']).replace(/%s/g, encoded);
+      } else if (String(prefix).indexOf('%s') >= 0) {
+        url = String(prefix).replace(/%s/g, encoded);
+      } else {
+        url = prefix + encoded;
+      }
+      if (use) {
+        var pages = parseInt(adv.pages, 10);
+        var t = adv.time && ADV_TIME_PARAMS[adv.time];
+        var from = advDateStamp(adv.from);
+        var to = advDateStamp(adv.to);
+        var custom = !!(from && to);
+        if (engine === 'google') {
+          if (pages > 0) url += '&num=' + pages;
+          if (custom) {
+            url += '&tbs=' + encodeURIComponent('cdr:1,cd_min:' + from.replace(/-/g, '/') + ',cd_max:' + to.replace(/-/g, '/'));
+          } else if (t) {
+            url += '&tbs=qdr:' + t.g;
+          }
+        } else if (engine === 'bing') {
+          if (pages > 0) url += '&count=' + pages;
+          // 必应的日期过滤：单条过滤器不需要前导 +（原样 + 会被解码成空格，反而不生效）
+          if (t && !custom) url += '&qft=' + encodeURIComponent('filterui:age-lt' + t.bing);
+        } else if (engine === 'baidu') {
+          if (pages > 0) url += '&rn=' + pages;
+          if (custom) {
+            var s = Math.floor(new Date(from + 'T00:00:00').getTime() / 1000);
+            var e2 = Math.floor(new Date(to + 'T23:59:59').getTime() / 1000);
+            if (!isNaN(s) && !isNaN(e2)) url += '&gpc=' + encodeURIComponent('stf=' + s + ',' + e2 + '|stftype=2');
+          } else if (t) {
+            var end = Math.floor(Date.now() / 1000);
+            url += '&gpc=' + encodeURIComponent('stf=' + (end - t.bd * 86400) + ',' + end + '|stftype=2');
+          }
+        } else if (engine === 'yandex') {
+          url += '&noreask=1';
+        }
+      }
+      return url;
+    }
+
+    function applySearchAdvUi() {
+      var adv = loadSearchAdv();
+      var tg = document.getElementById('setAdvToggle');
+      if (tg) tg.classList.toggle('on', adv.on);
+      var ex = document.getElementById('setAdvExact');
+      if (ex) ex.classList.toggle('on', adv.exact);
+      var map = { advAllInput: 'all', advAnyInput: 'any', advNoneInput: 'none',
+                  advSiteInput: 'site', advFromInput: 'from', advToInput: 'to' };
+      Object.keys(map).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && el.value !== adv[map[id]]) el.value = adv[map[id]];
+      });
+      document.querySelectorAll('[data-advpos]').forEach(function(el) {
+        el.classList.toggle('on', (el.getAttribute('data-advpos') || 'any') === adv.pos);
+      });
+      document.querySelectorAll('[data-advft]').forEach(function(el) {
+        el.classList.toggle('on', (el.getAttribute('data-advft') || '') === adv.filetype);
+      });
+      document.querySelectorAll('[data-advtime]').forEach(function(el) {
+        el.classList.toggle('on', (el.getAttribute('data-advtime') || '') === adv.time);
+      });
+      document.querySelectorAll('[data-advpages]').forEach(function(el) {
+        el.classList.toggle('on', (el.getAttribute('data-advpages') || '') === adv.pages);
+      });
+      var btn = document.getElementById('advBtn');
+      if (btn) {
+        var bits = [];
+        if (adv.all) bits.push('全部词');
+        if (adv.any) bits.push('任一词');
+        if (adv.none) bits.push('排除');
+        if (adv.site) bits.push('站内');
+        if (adv.filetype) bits.push(adv.filetype.toUpperCase());
+        if (adv.time) bits.push('时间');
+        if (adv.from && adv.to) bits.push('自定义时段');
+        if (adv.pos === 'title') bits.push('标题');
+        if (adv.pos === 'url') bits.push('网址');
+        if (adv.pages) bits.push(adv.pages + '条/页');
+        // 图标颜色只跟随「是否启用」：未启用=淡灰，启用=实心强调色
+        btn.classList.toggle('on', !!adv.on);
+        btn.title = adv.on
+          ? ('高级搜索已启用' + (bits.length ? '：' + bits.join(' / ') : '（还没有设置具体条件）') + '（仅对 必应/百度/谷歌/Yandex 生效）')
+          : '高级搜索：含/不含关键词、位置、站内、格式、时间、每页条数';
+      }
+      var hint = document.getElementById('advHint');
+      if (hint) {
+        hint.textContent = adv.on
+          ? '已启用（仅 必应 / 百度 / 谷歌 / Yandex 生效）：关键词按标准语法拼进查询；时间与每页条数走各引擎参数——谷歌 num/tbs、必应 count/qft、百度 rn/gpc；Yandex 只应用关键词、位置与站内条件。'
+          : '启用后按百度高级搜索的思路生效：含/不含关键词、关键词位置、站内、文档格式、时间范围、每页条数。只对 必应 / 百度 / 谷歌 / Yandex 生效，其他引擎不受影响。';
+      }
+    }
+
+    // 高级搜索浮层：贴在搜索框下方（fixed 定位，不受 hero overflow 裁切）
+    function positionAdvPanel() {
+      var panel = document.getElementById('advPanel');
+      var box = document.querySelector('.search-box');
+      if (!panel || !box) return;
+      var r = box.getBoundingClientRect();
+      var w = Math.min(620, Math.max(300, window.innerWidth - 24));
+      panel.style.width = w + 'px';
+      var top = Math.round(r.bottom + 8);
+      panel.style.maxHeight = Math.max(240, window.innerHeight - top - 16) + 'px';
+      panel.style.top = top + 'px';
+      var left = Math.round(r.left + (r.width - w) / 2);
+      left = Math.max(12, Math.min(left, window.innerWidth - w - 12));
+      panel.style.left = left + 'px';
+    }
+    function toggleAdvPanel(e) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      var panel = document.getElementById('advPanel');
+      if (!panel) return;
+      if (panel.classList.contains('open')) { closeAdvPanel(); return; }
+      applySearchAdvUi();
+      positionAdvPanel();
+      panel.classList.add('open');
+    }
+    function closeAdvPanel() {
+      var panel = document.getElementById('advPanel');
+      if (panel) panel.classList.remove('open');
+    }
+    window.toggleAdvPanel = toggleAdvPanel;
+    window.closeAdvPanel = closeAdvPanel;
+    document.addEventListener('click', function(e) {
+      var panel = document.getElementById('advPanel');
+      if (!panel || !panel.classList.contains('open')) return;
+      var t = e.target;
+      if (panel.contains(t)) return;
+      if (t && t.closest && t.closest('#advBtn')) return;
+      closeAdvPanel();
+    });
+    window.addEventListener('resize', function() {
+      var panel = document.getElementById('advPanel');
+      if (panel && panel.classList.contains('open')) positionAdvPanel();
+    });
+    window.addEventListener('scroll', function() {
+      var panel = document.getElementById('advPanel');
+      if (panel && panel.classList.contains('open')) closeAdvPanel();
+    }, { passive: true });
+
+    function toggleSearchAdv() {
+      var adv = loadSearchAdv();
+      adv.on = !adv.on;
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function toggleAdvOption(k) {
+      var adv = loadSearchAdv();
+      adv[k] = !adv[k];
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function setAdvFiletype(v) {
+      var adv = loadSearchAdv();
+      adv.filetype = v || '';
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function setAdvTime(v) {
+      var adv = loadSearchAdv();
+      adv.time = v || '';
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function setAdvPos(v) {
+      var adv = loadSearchAdv();
+      adv.pos = ['any', 'title', 'url'].indexOf(v) >= 0 ? v : 'any';
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function setAdvPages(v) {
+      var adv = loadSearchAdv();
+      adv.pages = v || '';
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function clearAdvDates() {
+      var adv = loadSearchAdv();
+      adv.from = '';
+      adv.to = '';
+      saveSearchAdv(adv);
+      applySearchAdvUi();
+    }
+    function saveSearchAdvField(k, val) {
+      var adv = loadSearchAdv();
+      adv[k] = String(val || '').trim();
+      saveSearchAdv(adv);
+    }
+    window.toggleSearchAdv = toggleSearchAdv;
+    window.buildSearchUrl = buildSearchUrl;
+    window.setAdvPos = setAdvPos;
+    window.setAdvPages = setAdvPages;
+    window.clearAdvDates = clearAdvDates;
+
     var allHidden = false;
+    // 导航折叠模式：show（展开）/ hide（折叠）/ autofold（平时可展开，但每次刷新自动折叠；默认）
+    var navFoldMode = 'autofold';
 
     var customEngineName = '';
     var customEngineUrl = '';
@@ -3382,7 +4094,16 @@
     loadSettings();
 
     (function() {
-      try { allHidden = localStorage.getItem('nav_all_hidden') === '1'; } catch(e) {}
+      try { navFoldMode = localStorage.getItem('nav_fold_mode') || ''; } catch(e) { navFoldMode = ''; }
+      if (navFoldMode !== 'show' && navFoldMode !== 'hide' && navFoldMode !== 'autofold') {
+        // 没有模式键（新访客 / 老版本）→ 默认「刷新后自动折叠」（用户指定）
+        navFoldMode = 'autofold';
+      }
+      try {
+        // 「刷新后自动折叠」= 每次载入都强制折叠；hide 也折叠；show 才沿用上次状态
+        allHidden = (navFoldMode === 'hide' || navFoldMode === 'autofold') ? true
+                  : (localStorage.getItem('nav_all_hidden') === '1');
+      } catch(e) { allHidden = false; }
       if (allHidden) {
         document.body.classList.add('all-hidden');
       } else {
@@ -3391,8 +4112,10 @@
       updateToggleUi();
       var showChip = document.getElementById('setNavShow');
       var hideChip = document.getElementById('setNavHide');
-      if (showChip) showChip.classList.toggle('on', !allHidden);
-      if (hideChip) hideChip.classList.toggle('on', allHidden);
+      var autoChip = document.getElementById('setNavAuto');
+      if (showChip) showChip.classList.toggle('on', navFoldMode === 'show');
+      if (hideChip) hideChip.classList.toggle('on', navFoldMode === 'hide');
+      if (autoChip) autoChip.classList.toggle('on', navFoldMode === 'autofold');
       applyCatOrder();
       applyCatStates(window.innerWidth <= 1023);
     })();
@@ -3570,7 +4293,12 @@
       var maxH = line * IX_MAX_LINES + padV;
       var h = Math.min(ta.scrollHeight, maxH);
       ta.style.height = h + 'px';
-      ta.style.overflowY = ta.scrollHeight > maxH + 1 ? 'auto' : 'hidden';
+      // 只有真的超过 10 行才出现滚动条；单行/未超出时一律隐藏（上下滚动条很难看）
+      var needScroll = ta.scrollHeight > maxH + 1;
+      ta.style.overflowY = needScroll ? 'auto' : 'hidden';
+      ta.style.overflowX = 'hidden';
+      // 单行时把高度钉回基准高度，避免 1px 往返导致滚动条闪一下
+      if (!needScroll && h <= line + padV + 1) ta.style.height = '';
     }
     window.autosizeSearch = autosizeSearch;
 
@@ -3743,7 +4471,13 @@
     function updateHeroBg() {
       var bg = document.querySelector('.hero-bg');
       if (!bg) return;
-      if (wallpaperType === 'local' && localWallpaperDataUrl) {
+      if (wallpaperType === 'earth' && earthWallpaperUrl) {
+        // 地球实况：一张图铺满整个首屏（cover 按比例放大、裁掉溢出，既不留白也不变形）
+        bg.style.backgroundImage = 'url(' + earthWallpaperUrl + ')';
+        bg.style.backgroundSize = 'cover';
+        bg.style.backgroundPosition = 'center center';
+        bg.style.opacity = document.body.classList.contains('dark') ? '0.94' : '0.98';
+      } else if (wallpaperType === 'local' && localWallpaperDataUrl) {
         bg.style.backgroundImage = 'url(' + localWallpaperDataUrl + ')';
         bg.style.opacity = document.body.classList.contains('dark') ? '0.35' : '0.60';
       } else if (wallpaperType === 'custom' && customWallpaperUrl) {
@@ -3760,11 +4494,349 @@
         bg.style.backgroundImage = '';
         bg.style.opacity = '';
       }
+      // 图源说明只在「地球实况」真正生效时出现
+      if (typeof syncEarthClass === 'function') syncEarthClass();
     }
 
     function applyHeroBg() {
       updateHeroBg();
     }
+
+    // ---------- 🌍 地球实况壁纸：NASA GIBS 真实色卫星图，跟随「地球正午」取景 ----------
+    var EARTH_KEY = 'nav_earth_cache';
+    var EARTH_VER = '9';                      // 改取景/尺寸/选图逻辑后递增，旧缓存自动作废
+    // 纬度固定 -60..70（南极圈外到北冰洋边）；经度跟随正午经线跨 150°：
+    // 实测 180° 时右边缘有约 9% 的黑带，收到 150° 后≈1%，且仍比 120° 宽得多。
+    var EARTH_LAT_MIN = -60, EARTH_LAT_MAX = 70, EARTH_LON_SPAN = 150;
+    var EARTH_W = 1200, EARTH_H = 1040;       // 150°×130° 的真实比例
+    var earthWallpaperUrl = '';
+    var earthPickedDay = '';
+    var earthPickedLayer = '';
+    // 主源：国家卫星气象中心（NSMC）「风云四号B 中国区域云图（真彩合成）」
+    // 产品页 id=FY4B_AGRI_IMG_REGI_GCLR_GLL，图片每 15 分钟一帧、取最新那一帧
+    var FY4_XML = 'https://img.nsmc.org.cn/CLOUDIMAGE/FY4B/AGRI/GCLR/SEC/xml/FY4B-china-72h.xml';
+    var fy4Time = '';
+    var fy4FetchedAt = 0;
+    var fy4PickedTime = '';
+    var fy4ListCache = null;      // {ts, items:[{time,url}]} 内存缓存 5 分钟
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    // 从 XML 里取最新的「全尺寸 + 缩略图」：XML 里同一时刻有两条，-thumb.JPG 结尾的是小图
+    // 注意 XML 里的 URL 是协议相对（//img.nsmc.org.cn/...），在 file:// 页面下会解析失败，必须补全
+    function fy4AbsUrl(url) {
+      if (!url) return '';
+      if (url.indexOf('//') === 0) return 'https:' + url;
+      if (url.indexOf('http') === 0) return url;
+      return 'https://img.nsmc.org.cn' + (url.charAt(0) === '/' ? '' : '/') + url;
+    }
+    function fy4Parse(xmlText) {
+      var out = [];
+      var re = /<image\s+time="([^"]+)"[^>]*url="([^"]+)"/g;
+      var m;
+      while ((m = re.exec(xmlText || ''))) {
+        var url = m[2];
+        if (/-thumb\.JPG$/i.test(url)) continue;
+        out.push({ time: m[1], url: fy4AbsUrl(url) });
+      }
+      return out;
+    }
+    function fy4ThumbOf(url) {
+      return url && /\.JPG$/i.test(url) ? url + '-thumb.JPG' : url;
+    }
+    // 兜底：URL 有规律 …/china/YYYY/YYYYMMDD/FY4B_china_YYYYMMDDHHMMSS.JPG
+    function fy4UrlForSlot(d) {
+      var t = new Date(d.getTime());
+      t.setUTCMinutes(Math.floor(t.getUTCMinutes() / 15) * 15, 0, 0);
+      var day = '' + t.getUTCFullYear() + pad2(t.getUTCMonth() + 1) + pad2(t.getUTCDate());
+      var stamp = day + pad2(t.getUTCHours()) + pad2(t.getUTCMinutes()) + '00';
+      return 'https://img.nsmc.org.cn/CLOUDIMAGE/FY4B/AGRI/GCLR/SEC/china/' +
+             t.getUTCFullYear() + '/' + day + '/FY4B_china_' + stamp + '.JPG';
+    }
+    function fy4LoadList() {
+      if (fy4ListCache && (Date.now() - fy4ListCache.ts) < 5 * 60 * 1000 && fy4ListCache.items.length) {
+        return Promise.resolve(fy4ListCache.items);
+      }
+      return fetch(FY4_XML, { mode: 'cors', cache: 'no-store' })
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function(txt) {
+          var items = fy4Parse(txt);
+          if (!items.length) throw new Error('empty-list');
+          fy4ListCache = { ts: Date.now(), items: items };
+          return items;
+        });
+    }
+    // 北京时间显示（用户要求：右下角备注用北京时间，不是 UTC）
+    function beijingTimeText(timeText) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(timeText || '');
+      if (!m) return '';
+      var utc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+      var d = new Date(utc + 8 * 3600 * 1000);
+      return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) +
+             ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + '（北京时间）';
+    }
+    // 时间戳 → 北京时间文本（全圆盘那张拿不到 Last-Modified，只能记"抓取于"）
+    function beijingTimeOfStamp(ts) {
+      if (!ts) return '';
+      var d = new Date(Number(ts) + 8 * 3600 * 1000);
+      return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) +
+             ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + '（北京时间）';
+    }
+    // 拉最新一帧中国区域云图（缩略图 1719×1080，约 880KB，CORS 允许，可落 IndexedDB）
+    function fy4FetchRegion() {
+      return fy4LoadList().then(function(items) {
+        var cands = items.slice(0, 8).map(function(it) { return { url: fy4ThumbOf(it.url), time: it.time }; });
+        // 列表抽风时用「现在往前 30 分钟」的规律 URL 兜底
+        for (var n = 0; n < 4; n++) {
+          var d = new Date(Date.now() - (30 + n * 15) * 60000);
+          cands.push({ url: fy4ThumbOf(fy4UrlForSlot(d)), time: '' });
+        }
+        function tryAt(i) {
+          if (i >= cands.length) return Promise.reject(new Error('fy4-empty'));
+          var c = cands[i];
+          return fetch(c.url, { mode: 'cors', cache: 'force-cache' })
+            .then(function(r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.blob().then(function(b) { return { blob: b, time: c.time || '', lm: r.headers.get('Last-Modified') }; });
+            })
+            .then(function(res) {
+              return blobToDataUrl(res.blob).then(function(dataUrl) {
+                return earthImageUsable(dataUrl).then(function(ok) {
+                  if (!ok) throw new Error('blank');
+                  return { dataUrl: dataUrl, time: res.time, lastMod: res.lm || '' };
+                });
+              });
+            })
+            .catch(function() { return tryAt(i + 1); });
+        }
+        return tryAt(0);
+      });
+    }
+    function fy4SlotStamp(d) {
+      var t = new Date(d.getTime());
+      t.setUTCMinutes(Math.floor(t.getUTCMinutes() / 15) * 15, 0, 0);
+      return '' + t.getUTCFullYear() + pad2(t.getUTCMonth() + 1) + pad2(t.getUTCDate()) +
+             pad2(t.getUTCHours()) + pad2(t.getUTCMinutes());
+    }
+    function fy4DayOf(timeText) {
+      var m = /^(\d{4}-\d{2}-\d{2})/.exec(timeText || '');
+      return m ? m[1] : '';
+    }
+    // 地球实况（中国区域）
+    function fetchFy4Image() {
+      return fy4FetchRegion().then(function(res) {
+        earthWallpaperUrl = res.dataUrl;
+        fy4PickedTime = res.time || res.lastMod || '';
+        earthPickedDay = fy4DayOf(res.time);
+        earthPickedLayer = 'FY4B_AGRI_REGI_GCLR';
+        try {
+          idbSet(EARTH_KEY, { ver: EARTH_VER, kind: 'fy4', time: fy4PickedTime, day: earthPickedDay,
+                              bucket: earthBucket(), dataUrl: res.dataUrl, ts: Date.now() });
+        } catch(e) {}
+        if (wallpaperType === 'earth') applyHeroBg();
+        return res.dataUrl;
+      });
+    }
+    // 「一定要最新」：GIBS 各产品的当日镶嵌出炉时间不同（实测 SNPP 当天常还是全黑，
+    // 而 MODIS Terra / NOAA-20 当天已经有了），所以按「今天优先 + 多图层兜底」逐个试。
+    var EARTH_LAYERS = [
+      'MODIS_Terra_CorrectedReflectance_TrueColor',
+      'VIIRS_NOAA20_CorrectedReflectance_TrueColor',
+      'VIIRS_SNPP_CorrectedReflectance_TrueColor'
+    ];
+    function earthDayOffset(n) {
+      var d = new Date(Date.now() - (n || 0) * 86400000);
+      var m = d.getUTCMonth() + 1, day = d.getUTCDate();
+      return d.getUTCFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+    function earthDay() { return earthDayOffset(0); }        // 首选「今天」
+    // 候选顺序：今天 × 3 图层 → 昨天 × 3 图层 → 前天 × 3 图层
+    function earthCandidates() {
+      var list = [];
+      for (var n = 0; n < 3; n++) {
+        var day = earthDayOffset(n);
+        for (var i = 0; i < EARTH_LAYERS.length; i++) {
+          list.push({ day: day, layer: EARTH_LAYERS[i], age: n });
+        }
+      }
+      return list;
+    }
+    // 太阳直射点经度：UTC 12 点时在 0°（格林尼治），每小时西移 15°
+    function earthSubsolarLon(d) {
+      var t = d || new Date();
+      var utcH = t.getUTCHours() + t.getUTCMinutes() / 60 + t.getUTCSeconds() / 3600;
+      var lon = (12 - utcH) * 15;
+      while (lon > 180) lon -= 360;
+      while (lon < -180) lon += 360;
+      return lon;
+    }
+    // 以正午经线为中心取景；越过 ±180 时整体平移（不缩窄）
+    function earthBboxNow(d) {
+      var lon = earthSubsolarLon(d);
+      var lo = lon - EARTH_LON_SPAN / 2, hi = lon + EARTH_LON_SPAN / 2;
+      if (lo < -180) { lo = -180; hi = -180 + EARTH_LON_SPAN; }
+      if (hi > 180) { lo = 180 - EARTH_LON_SPAN; hi = 180; }
+      return EARTH_LAT_MIN + ',' + Math.round(lo * 100) / 100 + ',' + EARTH_LAT_MAX + ',' + Math.round(hi * 100) / 100;
+    }
+    function earthUrlFor(day, d, layer) {
+      return 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap'
+        + '&LAYERS=' + (layer || EARTH_LAYERS[0]) + '&CRS=EPSG:4326&BBOX=' + earthBboxNow(d)
+        + '&WIDTH=' + EARTH_W + '&HEIGHT=' + EARTH_H + '&FORMAT=image/jpeg&TIME=' + day;
+    }
+    // 缓存按「天 + 整点小时」做键：一小时内的多次打开都用同一张缓存图，只有跨到下一个整点才拉新图
+    function earthBucket(d) {
+      var t = d || new Date();
+      return t.getUTCHours();
+    }
+    // 图源浅淡说明：风云四号B + 北京时间
+    function updateEarthCredit() {
+      var el = document.getElementById('earthCredit');
+      if (!el) return;
+      var bj = beijingTimeText(fy4PickedTime) || ('更新于 ' + beijingTimeOfStamp(Date.now()));
+      el.textContent = '🌍 图源 国家卫星气象中心（风云四号B 中国区域真彩云图）· ' + bj +
+        ' · 点击去 Zoom Earth 看实时卫星图';
+      el.title = '点击打开 zoom.earth/maps/satellite 实时卫星图';
+    }
+    // 地球实况背景时给 body 打标记（决定两层背景、模糊铺底与取景）
+    function syncEarthClass() {
+      document.body.classList.toggle('wp-earth', wallpaperType === 'earth' && !!earthWallpaperUrl);
+      updateEarthCredit();
+    }
+    // 点图源说明 → 打开 Zoom Earth 的实时卫星图（用户指定：https://zoom.earth/maps/satellite/）
+    function openEarthSource() {
+      window.open(ZOOM_EARTH_SITE, '_blank', 'noopener');
+    }
+    // Zoom Earth 实时卫星图网址（图源说明点一下就去这里）
+    var ZOOM_EARTH_SITE = 'https://zoom.earth/maps/satellite/';
+    // ---------- 右上角时钟：日期 / 周几 / 本地时间 ----------
+    var WEEK_CN = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    function tickHeroClock() {
+      var d = new Date();
+      var month = d.getMonth() + 1, day = d.getDate();
+      var dateEl = document.getElementById('hcDate');
+      var weekEl = document.getElementById('hcWeek');
+      var timeEl = document.getElementById('hcTime');
+      if (dateEl) dateEl.textContent = (month < 10 ? '0' : '') + month + '月' + (day < 10 ? '0' : '') + day + '日';
+      if (weekEl) weekEl.textContent = WEEK_CN[d.getDay()];
+      if (timeEl) {
+        var hh = d.getHours(), mi = d.getMinutes(), ss = d.getSeconds();
+        timeEl.textContent = (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi + ':' + (ss < 10 ? '0' : '') + ss;
+      }
+    }
+    tickHeroClock();
+    setInterval(tickHeroClock, 1000);
+    function blobToDataUrl(blob) {
+      return new Promise(function(res, rej) {
+        var fr = new FileReader();
+        fr.onload = function() { res(fr.result); };
+        fr.onerror = function() { rej(fr.error); };
+        fr.readAsDataURL(blob);
+      });
+    }
+    // 判断一张图是不是「有效影像」：GIBS 对还没出全的日期会返回整张全黑（约 1KB 的纯黑 JPEG），
+    // 这里画到 64×64 小画布上量亮度与纯黑占比（图片来自 fetch 的 blob → dataURL，画布不会被污染）
+    function earthImageUsable(dataUrl) {
+      return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+          try {
+            var c = document.createElement('canvas');
+            c.width = 64; c.height = 64;
+            var ctx = c.getContext('2d');
+            ctx.drawImage(img, 0, 0, 64, 64);
+            var px = ctx.getImageData(0, 0, 64, 64).data;
+            var sum = 0, dark = 0, n = 64 * 64;
+            for (var i = 0; i < px.length; i += 4) {
+              var v = (px[i] + px[i + 1] + px[i + 2]) / 3;
+              sum += v;
+              if (v < 8) dark++;
+            }
+            var mean = sum / n;
+            resolve(mean >= 12 && dark / n <= 0.8);
+          } catch(e) {
+            resolve(true);        // 读不到像素就不拦（宁可显示，也别空白）
+          }
+        };
+        img.onerror = function() { resolve(false); };
+        img.src = dataUrl;
+      });
+    }
+    // 从候选（今天→昨天→前天，每层三个产品）里挑第一张「有内容」的图（气象局取不到时的兜底）
+    function fetchEarthImage(forceDay) {
+      var bucket = earthBucket();
+      var candidates = forceDay
+        ? [{ day: forceDay, layer: EARTH_LAYERS[0], age: 0 }].concat(earthCandidates())
+        : earthCandidates();
+      function tryAt(i) {
+        if (i >= candidates.length) return Promise.reject(new Error('no-usable-image'));
+        var cand = candidates[i];
+        var url = earthUrlFor(cand.day, undefined, cand.layer);
+        return fetch(url, { mode: 'cors', cache: 'force-cache' })
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+          .then(blobToDataUrl)
+          .then(function(dataUrl) {
+            return earthImageUsable(dataUrl).then(function(ok) {
+              if (!ok) throw new Error('blank');
+              earthWallpaperUrl = dataUrl;
+              earthPickedDay = cand.day;
+              earthPickedLayer = cand.layer;
+              try {
+                idbSet(EARTH_KEY, { ver: EARTH_VER, day: cand.day, bucket: bucket,
+                                    layer: cand.layer, dataUrl: dataUrl, ts: Date.now() });
+              } catch(e) {}
+              if (wallpaperType === 'earth') applyHeroBg();
+              return dataUrl;
+            });
+          })
+          .catch(function() { return tryAt(i + 1); });
+      }
+      return tryAt(0).catch(function() {
+        // 全部拿不到：退回直接引用 URL（浏览器 HTTP 缓存同样能加速），失败则保持原壁纸
+        if (!earthWallpaperUrl) {
+          var url = earthUrlFor(earthDay(), undefined, EARTH_LAYERS[0]);
+          earthWallpaperUrl = url;
+          if (wallpaperType === 'earth') applyHeroBg();
+        }
+        return '';
+      });
+    }
+    // 取最新一帧：优先气象局 FY-4B（15 分钟级），失败再退 NASA GIBS 当日真彩
+    function refreshEarthWallpaper() {
+      return fetchFy4Image().catch(function(err) {
+        // 注意：这里一旦静默退回 NASA，看起来就像"图源不对"，所以留一条显眼的日志
+        if (window.console && console.warn) console.warn('[earth] FY-4B 取图失败，退回 NASA GIBS：', err && err.message);
+        return fetchEarthImage(earthDay());
+      }).catch(function() {});
+    }
+    // 启动：先读 IndexedDB 缓存秒开；
+    // 缓存超过 10 分钟（FY-4B 是 15 分钟一帧）就静默换成更新的一帧
+    function initEarthWallpaper() {
+      var bucket = earthBucket();
+      var afterCache = function(cached) {
+        if (cached && cached.dataUrl && cached.ver === EARTH_VER) {
+          earthWallpaperUrl = cached.dataUrl;
+          earthPickedDay = cached.day || '';
+          earthPickedLayer = cached.layer || '';
+          fy4PickedTime = cached.time || '';
+          if (wallpaperType === 'earth') applyHeroBg();
+          var fresh = cached.ts && (Date.now() - cached.ts) < 10 * 60 * 1000;
+          if (fresh && cached.bucket === bucket) return;      // 10 分钟内 → 直接用缓存
+        }
+        refreshEarthWallpaper();
+      };
+      try {
+        idbGet(EARTH_KEY).then(afterCache).catch(refreshEarthWallpaper);
+      } catch(e) { refreshEarthWallpaper(); }
+      // 页面长时间开着：每 5 分钟对一次表，换最新一帧（跨整点或超过 10 分钟都会刷新）
+      if (window.__earthTimer) { clearInterval(window.__earthTimer); }
+      window.__earthTimer = setInterval(function() {
+        if (wallpaperType !== 'earth') return;
+        idbGet(EARTH_KEY).then(function(c) {
+          var stale = !c || c.ver !== EARTH_VER || !c.ts || (Date.now() - c.ts) > 10 * 60 * 1000 ||
+                      c.bucket !== earthBucket();
+          if (stale) refreshEarthWallpaper();
+        }).catch(function() {});
+      }, 5 * 60 * 1000);
+    }
+    window.initEarthWallpaper = initEarthWallpaper;
 
     function initWallpaper() {
       // 默认壁纸：首次访问 / 未手动选择过壁纸的用户，默认使用「默认壁纸」
@@ -3772,7 +4844,13 @@
       try { saved = localStorage.getItem('nav_wallpaper'); } catch(e) {}
       try {
         var migrated = localStorage.getItem('nav_wp_default_migrated') === '1';
-        if (saved === 'custom' || saved === 'local' || saved === 'default') {
+        // 老用户的 'zoom'（已删除的卫星平面图）/ 'fy4'（已并入地球实况）都迁移到「地球实况」
+        if (saved === 'zoom' || saved === 'fy4') {
+          saved = 'earth';
+          try { localStorage.setItem('nav_wallpaper', 'earth'); } catch(e) {}
+        }
+        try { localStorage.removeItem('nav_earth_scope'); } catch(e) {}
+        if (saved === 'custom' || saved === 'local' || saved === 'default' || saved === 'earth' || saved === 'fy4') {
           // 用户主动选过，尊重其选择
           wallpaperType = saved;
           useBingWallpaper = false;
@@ -3806,8 +4884,21 @@
       if (typeof restoreLocalWallpaperAsync === 'function') {
         try { restoreLocalWallpaperAsync(); } catch(e) {}
       }
+      // 一次性迁移：默认壁纸改为「🌍 地球实况」（用户自己选过 bing/自定义/本地的不动）
+      try {
+        if (localStorage.getItem('nav_wp_earth_ver') !== '1') {
+          if (wallpaperType === 'default') {
+            wallpaperType = 'earth';
+            useBingWallpaper = false;
+            localStorage.setItem('nav_wallpaper', 'earth');
+          }
+          localStorage.setItem('nav_wp_earth_ver', '1');
+        }
+      } catch(e) {}
       applyHeroBg();
       if (wallpaperType === 'bing') fetchBingWallpaper();
+      if (wallpaperType === 'earth') initEarthWallpaper();
+      if (wallpaperType === 'fy4') initFy4Wallpaper();
     }
 
     initWallpaper();
@@ -3877,13 +4968,22 @@
     }
 
     // --- Custom Right-Edge Tools ---
+    // 右侧快捷工具固定顺序（用户指定，从上到下）：
+    // 网页微信助手 → 在线WPS → 待办 → 番茄钟 → 单位换算 → 临时记事本 → 工具箱 → 计算器 → 临时画图
+    // 天气已按用户要求移到首屏右上角（🌤️，在 🌙 主题切换正下方）
     var rtBuiltins = [
-      {icon:'💬', name:'微信传输', url:'https://filehelper.weixin.qq.com/', enabled:true},
-      {icon:'📄', name:'在线WPS', url:'https://365.kdocs.cn', enabled:true},
-      {icon:'🔢', name:'计算器', url:'https://www.desmos.com/scientific?lang=zh-CN', enabled:true},
-      {icon:'✏️', name:'画图', url:'https://app.diagrams.net/', enabled:true},
-      {icon:'🧰', name:'工具箱', url:'https://txttool.cn/', enabled:true}
+      { icon: '💬', name: '网页微信助手', url: 'https://filehelper.weixin.qq.com/', enabled: true },
+      { icon: '📄', name: '在线WPS', url: 'https://365.kdocs.cn', enabled: true },
+      { icon: '📋', name: '待办', action: 'toggleTodoWindow()', enabled: true },
+      { icon: '🍅', name: '番茄钟', action: 'togglePomoWindow()', enabled: true },
+      { icon: '📐', name: '单位换算', action: 'toggleConvWindow()', enabled: true },
+      { icon: '📝', name: '临时记事本', action: 'toggleNoteWindow()', enabled: true },
+      { icon: '🧰', name: '工具箱', url: 'https://txttool.cn/', enabled: true },
+      { icon: '🔢', name: '计算器', url: 'https://www.desmos.com/scientific?lang=zh-CN', enabled: true },
+      { icon: '✏️', name: '临时画图', url: 'https://app.diagrams.net/', enabled: true }
     ];
+    // 旧名称 → 新名称（保留老用户已存的左右侧别设置与自定义顺序）
+    var RT_RENAMES = { '微信传输': '网页微信助手', '待办事项': '待办', '记事本': '临时记事本', '画图': '临时画图' };
 
     function loadRtCustom() {
       try { return JSON.parse(localStorage.getItem('nav_rt_custom_tools') || '[]'); } catch(e) { return []; }
@@ -3915,9 +5015,18 @@
     function rtSideMap() {
       try { return JSON.parse(localStorage.getItem('nav_rt_sides') || '{}') || {}; } catch(e) { return {}; }
     }
+    // 兼容改名：老键 rtb:微信传输 / rtb:待办事项 / rtb:记事本 / rtb:画图 仍能读到侧别设置
     function rtSideOf(entry) {
       var m = rtSideMap();
       var v = m[entry.key];
+      if (v === undefined && entry.name) {
+        for (var oldName in RT_RENAMES) {
+          if (RT_RENAMES[oldName] === entry.name) {
+            var ov = m['rtb:' + oldName];
+            if (ov !== undefined) { v = ov; break; }
+          }
+        }
+      }
       return v === 'left' ? 'left' : 'right';
     }
     function rtCollectTabs() {
@@ -3926,13 +5035,9 @@
       var seenUrls = {};
       rtBuiltins.forEach(function(t) {
         if (!t.enabled) return;
-        seenUrls[t.url] = true;
-        list.push({ key: 'rtb:' + t.name, icon: t.icon, name: t.name, url: t.url });
+        if (t.url) seenUrls[t.url] = true;
+        list.push({ key: 'rtb:' + t.name, icon: t.icon, name: t.name, url: t.url, action: t.action });
       });
-      list.push({ key: 'rtb:待办事项', icon: '📋', name: '待办事项', action: 'toggleTodoWindow()' });
-      list.push({ key: 'rtb:记事本', icon: '📝', name: '记事本', action: 'toggleNoteWindow()' });
-      list.push({ key: 'rtb:番茄钟', icon: '🍅', name: '番茄钟', action: 'togglePomoWindow()' });
-      list.push({ key: 'rtb:单位换算', icon: '📐', name: '单位换算', action: 'toggleConvWindow()' });
       custom.forEach(function(t, i) {
         if (t.enabled === false) return;
         if (seenUrls[t.url]) return;
@@ -3944,7 +5049,8 @@
     }
     function rtTabHtml(t) {
       var oc = t.action ? t.action : ("rtGo('" + String(t.url || '').replace(/'/g, "\\'") + "')");
-      return '<div class="rt-tab" onclick="' + oc + '" title="' + String(t.name).replace(/"/g, '&quot;') + '">' +
+      return '<div class="rt-tab" data-tool="' + String(t.name).replace(/"/g, '&quot;') + '" onclick="' + oc +
+             '" title="' + String(t.name).replace(/"/g, '&quot;') + '">' +
              t.icon + '<span class="rt-label">' + t.name + '</span></div>';
     }
     function renderRtEdge() {
@@ -3963,11 +5069,41 @@
       if (edgeL) edgeL.innerHTML = left;
       document.body.classList.toggle('rt-left-on', !!left);
       document.body.classList.toggle('rt-right-on', !!right);
+      applyTodoBadge();
       var hint = document.getElementById('rtSideHint');
       if (hint) {
         hint.textContent = '每个工具可以单独选择显示在左侧或右侧（在配置编辑器的「🔗 快捷工具」里逐项设置）。同一工具只会出现在一侧，不会重复。';
       }
     }
+    // 未完成待办在工具条上的醒目标记（全部完成 / 没有待办时不显示）
+    function activeTodoCount() {
+      try {
+        var items = JSON.parse(localStorage.getItem('nav_todo_items') || '[]') || [];
+        return items.filter(function(t) { return t && !t.completed; }).length;
+      } catch(e) { return 0; }
+    }
+    function applyTodoBadge() {
+      var n = activeTodoCount();
+      document.querySelectorAll('.rt-edge .rt-tab').forEach(function(tab) {
+        var isTodo = tab.getAttribute('data-tool') === '待办';   // 用 data-tool 判断，避免被改过的 title 影响
+        var old = tab.querySelector('.rt-badge');
+        if (!isTodo) { if (old) old.remove(); tab.classList.remove('rt-has-todo'); return; }
+        tab.classList.toggle('rt-has-todo', n > 0);
+        if (n > 0) {
+          if (!old) {
+            old = document.createElement('span');
+            old.className = 'rt-badge';
+            tab.appendChild(old);
+          }
+          old.textContent = n > 99 ? '99+' : String(n);
+          tab.setAttribute('title', '待办（还有 ' + n + ' 项未完成）');
+        } else {
+          if (old) old.remove();
+          tab.setAttribute('title', '待办');
+        }
+      });
+    }
+    window.applyTodoBadge = applyTodoBadge;
 
     function rtToggleGlobal(val, el) {
       // moved to config-editor
@@ -3987,6 +5123,9 @@
       on('setWpDefault', wallpaperType === 'default');
       on('setWpCustom', wallpaperType === 'custom');
       on('setWpLocal', wallpaperType === 'local');
+      on('setWpEarth', wallpaperType === 'earth');
+      var wpHintEl = $('wpStatusHint');
+      if (wpHintEl) wpHintEl.textContent = wallpaperHintText(wallpaperType);
       show('randomWpBtn', wallpaperType === 'bing');
       show('customWpInput', wallpaperType === 'custom');
       var localInput = $('localWpInput');
@@ -4003,9 +5142,11 @@
       var isDark = document.body.classList.contains('dark');
       on('setThemeLight', !isDark);
       on('setThemeDark', isDark);
-      on('setNavShow', !allHidden);
-      on('setNavHide', allHidden);
+      on('setNavShow', navFoldMode === 'show');
+      on('setNavHide', navFoldMode === 'hide');
+      on('setNavAuto', navFoldMode === 'autofold');
       applySearchModeUi();      // 搜索模式 chip + 说明文案
+      applySearchAdvUi();       // 高级搜索 chip/输入框回显
       var ft = $('setFreqToggle');
       if (ft) ft.classList.toggle('on', freqVisible);
       var fc = $('setFreqCount');
@@ -4086,6 +5227,14 @@
       applySettings();
     }
 
+    function wallpaperHintText(type) {
+      if (type === 'local') return '本地图片仅存在本机浏览器存储中，导出配置时会留空';
+      if (type === 'custom') return '请输入网络图片URL，支持JPG/PNG/GIF';
+      if (type === 'earth') return '地球实况：国家卫星气象中心 <strong>风云四号B「中国区域真彩云图」</strong>，<strong>每 15 分钟一帧</strong>、每次打开都取最新那帧；缩略图 1719×1080 约 880KB，本地缓存 10 分钟；取不到时退回 NASA 当日真彩。右下角显示北京时间的观测时刻。';
+      if (type === 'fy4') return '实时卫星图：<strong>风云四号B 全圆盘云图（真彩合成）</strong>——整个地球一颗球（1374×1489，约 400KB，官网实时刷新）；与「🌍 地球实况」的中国区域云图不重复。<strong>整张图完整显示</strong>（用 contain，不裁切），空白处由同一张图放大模糊铺底；右下角显示北京时间。';
+      if (type === 'bing') return '在线风景壁纸从必应每日图库随机取一张，可点「换一张」';
+      return '网络图片URL用于导入/导出配置；本地图片仅存在本机浏览器中';
+    }
     function setWallpaper(type, el) {
       wallpaperType = type;
       useBingWallpaper = (type === 'bing');
@@ -4093,19 +5242,16 @@
       document.getElementById('setWpDefault').classList.toggle('on', type === 'default');
       document.getElementById('setWpCustom').classList.toggle('on', type === 'custom');
       document.getElementById('setWpLocal').classList.toggle('on', type === 'local');
+      var elEarth = document.getElementById('setWpEarth');
+      if (elEarth) elEarth.classList.toggle('on', type === 'earth');
       document.getElementById('customWpInput').style.display = (type === 'custom') ? '' : 'none';
       document.getElementById('localWpInput').nextElementSibling.style.display = (type === 'local') ? '' : 'none';
       document.getElementById('wpExportRow').style.display = (type === 'local') ? '' : 'none';
       document.getElementById('randomWpBtn').style.display = (type === 'bing') ? '' : 'none';
-      if (type === 'local') {
-        document.getElementById('wpStatusHint').textContent = '本地图片仅存在本机浏览器存储中，导出配置时会留空';
-      } else if (type === 'custom') {
-        document.getElementById('wpStatusHint').textContent = '请输入网络图片URL，支持JPG/PNG/GIF';
-      } else {
-        document.getElementById('wpStatusHint').textContent = '网络图片URL用于导入/导出配置；本地图片仅存在本机浏览器中';
-      }
+      document.getElementById('wpStatusHint').textContent = wallpaperHintText(type);
       applyHeroBg();
       if (type === 'bing' && !bingWallpaperUrl) { fetchBingWallpaper(); }
+      if (type === 'earth' && !earthWallpaperUrl) { initEarthWallpaper(); }
       try { localStorage.setItem('nav_wallpaper', type); } catch(e) {}
     }
 
@@ -4303,8 +5449,9 @@
             if (typeof settings.freqCount === 'number' && settings.freqCount >= 1 && settings.freqCount <= 12) {
               localStorage.setItem('nav_freq_count', String(settings.freqCount));
             }
-            if (typeof settings.navFold === 'string' && (settings.navFold === 'show' || settings.navFold === 'hide')) {
-              localStorage.setItem('nav_all_hidden', settings.navFold === 'hide' ? '1' : '0');
+            if (typeof settings.navFold === 'string' && (settings.navFold === 'show' || settings.navFold === 'hide' || settings.navFold === 'autofold')) {
+              localStorage.setItem('nav_fold_mode', settings.navFold);
+              localStorage.setItem('nav_all_hidden', settings.navFold === 'show' ? '0' : '1');
             }
             if (settings.hiddenCategories && typeof settings.hiddenCategories === 'object') {
               localStorage.setItem('nav_hidden_cats', JSON.stringify(settings.hiddenCategories));
@@ -4320,6 +5467,13 @@
             }
             if (settings.searchMode === 'focus' || settings.searchMode === 'full') {
               localStorage.setItem('nav_search_mode', settings.searchMode);
+            }
+            if (settings.searchAdv && typeof settings.searchAdv === 'object') {
+              var advIn = { on: false, exact: false, site: '', exclude: '', filetype: '', time: '' };
+              Object.keys(advIn).forEach(function(k) {
+                if (settings.searchAdv[k] !== undefined) advIn[k] = settings.searchAdv[k];
+              });
+              try { localStorage.setItem('nav_search_adv', JSON.stringify(advIn)); } catch(e) {}
             }
           }
           var msgParts = [];
@@ -4341,7 +5495,7 @@
 
       function restoreDefaults() {
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       alert('已清除所有自定义数据，页面将刷新恢复到默认状态。');
       location.reload();
@@ -4389,7 +5543,11 @@
       try { var cwp = localStorage.getItem('nav_custom_wp'); if (cwp) settings.customWallpaper = cwp; } catch(e) {}
       try { var fv = localStorage.getItem('nav_freq_visible'); if (fv !== null) settings.freqVisible = fv !== '0'; } catch(e) {}
       try { var fc = parseInt(localStorage.getItem('nav_freq_count')); if (fc) settings.freqCount = fc; } catch(e) {}
-      try { var nf = localStorage.getItem('nav_all_hidden'); if (nf) settings.navFold = nf === '1' ? 'hide' : 'show'; } catch(e) {}
+      try {
+        var nfm = localStorage.getItem('nav_fold_mode');
+        var nf = localStorage.getItem('nav_all_hidden');
+        settings.navFold = (nfm === 'hide' || nfm === 'autofold' || nfm === 'show') ? nfm : (nf === '1' ? 'hide' : 'show');
+      } catch(e) {}
       try {
         var co = localStorage.getItem('nav_cat_order');
         if (co) settings.catOrder = JSON.parse(co);
@@ -4401,6 +5559,12 @@
       try {
         var smd = localStorage.getItem('nav_search_mode');
         settings.searchMode = (smd === 'focus') ? 'focus' : 'full';
+      } catch(e) {}
+      try {
+        var advExport = loadSearchAdv();
+        if (advExport.on || advExport.exact || advExport.site || advExport.exclude || advExport.filetype || advExport.time) {
+          settings.searchAdv = advExport;
+        }
       } catch(e) {}
       try {
         var vm = localStorage.getItem('nav_vpn_mode');
@@ -4579,13 +5743,22 @@
     }
 
     function setNavFold(state, el) {
-      allHidden = (state === 'hide');
+      // state: show（展开）/ hide（折叠并记住）/ autofold（刷新后自动折叠）
+      navFoldMode = (state === 'hide' || state === 'autofold') ? state : 'show';
+      allHidden = (state === 'hide' || state === 'autofold');
       if (allHidden) { document.body.classList.add('all-hidden'); }
       else { document.body.classList.remove('all-hidden'); }
-      document.getElementById('setNavShow').classList.toggle('on', !allHidden);
-      document.getElementById('setNavHide').classList.toggle('on', allHidden);
+      var cs = document.getElementById('setNavShow');
+      var ch = document.getElementById('setNavHide');
+      var ca = document.getElementById('setNavAuto');
+      if (cs) cs.classList.toggle('on', navFoldMode === 'show');
+      if (ch) ch.classList.toggle('on', navFoldMode === 'hide');
+      if (ca) ca.classList.toggle('on', navFoldMode === 'autofold');
       updateToggleUi();
-      try { localStorage.setItem('nav_all_hidden', allHidden ? '1' : '0'); } catch(e) {}
+      try {
+        localStorage.setItem('nav_all_hidden', allHidden ? '1' : '0');
+        localStorage.setItem('nav_fold_mode', navFoldMode);
+      } catch(e) {}
     }
 
     function toggleFreqVisible() {
@@ -4637,18 +5810,24 @@
     (function() {
       try {
         var clicks = JSON.parse(localStorage.getItem('nav_clicks') || '{}');
-        document.querySelectorAll('.nav-card').forEach(function(card) {
-          card.addEventListener('click', function() {
-            var href = card.getAttribute('href');
-            var name = card.querySelector('h3').textContent;
-            if (!href || !name) return;
-            clicks[name] = (clicks[name] || 0) + 1;
-            clicks._hrefs = clicks._hrefs || {};
-            clicks._hrefs[name] = href;
-            localStorage.setItem('nav_clicks', JSON.stringify(clicks));
-            renderFrequent();
-          });
-        });
+        function bumpCard(card) {
+          var href = card.getAttribute('href');
+          var h3 = card.querySelector('h3');
+          var name = h3 ? h3.textContent : '';
+          if (!href || !name) return;
+          clicks[name] = (clicks[name] || 0) + 1;
+          clicks._hrefs = clicks._hrefs || {};
+          clicks._hrefs[name] = href;
+          localStorage.setItem('nav_clicks', JSON.stringify(clicks));
+          renderFrequent();
+        }
+        // 一次委托代替 300+ 个卡片监听（启动更快，且收藏区的克隆卡也能计数）
+        document.addEventListener('click', function(e) {
+          var t = e.target;
+          if (!t || !t.closest || t.closest('.fav-star')) return;
+          var card = t.closest('.main-content a.nav-card');
+          if (card) bumpCard(card);
+        }, true);
         document.getElementById('frequentGrid').addEventListener('click', function(e) {
           var chip = e.target.closest('.frequent-chip');
           if (!chip) return;
@@ -4793,7 +5972,6 @@
     }
 
 
-
     // ---------- 站点覆盖（显隐 / 需VPN / 排序） ----------
     var siteOv = {};
     function loadSiteOverrides() {
@@ -4880,6 +6058,21 @@
       if (on) on.classList.toggle('on', vpnMode === 'always');
       if (au) au.classList.toggle('on', vpnMode === 'auto');
       if (off) off.classList.toggle('on', vpnMode === 'off');
+      // 搜索框下方的快捷「显示 / 隐藏」：auto 模式按当前探测结果反映实际效果
+      var showBtn = document.getElementById('vpnQuickShow');
+      var hideBtn = document.getElementById('vpnQuickHide');
+      var effectiveShow = (vpnMode === 'auto') ? !!vpnOn : (vpnMode !== 'off');
+      if (showBtn) showBtn.classList.toggle('on', effectiveShow);
+      if (hideBtn) {
+        hideBtn.classList.toggle('on', !effectiveShow);
+        hideBtn.classList.toggle('muted-on', !effectiveShow);
+      }
+      var row = document.getElementById('vpnQuickRow');
+      if (row) {
+        row.title = vpnMode === 'auto'
+          ? '当前为「自动判断」：探测到上不了外网时自动隐藏。点一下可固定为显示/隐藏。'
+          : (vpnMode === 'always' ? '当前「一直显示」。点「隐藏」可固定为一直隐藏。' : '当前「一直隐藏」。点「显示」可固定为一直显示。');
+      }
     }
 
     function probeOne(url, ms) {
@@ -4906,8 +6099,8 @@
         return Promise.resolve(cached.on);
       }
       return Promise.all([
-        probeOne('https://www.google.com/favicon.ico', 2500),
-        probeOne('https://www.quora.com/favicon.ico', 2500)
+        probeOne('https://www.google.com/favicon.ico', 1200),
+        probeOne('https://www.quora.com/favicon.ico', 1200)
       ]).then(function(res) {
         var on = (res[0] || res[1]);
         try { sessionStorage.setItem(VPN_PROBE_KEY, JSON.stringify({ t: Date.now(), on: on })); } catch(e) {}
@@ -5049,6 +6242,7 @@
       applyVpnUi();
       applyOnlyActive();
       applySearchModeUi();      // 只回显，不写盘
+      applySearchAdvUi();       // 高级搜索回显
       // 仅回显提示文案，不调用 setVpnMode（那会写盘）
       var hint = document.getElementById('vpnModeHint');
       if (hint) hint.textContent = vpnModeHintText();
@@ -5566,6 +6760,8 @@
         listEl.innerHTML = h;
       }
       countEl.textContent = activeCount + ' 项未完成 · ' + completedCount + ' 项已完成';
+      if (typeof applyTodoBadge === 'function') applyTodoBadge();
+      if (typeof maybeShowTodoAlert === 'function') maybeShowTodoAlert();
     }
 
     function escapeHtml(str) {
@@ -5636,12 +6832,33 @@
     function toggleTodoWindow() {
       var win = document.getElementById('todoWindow');
       if (!win) return;
+      hideTodoAlert();
       if (win.classList.contains('visible')) {
         closeTodoWindow();
       } else {
         openTodoWindow();
       }
     }
+
+    // ---------- 未完成待办：顶部醒目提醒条（全部完成/没有待办时不出现） ----------
+    function hideTodoAlert() {
+      var el = document.getElementById('todoAlert');
+      if (el) el.classList.remove('show');
+    }
+    function maybeShowTodoAlert() {
+      var n = (typeof activeTodoCount === 'function') ? activeTodoCount() : 0;
+      var el = document.getElementById('todoAlert');
+      if (!el) return;
+      if (n <= 0 || document.getElementById('todoWindow').classList.contains('visible')) {
+        el.classList.remove('show');
+        return;
+      }
+      var txt = el.querySelector('.ta-text');
+      if (txt) txt.textContent = '你还有 ' + n + ' 项待办未完成 → 点这里查看';
+      el.classList.add('show');
+    }
+    window.hideTodoAlert = hideTodoAlert;
+    window.maybeShowTodoAlert = maybeShowTodoAlert;
 
     function openTodoWindow() {
       var win = document.getElementById('todoWindow');
@@ -5840,6 +7057,7 @@
     }
 
     loadTodoItems();
+    if (typeof renderTodoList === 'function') renderTodoList();   // 初始化待办徽标与提醒条
     initTodoDrag();
     initTodoResize();
 
@@ -6452,6 +7670,10 @@
         { label: 'mm (毫米)', factor: 0.001 },
         { label: 'μm (微米)', factor: 0.000001 },
         { label: 'nm (纳米)', factor: 0.000000001 },
+        { label: '里 (市里)', factor: 500 },
+        { label: '丈', factor: 10/3 },
+        { label: '尺 (市尺)', factor: 1/3 },
+        { label: '寸 (市寸)', factor: 1/30 },
         { label: 'inch (英寸)', factor: 0.0254 },
         { label: 'ft (英尺)', factor: 0.3048 },
         { label: 'yd (码)', factor: 0.9144 },
@@ -6465,6 +7687,9 @@
         { label: 'g (克)', factor: 0.001 },
         { label: 'mg (毫克)', factor: 0.000001 },
         { label: 't (吨)', factor: 1000 },
+        { label: '斤', factor: 0.5 },
+        { label: '两', factor: 0.05 },
+        { label: '钱', factor: 0.005 },
         { label: 'lb (磅)', factor: 0.45359237 },
         { label: 'oz (盎司)', factor: 0.028349523125 },
         { label: 'slug (斯勒格)', factor: 14.59390293720636 },
@@ -6505,6 +7730,10 @@
         { label: 'km² (平方千米)', factor: 1000000 },
         { label: 'cm² (平方厘米)', factor: 0.0001 },
         { label: 'mm² (平方毫米)', factor: 0.000001 },
+        { label: '亩', factor: 2000/3 },
+        { label: '分 (市分)', factor: 200/3 },
+        { label: '平方丈', factor: 100/9 },
+        { label: '平方尺', factor: 1/9 },
         { label: 'ha (公顷)', factor: 10000 },
         { label: 'acre (英亩)', factor: 4046.8564224 },
         { label: 'ft² (平方英尺)', factor: 0.09290304 },
@@ -6519,6 +7748,7 @@
         { label: 'mW (毫瓦)', factor: 0.001 },
         { label: 'hp (机械马力)', factor: 745.69987158227 },
         { label: 'PS (公制马力)', factor: 735.49875 },
+        { label: 'RT (冷吨)', factor: 3516.8528420667 },
         { label: 'BTU/s', factor: 1055.05585262 },
         { label: 'BTU/h', factor: 0.29307107017222 },
         { label: 'ft·lbf/s', factor: 1.3558179483314 },
@@ -6551,6 +7781,8 @@
         { label: 'mL (毫升)', factor: 0.001 },
         { label: 'm³ (立方米)', factor: 1000 },
         { label: 'cm³ (立方厘米)', factor: 0.001 },
+        { label: '斗', factor: 10 },
+        { label: '石', factor: 100 },
         { label: 'gal US (美制加仑)', factor: 3.785411784 },
         { label: 'gal UK (英制加仑)', factor: 4.54609 },
         { label: 'qt (夸脱)', factor: 0.946352946 },
@@ -6559,6 +7791,7 @@
         { label: 'fl oz US (液量盎司)', factor: 0.0295735295625 },
         { label: 'ft³ (立方英尺)', factor: 28.316846592 },
         { label: 'in³ (立方英寸)', factor: 0.016387064 },
+        { label: 'yd³ (立方码)', factor: 764.554857984 },
         { label: 'barrel (石油桶)', factor: 158.987294928 }
       ],
       viscosity: [
@@ -6693,6 +7926,448 @@
       win.classList.remove('visible');
     }
 
+    /* ==================== 🌤️ 天气（Open-Meteo 数据 + MSN 跳转） ==================== */
+    var WEATHER_LOC_KEY = 'nav_weather_loc';
+    var WEATHER_CACHE_KEY = 'nav_weather_cache';
+    var WEATHER_GEO_KEY = 'nav_weather_geo';       // IP 定位缓存（12 小时）
+    var WEATHER_SRC_KEY = 'nav_weather_loc_src';   // 'user' = 用户手动选的城市
+    var weatherLoc = { name: '北京', lat: 39.9042, lon: 116.4074 };
+    var weatherTimer = null;
+    var WMO_TEXT = {
+      0: ['晴', '☀️'], 1: ['大部晴朗', '🌤️'], 2: ['多云', '⛅'], 3: ['阴', '☁️'],
+      45: ['有雾', '🌫️'], 48: ['雾凇', '🌫️'],
+      51: ['小毛毛雨', '🌦️'], 53: ['毛毛雨', '🌦️'], 55: ['大毛毛雨', '🌧️'],
+      56: ['冻毛毛雨', '🌧️'], 57: ['强冻毛毛雨', '🌧️'],
+      61: ['小雨', '🌦️'], 63: ['中雨', '🌧️'], 65: ['大雨', '🌧️'],
+      66: ['冻雨', '🌧️'], 67: ['强冻雨', '🌧️'],
+      71: ['小雪', '🌨️'], 73: ['中雪', '🌨️'], 75: ['大雪', '❄️'], 77: ['米雪', '🌨️'],
+      80: ['阵雨', '🌦️'], 81: ['强阵雨', '🌧️'], 82: ['暴雨', '⛈️'],
+      85: ['阵雪', '🌨️'], 86: ['强阵雪', '❄️'],
+      95: ['雷阵雨', '⛈️'], 96: ['雷阵雨伴冰雹', '⛈️'], 99: ['强雷暴伴冰雹', '⛈️']
+    };
+    var WIND_DIR = ['北', '东北偏北', '东北', '东北偏东', '东', '东南偏东', '东南', '东南偏南',
+                    '南', '西南偏南', '西南', '西南偏西', '西', '西北偏西', '西北', '西北偏北'];
+    function weatherTextOf(code) {
+      return WMO_TEXT[code] || ['未知', '🌡️'];
+    }
+    function windDirText(deg) {
+      if (deg === null || deg === undefined || isNaN(deg)) return '—';
+      var i = Math.round(((Number(deg) % 360) / 22.5)) % 16;
+      return WIND_DIR[i] + '风';
+    }
+    function aqiInfo(v) {
+      var n = Number(v);
+      if (isNaN(n)) return { text: '—', color: '#94a3b8' };
+      if (n <= 50) return { text: '优', color: '#22c55e' };
+      if (n <= 100) return { text: '良', color: '#84cc16' };
+      if (n <= 150) return { text: '轻度污染', color: '#f59e0b' };
+      if (n <= 200) return { text: '中度污染', color: '#f97316' };
+      if (n <= 300) return { text: '重度污染', color: '#ef4444' };
+      return { text: '严重污染', color: '#7c3aed' };
+    }
+    function weatherLocIsUser() {
+      try { return localStorage.getItem(WEATHER_SRC_KEY) === 'user'; } catch(e) { return false; }
+    }
+    // 关注地优先级：用户手动选的 City > IP 定位（网络所在地，缓存 12h）> 北京
+    function loadWeatherLoc() {
+      try {
+        if (weatherLocIsUser()) {
+          var v = JSON.parse(localStorage.getItem(WEATHER_LOC_KEY) || 'null');
+          if (v && typeof v.lat === 'number' && typeof v.lon === 'number') {
+            weatherLoc = { name: v.name || '北京', lat: v.lat, lon: v.lon };
+            return;
+          }
+        }
+        var g = JSON.parse(localStorage.getItem(WEATHER_GEO_KEY) || 'null');
+        if (g && typeof g.lat === 'number' && typeof g.lon === 'number' &&
+            (Date.now() - (g.ts || 0)) < 12 * 3600 * 1000) {
+          weatherLoc = { name: g.name || '当前位置', lat: g.lat, lon: g.lon };
+        }
+      } catch(e) {}
+    }
+    function saveWeatherLoc() {
+      try {
+        localStorage.setItem(WEATHER_LOC_KEY, JSON.stringify(weatherLoc));
+        localStorage.setItem(WEATHER_SRC_KEY, 'user');
+      } catch(e) {}
+    }
+    // IP 定位常返回英文城市名，这里给常见城市补个中文名（命中不到就保留原名）
+    var IP_CITY_CN = {
+      'Beijing': '北京', 'Shanghai': '上海', 'Tianjin': '天津', 'Chongqing': '重庆',
+      'Guangzhou': '广州', 'Shenzhen': '深圳', 'Hangzhou': '杭州', 'Nanjing': '南京',
+      'Wuhan': '武汉', 'Chengdu': '成都', 'Xi\'an': '西安', 'Xi’an': '西安',
+      'Shenyang': '沈阳', 'Harbin': '哈尔滨', 'Changsha': '长沙', 'Zhengzhou': '郑州',
+      'Jinan': '济南', 'Qingdao': '青岛', 'Xiamen': '厦门', 'Fuzhou': '福州',
+      'Kunming': '昆明', 'Hefei': '合肥', 'Nanchang': '南昌', 'Shijiazhuang': '石家庄',
+      'Taiyuan': '太原', 'Urumqi': '乌鲁木齐', 'Lhasa': '拉萨', 'Guiyang': '贵阳',
+      'Nanning': '南宁', 'Haikou': '海口', 'Suzhou': '苏州', 'Dalian': '大连', 'Ningbo': '宁波'
+    };
+    function ipCityName(name) { return (name && IP_CITY_CN[name]) ? IP_CITY_CN[name] : (name || '当前位置'); }
+    // IP 定位（网络所在地）：多个源依次尝试，任一成功即用
+    function fetchIpGeo() {
+      var sources = [
+        { url: 'https://ipwho.is/', pick: function(d) {
+            if (!d || d.success === false || !d.latitude || !d.longitude) return null;
+            return { name: ipCityName(d.city || d.region || d.country), lat: Number(d.latitude), lon: Number(d.longitude) };
+          } },
+        { url: 'https://ipinfo.io/json', pick: function(d) {
+            if (!d || !d.loc) return null;
+            var p = String(d.loc).split(',');
+            var lat = parseFloat(p[0]), lon = parseFloat(p[1]);
+            if (!isFinite(lat) || !isFinite(lon)) return null;
+            return { name: ipCityName(d.city || d.region || d.country), lat: lat, lon: lon };
+          } },
+        { url: 'https://api.ip.sb/geoip', pick: function(d) {
+            if (!d || !d.latitude || !d.longitude) return null;
+            return { name: ipCityName(d.city || d.region || d.country), lat: Number(d.latitude), lon: Number(d.longitude) };
+          } }
+      ];
+      function tryOne(i) {
+        if (i >= sources.length) return Promise.reject(new Error('no-geo'));
+        var s = sources[i];
+        return fetch(s.url, { mode: 'cors', cache: 'no-store' })
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .then(function(d) { var g = s.pick(d); if (!g) throw new Error('bad'); return g; })
+          .catch(function() { return tryOne(i + 1); });
+      }
+      return tryOne(0);
+    }
+    // 确保 weatherLoc 有值（用户城市 > 12h 内的 IP 缓存 > 现场 IP 定位 > 北京）
+    function ensureWeatherLocation() {
+      return new Promise(function(resolve) {
+        loadWeatherLoc();
+        if (weatherLocIsUser() || weatherLoc.name !== '北京') return resolve(weatherLoc);
+        var cachedFresh = false;
+        try {
+          var g = JSON.parse(localStorage.getItem(WEATHER_GEO_KEY) || 'null');
+          cachedFresh = !!(g && (Date.now() - (g.ts || 0)) < 12 * 3600 * 1000);
+        } catch(e) {}
+        if (cachedFresh) return resolve(weatherLoc);
+        fetchIpGeo().then(function(g) {
+          try { localStorage.setItem(WEATHER_GEO_KEY, JSON.stringify({ name: g.name, lat: g.lat, lon: g.lon, ts: Date.now() })); } catch(e) {}
+          weatherLoc = { name: g.name, lat: g.lat, lon: g.lon };
+          resolve(weatherLoc);
+        }).catch(function() { resolve(weatherLoc); });
+      });
+    }
+    // 首屏右上角天气按钮：自动显示关注地当前的天气图标
+    function setHeroWeatherIcon(emoji, title) {
+      var b = document.getElementById('heroWeatherBtn');
+      if (!b) return;
+      if (emoji) b.textContent = emoji;
+      if (title) b.title = title;
+    }
+    function fetchWeatherData() {
+      var f = 'https://api.open-meteo.com/v1/forecast?latitude=' + weatherLoc.lat + '&longitude=' + weatherLoc.lon +
+        '&current=temperature_2m,relative_humidity_2m,surface_pressure,weather_code,wind_speed_10m,wind_direction_10m,' +
+        'wind_gusts_10m,apparent_temperature,visibility,precipitation,cloud_cover,is_day' +
+        '&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max' +
+        '&timezone=auto&forecast_days=1';
+      var a = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + weatherLoc.lat +
+        '&longitude=' + weatherLoc.lon + '&current=pm2_5,pm10,us_aqi,european_aqi,' +
+        'alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=auto';
+      function getJSON(u) {
+        return fetch(u, { mode: 'cors', cache: 'no-store' }).then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        });
+      }
+      return Promise.all([getJSON(f), getJSON(a).catch(function() { return null; })])
+        .then(function(res) { return { forecast: res[0], air: res[1], ts: Date.now() }; });
+    }
+    // 能见度：米 → 人类可读
+    function visText(m) {
+      var n = Number(m);
+      if (!isFinite(n)) return '—';
+      var km = n / 1000;
+      if (km >= 10) return Math.round(km) + ' km';
+      if (km >= 1) return km.toFixed(1) + ' km';
+      return Math.round(n) + ' m';
+    }
+    // 花粉：Open-Meteo 的 pollen 字段只在欧洲有数据（CAMS Europe），中国区返回 null
+    var POLLEN_FIELDS = [
+      ['birch_pollen', '桦树'], ['alder_pollen', '赤杨'], ['grass_pollen', '禾本科'],
+      ['mugwort_pollen', '蒿属'], ['olive_pollen', '橄榄'], ['ragweed_pollen', '豚草']
+    ];
+    function pollenInfo(air) {
+      var cur = (air && air.current) ? air.current : null;
+      if (!cur) return { known: false };
+      var hits = [], max = null, anyNumber = false;
+      POLLEN_FIELDS.forEach(function(f) {
+        var v = cur[f[0]];
+        if (v === null || v === undefined || typeof v !== 'number') return;
+        anyNumber = true;
+        if (max === null || v > max) max = v;
+        if (v > 0.4) hits.push({ name: f[1], v: v });
+      });
+      if (!anyNumber) return { known: false };
+      hits.sort(function(a, b) { return b.v - a.v; });
+      var level, color;
+      if (max <= 1) { level = '很低'; color = '#22c55e'; }
+      else if (max <= 10) { level = '低'; color = '#84cc16'; }
+      else if (max <= 50) { level = '中'; color = '#f59e0b'; }
+      else if (max <= 200) { level = '高'; color = '#f97316'; }
+      else { level = '很高'; color = '#ef4444'; }
+      return { known: true, level: level, color: color, max: max, hits: hits.slice(0, 3) };
+    }
+    // 穿衣建议：以体感温度为主，叠加风、降水概率、紫外线
+    function clothingAdvice(feels, wind, precipProb, uv) {
+      var t = (feels === null || feels === undefined || isNaN(feels)) ? null : Number(feels);
+      var base;
+      if (t === null) base = '体感数据缺失，按今日气温自行加减衣物';
+      else if (t >= 30) base = '短袖短裤 / 轻薄连衣裙，注意防晒补水';
+      else if (t >= 26) base = '短袖 T 恤、薄长裤或短裙';
+      else if (t >= 21) base = '长袖衬衫 / 薄长裤，早晚可搭薄开衫';
+      else if (t >= 16) base = '薄外套或卫衣，里面一件长袖';
+      else if (t >= 11) base = '夹克 / 风衣，内搭针织衫';
+      else if (t >= 6) base = '厚外套 / 毛衣，注意保暖';
+      else if (t >= 0) base = '棉服或羽绒服，围巾手套更稳妥';
+      else base = '厚羽绒 + 围巾、手套、帽子';
+      var extra = [];
+      // 风速单位是 km/h（Open-Meteo 默认），20 km/h ≈ 5.5 m/s 才算"风大"
+      if (wind !== null && wind !== undefined && Number(wind) >= 20) extra.push('风大，加件防风外套');
+      if (precipProb !== null && precipProb !== undefined && Number(precipProb) >= 50) extra.push('降水概率 ' + Math.round(precipProb) + '%，带伞');
+      if (uv !== null && uv !== undefined && Number(uv) >= 6) extra.push('紫外线强，注意防晒');
+      return { base: base, extra: extra };
+    }
+    function renderWeather(data) {
+      var body = document.getElementById('weatherBody');
+      if (!body || !data || !data.forecast) return;
+      var fc = data.forecast, cur = fc.current || {}, daily = fc.daily || {};
+      var code = cur.weather_code;
+      var wt = weatherTextOf(code);
+      var temp = (cur.temperature_2m !== undefined && cur.temperature_2m !== null) ? Math.round(cur.temperature_2m) : '—';
+      var feels = (cur.apparent_temperature !== undefined && cur.apparent_temperature !== null) ? Math.round(cur.apparent_temperature) : null;
+      var tmax = (daily.temperature_2m_max && daily.temperature_2m_max[0] !== undefined) ? Math.round(daily.temperature_2m_max[0]) : '—';
+      var tmin = (daily.temperature_2m_min && daily.temperature_2m_min[0] !== undefined) ? Math.round(daily.temperature_2m_min[0]) : '—';
+      var sunrise = (daily.sunrise && daily.sunrise[0]) ? daily.sunrise[0].slice(11, 16) : '—';
+      var sunset = (daily.sunset && daily.sunset[0]) ? daily.sunset[0].slice(11, 16) : '—';
+      var uv = (daily.uv_index_max && daily.uv_index_max[0] !== undefined) ? daily.uv_index_max[0] : null;
+      // 首屏按钮跟着关注地的实时天气换图标（用户要求：自动显示关注地/网络所在地的天气状态）
+      setHeroWeatherIcon(wt[1], weatherLoc.name + ' ' + temp + '° ' + wt[0] + ' · 点开看天气详情');
+      var precipProb = (daily.precipitation_probability_max && daily.precipitation_probability_max[0] !== undefined)
+        ? daily.precipitation_probability_max[0] : null;
+      var aqiVal = (data.air && data.air.current) ? data.air.current.us_aqi : null;
+      var pm25 = (data.air && data.air.current) ? data.air.current.pm2_5 : null;
+      var ai = aqiInfo(aqiVal);
+      var pol = pollenInfo(data.air);
+      var cloth = clothingAdvice(feels, cur.wind_speed_10m, precipProb, uv);
+      var h = '';
+      // ① 主区：温度 + 天气 + 城市 + 今日范围
+      h += '<div class="weather-hero">';
+      h += '<div class="weather-emoji">' + wt[1] + '</div>';
+      h += '<div class="weather-hero-main">';
+      h += '<div class="weather-temp">' + temp + '<small>°C</small></div>';
+      h += '<div class="weather-desc">' + wt[0] + '</div>';
+      h += '<div class="weather-city">📍 ' + weatherLoc.name +
+           '<span class="weather-feels">体感 ' + (feels === null ? '—' : feels + '°') + '</span></div>';
+      h += '</div>';
+      h += '<div class="weather-range-box"><span class="wr-k">今日</span><span class="wr-v">' + tmin + '° ~ ' + tmax + '°</span></div>';
+      h += '</div>';
+
+      // ② 关键指标
+      h += '<div class="weather-sec-title">关键指标</div>';
+      h += '<div class="weather-grid">';
+      h += '<div class="weather-cell"><span class="wc-k">💧 湿度</span><span class="wc-v">' +
+           (cur.relative_humidity_2m !== undefined ? cur.relative_humidity_2m + '%' : '—') + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">👁️ 能见度</span><span class="wc-v">' + visText(cur.visibility) + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">💨 风</span><span class="wc-v">' +
+           windDirText(cur.wind_direction_10m) + ' ' +
+           (cur.wind_speed_10m !== undefined ? Math.round(cur.wind_speed_10m) + ' km/h' : '—') + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">🧭 气压</span><span class="wc-v">' +
+           (cur.surface_pressure !== undefined ? Math.round(cur.surface_pressure) + ' hPa' : '—') + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">🌅 日出</span><span class="wc-v">' + sunrise + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">🌇 日落</span><span class="wc-v">' + sunset + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">☀️ 紫外线</span><span class="wc-v">' +
+           (uv === null ? '—' : Math.round(uv) + ' / 11') + '</span></div>';
+      h += '<div class="weather-cell"><span class="wc-k">☔ 降水概率</span><span class="wc-v">' +
+           (precipProb === null ? '—' : Math.round(precipProb) + '%') + '</span></div>';
+      h += '</div>';
+
+      // ③ 空气质量（+ 花粉只有真的拿到数据才显示「过敏」那一行）
+      var hasAir = !!(data.air && data.air.current);
+      if (hasAir || pol.known) {
+        h += '<div class="weather-sec-title">' + (pol.known ? '空气与过敏' : '空气质量') + '</div>';
+        h += '<div class="weather-rows">';
+        if (hasAir) {
+          h += '<div class="weather-row"><span class="wr-label">空气质量</span><span class="wr-val weather-aqi">' +
+               '<span class="aqi-dot" style="background:' + ai.color + '"></span>' + ai.text +
+               (aqiVal !== null ? ' · AQI ' + Math.round(aqiVal) : '') +
+               (pm25 !== null && pm25 !== undefined ? ' · PM2.5 ' + Math.round(pm25) : '') + '</span></div>';
+        }
+        if (pol.known) {
+          var srcTxt = pol.hits.length
+            ? pol.hits.map(function(x) { return x.name + ' ' + Math.round(x.v) + ' 粒/m³'; }).join('、')
+            : '基本无花粉';
+          h += '<div class="weather-row"><span class="wr-label">过敏（花粉）</span><span class="wr-val">' +
+               '<span class="aqi-dot" style="background:' + pol.color + '"></span>' + pol.level +
+               '<span class="wr-sub">' + srcTxt + '</span></span></div>';
+        }
+        h += '</div>';
+      }
+
+      // ④ 穿衣建议
+      h += '<div class="weather-sec-title">穿衣建议</div>';
+      h += '<div class="weather-cloth"><span class="wc-icon">👕</span><div>' + cloth.base +
+           (cloth.extra.length ? '<span class="wr-sub">' + cloth.extra.join('；') + '</span>' : '') + '</div></div>';
+
+      h += '<div class="weather-updated">数据源 Open-Meteo（forecast + air-quality）· 更新于 ' +
+           new Date(data.ts).toLocaleTimeString('zh-CN', { hour12: false }) +
+           (weatherLocIsUser() ? ' · 关注地：' + weatherLoc.name : ' · 位置：网络所在地 ' + weatherLoc.name) + '</div>';
+      body.innerHTML = h;
+    }
+    function renderWeatherError(msg) {
+      var body = document.getElementById('weatherBody');
+      if (!body) return;
+      body.innerHTML = '<div class="weather-loading">天气获取失败：' + (msg || '') +
+        '<br><span style="opacity:.8">可点下方「MSN 详情」直接看网页版天气</span></div>';
+    }
+    function loadWeather(force) {
+      var body = document.getElementById('weatherBody');
+      if (!force) {
+        try {
+          var cache = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+          if (cache && cache.ts && (Date.now() - cache.ts) < 10 * 60 * 1000 && cache.loc &&
+              cache.loc.lat === weatherLoc.lat && cache.loc.lon === weatherLoc.lon) {
+            renderWeather(cache.data);
+            return Promise.resolve();
+          }
+        } catch(e) {}
+      }
+      if (body) body.innerHTML = '<div class="weather-loading">正在获取天气…</div>';
+      return fetchWeatherData().then(function(data) {
+        renderWeather(data);
+        try {
+          localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({
+            ts: data.ts, loc: { lat: weatherLoc.lat, lon: weatherLoc.lon }, data: data
+          }));
+        } catch(e) {}
+      }).catch(function(e) { renderWeatherError(e && e.message ? e.message : ''); });
+    }
+    function toggleWeatherWindow() {
+      var win = document.getElementById('weatherWindow');
+      if (!win) return;
+      if (win.classList.contains('visible')) closeWeatherWindow();
+      else openWeatherWindow();
+    }
+    function openWeatherWindow() {
+      var win = document.getElementById('weatherWindow');
+      if (!win) return;
+      win.classList.add('visible');
+      var hb = document.getElementById('heroWeatherBtn');
+      if (hb) hb.classList.add('on');
+      loadWeatherWeatherPos();
+      loadWeather(false);
+      if (weatherTimer) clearInterval(weatherTimer);
+      weatherTimer = setInterval(function() {
+        if (document.getElementById('weatherWindow').classList.contains('visible')) loadWeather(false);
+      }, 10 * 60 * 1000);
+    }
+    function closeWeatherWindow() {
+      var win = document.getElementById('weatherWindow');
+      if (!win) return;
+      win.classList.remove('visible');
+      var hb = document.getElementById('heroWeatherBtn');
+      if (hb) hb.classList.remove('on');
+      if (weatherTimer) { clearInterval(weatherTimer); weatherTimer = null; }
+    }
+    function loadWeatherWeatherPos() {
+      var win = document.getElementById('weatherWindow');
+      if (!win) return;
+      try {
+        var p = JSON.parse(localStorage.getItem('nav_weather_pos') || 'null');
+        if (p && typeof p.x === 'number') {
+          var maxX = window.innerWidth - win.offsetWidth - 10;
+          var maxY = window.innerHeight - win.offsetHeight - 10;
+          win.style.left = Math.max(6, Math.min(p.x, maxX)) + 'px';
+          win.style.top = Math.max(6, Math.min(p.y, maxY)) + 'px';
+          win.style.right = 'auto';
+        }
+      } catch(e) {}
+    }
+    // 城市搜索（Open-Meteo 地理编码，支持中英文）
+    function searchWeatherCity() {
+      var input = document.getElementById('weatherCityInput');
+      if (!input) return;
+      var q = (input.value || '').trim();
+      if (!q) { input.focus(); return; }
+      var url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) +
+                '&count=1&language=zh&format=json';
+      fetch(url, { mode: 'cors', cache: 'no-store' }).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function(j) {
+        if (!j.results || !j.results.length) { renderWeatherError('没找到这个城市，换个写法试试'); return; }
+        var r0 = j.results[0];
+        weatherLoc = { name: r0.name || q, lat: r0.latitude, lon: r0.longitude };
+        saveWeatherLoc();
+        input.value = '';
+        return loadWeather(true);
+      }).catch(function(e) { renderWeatherError(e && e.message ? e.message : ''); });
+    }
+    // 一键跳到 MSN 天气（地图模式 / 城市预报详情）
+    // 注意：MSN 的 /weather/overview 已经 404（点开会看到一堆源码/报错），
+    // 详情页要用 /weather/forecast/in-<城市名>，地图用 /weather/maps?loc=lat,lon。
+    function openMsnWeather(kind) {
+      var url;
+      if (kind === 'maps') {
+        url = 'https://www.msn.com/zh-cn/weather/maps?loc=' +
+              encodeURIComponent(weatherLoc.lat + ',' + weatherLoc.lon);
+      } else {
+        url = 'https://www.msn.com/zh-cn/weather/forecast/in-' +
+              encodeURIComponent(weatherLoc.name || 'Beijing');
+      }
+      window.open(url, '_blank', 'noopener');
+    }
+    // 天气窗拖动（放在标题栏）
+    (function() {
+      var win = document.getElementById('weatherWindow');
+      var head = document.getElementById('weatherHeader');
+      if (!win || !head) return;
+      var drag = { on: false, sx: 0, sy: 0, left: 0, top: 0 };
+      head.addEventListener('mousedown', function(e) {
+        if (e.target.closest('button')) return;
+        var r = win.getBoundingClientRect();
+        drag = { on: true, sx: e.clientX, sy: e.clientY, left: r.left, top: r.top };
+        win.style.right = 'auto';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!drag.on) return;
+        var x = Math.max(6, Math.min(drag.left + e.clientX - drag.sx, window.innerWidth - win.offsetWidth - 6));
+        var y = Math.max(6, Math.min(drag.top + e.clientY - drag.sy, window.innerHeight - 60));
+        win.style.left = x + 'px';
+        win.style.top = y + 'px';
+      });
+      document.addEventListener('mouseup', function() {
+        if (!drag.on) return;
+        drag.on = false;
+        try {
+          var r = win.getBoundingClientRect();
+          localStorage.setItem('nav_weather_pos', JSON.stringify({ x: r.left, y: r.top }));
+        } catch(e) {}
+      });
+    })();
+    // 启动：先用缓存把首屏天气图标画上（不用等网络），再解析关注地并拉一次最新天气
+    function initWeatherBadge() {
+      loadWeatherLoc();
+      try {
+        var c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+        if (c && c.data && c.data.forecast && c.data.forecast.current) {
+          var wt = weatherTextOf(c.data.forecast.current.weather_code);
+          setHeroWeatherIcon(wt[1], weatherLoc.name + ' 天气 · 点开看详情');
+        }
+      } catch(e) {}
+      ensureWeatherLocation().then(function() {
+        loadWeather(false);
+      });
+    }
+    window.toggleWeatherWindow = toggleWeatherWindow;
+    window.searchWeatherCity = searchWeatherCity;
+    window.openMsnWeather = openMsnWeather;
+    window.initWeatherBadge = initWeatherBadge;
+    initWeatherBadge();
+
     function convRestorePos() {
       var win = document.getElementById('convWindow');
       if (!win) return;
@@ -6769,7 +8444,6 @@
     initConvResize();
 
     document.getElementById('searchInput').focus();
-
 
     // 返回顶部按钮：滚动超过一屏才淡入（抽成函数，便于直接调用与测试）
     function updateBackToTop() {

@@ -99,7 +99,14 @@ INJECT = r'''
   function runCase() {
     try {
       if (CASE === 'wp_fresh') {
-        // 全新浏览器：无任何壁纸键
+        // 全新浏览器：所有壁纸键都没有 → 默认就是「🌍 地球实况」
+        eq('wallpaperType', wallpaperType, 'earth');
+        eq('nav_wallpaper', ls('nav_wallpaper'), 'earth');
+        eq('chipEarthOn', document.getElementById('setWpEarth').classList.contains('on'), true);
+        eq('chipDefaultOff', document.getElementById('setWpDefault').classList.contains('on'), false);
+      }
+      else if (CASE === 'wp_static_default') {
+        // 用户明确选了静态「默认壁纸」：不能再被地球实况覆盖
         eq('wallpaperType', wallpaperType, 'default');
         eq('nav_wallpaper', ls('nav_wallpaper'), 'default');
         eq('chipDefaultOn', document.getElementById('setWpDefault').classList.contains('on'), true);
@@ -115,6 +122,12 @@ INJECT = r'''
           } catch(e) {}
         }
         eq('cssDefaultAsset', (rule || '').indexOf('hero_bg_light.jpg') >= 0, true);
+      }
+      else if (CASE === 'wp_earth_keep_custom') {
+        // 一次性迁移只动「默认壁纸」，用户选过的自定义壁纸必须保留
+        eq('wallpaperType', wallpaperType, 'custom');
+        eq('nav_wallpaper', ls('nav_wallpaper'), 'custom');
+        eq('earthVerWritten', ls('nav_wp_earth_ver'), '1');
       }
       else if (CASE === 'wp_legacy_bing') {
         eq('wallpaperType', wallpaperType, 'default');
@@ -212,15 +225,19 @@ INJECT = r'''
         // 内置 WPS + 一条重复的自定义 WPS → 只应出现一次
         var count = (html.match(/365\.kdocs\.cn/g) || []).length;
         eq('wpsOnce', count, 1);
-        eq('builtinCount', (html.match(/class="rt-tab"/g) || []).length, 4 + 1 + 4);
-        // 微信传输必须是右侧工具栏的第一个
+        eq('builtinCount', (html.match(/class="rt-tab"/g) || []).length, 9);
+        // 用户指定顺序：网页微信助手 → 在线WPS → 待办 → 番茄钟 → 单位换算 → 临时记事本 → 工具箱 → 计算器 → 临时画图
+        // （天气已按需求移到首屏右上角，不再占工具条）
         var first = document.querySelector('#rtEdge .rt-tab');
-        eq('wechatIsFirst', !!first && first.getAttribute('title') === '微信传输', true);
+        eq('wechatIsFirst', !!first && first.getAttribute('title') === '网页微信助手', true);
         var titles = [];
         document.querySelectorAll('#rtEdge .rt-tab').forEach(function(el) { titles.push(el.getAttribute('title')); });
-        eq('orderHead', titles.slice(0, 3).join(','), '微信传输,在线WPS,计算器');
-        // 悬浮窗入口排在内置工具之后
-        eq('firstFloatingAfterBuiltins', titles.indexOf('待办事项') > titles.indexOf('工具箱'), true);
+        eq('toolbarOrder',
+           titles.slice(0, 9).join(','),
+           '网页微信助手,在线WPS,待办,番茄钟,单位换算,临时记事本,工具箱,计算器,临时画图');
+        eq('weatherNotInToolbar', titles.indexOf('天气'), -1);
+        eq('weatherInHero', !!document.getElementById('heroWeatherBtn'), true);
+        eq('renamedTodos', titles.indexOf('待办事项'), -1);
       }
       else if (CASE === 'tradition_cat') {
         eq('sectionExists', !!document.getElementById('cat-tradition'), true);
@@ -338,11 +355,14 @@ INJECT = r'''
         eq('noEngineSelectFn', typeof window.setEngineStyle, 'undefined');
         eq('noEngineSelectClass', document.body.classList.contains('engine-select'), false);
         eq('engineTagsVisible', getComputedStyle(document.querySelector('.search-engines')).display, 'flex');
-        // 返回顶部按钮：在反馈按钮正上方（右下角同一组、水平位置一致）
+        // 返回顶部按钮：右下角只剩它一个（意见反馈已移进设置面板）
         eq('backToTopBtn', !!document.getElementById('ixTop'), true);
         var tr = document.getElementById('ixTop').getBoundingClientRect();
-        var fr = document.querySelector('.ix-actions .ix-btn[onclick*="openFeedbackModal"]').getBoundingClientRect();
-        eq('topBtnAboveFeedback', Math.round(tr.left) === Math.round(fr.left) && tr.top < fr.top, true);
+        eq('floatingOnlyBackTop', document.querySelectorAll('.ix-actions .ix-btn').length, 1);
+        eq('noFloatingFeedback', !document.querySelector('.ix-actions .ix-btn[onclick*="openFeedbackModal"]'), true);
+        eq('feedbackInSettings', !!document.getElementById('settingsFeedbackBtn'), true);
+        eq('feedbackModalAboveSettings',
+           parseInt(getComputedStyle(document.getElementById('feedbackModal')).zIndex, 10) > 200, true);
         // 与右侧工具条不重叠（工具条贴右边缘）
         var rr = document.getElementById('rtEdge').getBoundingClientRect();
         eq('noOverlapToolbar', tr.right <= rr.left, true);
@@ -389,8 +409,8 @@ INJECT = r'''
         eq('leftOffClass', document.body.classList.contains('rt-left-on'), false);
         // 把两个内置工具挪到左侧 → 左侧出现、右侧减少、总量不变、无重复
         var sides = {};
-        sides['rtb:微信传输'] = 'left';
-        sides['rtb:待办事项'] = 'left';
+        sides['rtb:网页微信助手'] = 'left';
+        sides['rtb:待办'] = 'left';
         localStorage.setItem('nav_rt_sides', JSON.stringify(sides));
         renderRtEdge();
         var r2 = document.querySelectorAll('#rtEdge .rt-tab');
@@ -410,8 +430,14 @@ INJECT = r'''
         eq('noOverlapAcrossSides', dupAcross.join(','), '');
         eq('noDupRight', rt.length, new Set(rt).size);
         eq('noDupLeft', lt.length, new Set(lt).size);
-        eq('wechatOnLeft', lt.indexOf('微信传输') >= 0, true);
-        eq('floatingWindowFollows', lt.indexOf('待办事项') >= 0, true);
+        eq('wechatOnLeft', lt.indexOf('网页微信助手') >= 0, true);
+        eq('floatingWindowFollows', lt.indexOf('待办') >= 0, true);
+        // 老键兼容：只写了旧名 rtb:微信传输 也要能读到（改名不丢用户设置）
+        localStorage.setItem('nav_rt_sides', JSON.stringify({ 'rtb:微信传输': 'left' }));
+        renderRtEdge();
+        eq('legacyRenameCompat', titles('#rtEdgeLeft').indexOf('网页微信助手') >= 0, true);
+        localStorage.setItem('nav_rt_sides', JSON.stringify(sides));
+        renderRtEdge();
         // 回归：左侧工具条不得横向铺满（曾因 left+right 同时生效变成隐形全宽遮罩，
         // 导致搜索框无法输入、导航展开按钮点不动）
         var lb = document.getElementById('rtEdgeLeft').getBoundingClientRect();
@@ -535,6 +561,14 @@ INJECT = r'''
         var maxH = ta.getBoundingClientRect().height;
         eq('cappedAt10Lines', maxH <= threeH * 3.6 && maxH >= threeH * 2.5, true);
         eq('internalScroll', ta.style.overflowY, 'auto');
+        // 单行/未超行时不出现滚动条（用户反馈"单行显示上下滚动条很丑"）
+        ta.value = 'hello';
+        ta.dispatchEvent(new Event('input'));
+        eq('singleLineNoScrollbar', ta.style.overflowY, 'hidden');
+        eq('noHorizontalScrollbar', ta.style.overflowX, 'hidden');
+        ta.value = long15;
+        ta.dispatchEvent(new Event('input'));
+        eq('backToScrollWhenOverflow', ta.style.overflowY, 'auto');
         // Shift+Enter 换行、Enter 提交后自动清空输入框
         ta.value = 'hello';
         var opened = [];
@@ -615,8 +649,8 @@ INJECT = r'''
         return;
       }
       else if (CASE === 'engine_defaults_vpn') {
-        // 默认只勾选用户指定的 12 个引擎（必应/谷歌/秘塔/Yandex/搜狗知乎/搜狗微信/Quora/Reddit/谷歌学术/微软学术/译中/译英）
-        var EXPECT = 'bing,google,metaso,perplexity,yandex,sogouzhihu,sogouweixin,quora,reddit,googlescholar,msacademic,trans2zh,trans2en';
+        // 默认勾选 14 个引擎（必应/谷歌/百度/秘塔/Perplexity/Yandex/搜狗知乎/搜狗微信/Quora/Reddit/谷歌学术/微软学术/译中/译英）
+        var EXPECT = 'bing,google,baidu,metaso,perplexity,yandex,sogouzhihu,sogouweixin,quora,reddit,googlescholar,msacademic,trans2zh,trans2en';
         var hiddenMap = JSON.parse(ls('nav_hidden_engines') || '{}');
         var checked = Object.keys(hiddenMap).filter(function(k) { return k !== 'custom' && hiddenMap[k] === false; });
         eq('defaultCheckedSet', checked.join(','), EXPECT);
@@ -625,21 +659,26 @@ INJECT = r'''
         eq('perplexityAfterMetaso',
            document.querySelector('.search-engines input[value="metaso"]').closest('.engine-option').nextElementSibling
              .querySelector('input').value, 'perplexity');
+        // 百度默认勾选、固定排第三（紧跟必应、谷歌）
+        eq('baiduIsThird',
+           document.querySelectorAll('.search-engines .engine-option input[type="radio"]')[2].value, 'baidu');
+        eq('baiduCheckedByDefault', hiddenMap.baidu, false);
         eq('redditUrl', engineUrls.reddit, 'https://www.reddit.com/search/?q=');
-        eq('hiddenMapHidesOthers', hiddenMap.baidu, true);
+        eq('hiddenMapHidesOthers', hiddenMap.sogou, true);
         function engineShown(k) {
           var el = document.querySelector('.search-engines input[value="' + k + '"]').closest('.engine-option');
           return el.style.display !== 'none';
         }
-        // 没有科学上网（vpnMode=off）→ 勾选的引擎里，外网那 4 个不显示
+        // 没有科学上网（vpnMode=off）→ 勾选的引擎里，外网那 5 个不显示
         eq('noVpnFlag', vpnOn, false);
         eq('visibleWithoutVpn', getVisibleEngineKeys().join(','),
-           'bing,metaso,yandex,sogouzhihu,sogouweixin,msacademic,trans2zh,trans2en');
+           'bing,baidu,metaso,yandex,sogouzhihu,sogouweixin,msacademic,trans2zh,trans2en');
         eq('foreignHiddenWithoutVpn', ['google', 'quora', 'reddit', 'googlescholar', 'perplexity'].map(engineShown).join(','),
            'false,false,false,false,false');
         eq('domesticKept', ['bing', 'metaso', 'yandex', 'msacademic', 'trans2zh', 'trans2en'].map(engineShown).join(','),
            'true,true,true,true,true,true');
-        // 有科学上网（always）→ 13 个全部显示
+        eq('baiduAlwaysVisible', engineShown('baidu'), true);
+        // 有科学上网（always）→ 14 个全部显示
         setVpnMode('always');
         eq('visibleWithVpn', getVisibleEngineKeys().join(','), EXPECT);
         eq('foreignShownWithVpn', ['google', 'quora', 'reddit', 'googlescholar', 'perplexity'].map(engineShown).join(','),
@@ -696,6 +735,523 @@ INJECT = r'''
         setSearchMode('focus');
         eq('focusPersisted', ls('nav_search_mode'), 'focus');
         eq('exportSearchModeFocus', (buildConfigData().settings || {}).searchMode, 'focus');
+      }
+      else if (CASE === 'vpn_quick_and_adv') {
+        // ---- Yandex 换成 yandex.tr ----
+        eq('yandexEngineUrl', engineUrls.yandex, 'https://yandex.tr/search/?text=');
+        eq('yandexCardUrl', document.querySelector('#cat-general a.nav-card[href="https://yandex.tr"]') !== null, true);
+        // ---- 需 VPN 快捷开关在 hero 右上角（与主题切换并排，不压搜索框） ----
+        var row = document.getElementById('vpnQuickRow');
+        var showBtn = document.getElementById('vpnQuickShow');
+        var hideBtn = document.getElementById('vpnQuickHide');
+        eq('quickRowExists', !!row, true);
+        eq('quickRowVisible', row.getBoundingClientRect().height > 0, true);
+        var sr = document.getElementById('searchInput').getBoundingClientRect();
+        var rr = row.getBoundingClientRect();
+        var heroR = document.querySelector('.hero').getBoundingClientRect();
+        var themeR = document.querySelector('.theme-toggle').getBoundingClientRect();
+        eq('quickAboveSearchBox', rr.bottom <= sr.top + 1, true);
+        eq('quickInTopRight', rr.right <= themeR.left + 1 && rr.right > heroR.left + heroR.width * 0.6, true);
+        eq('quickSameRowAsTheme', Math.abs((rr.top + rr.height / 2) - (themeR.top + themeR.height / 2)) <= 6, true);
+        eq('quickRowNotInHeroContent', row.closest('.hero-content'), null);
+        eq('quickShowOnByDefault', showBtn.classList.contains('on'), true);
+        hideBtn.click();
+        eq('hideSetsOff', vpnMode, 'off');
+        eq('hideFlag', vpnOn, false);
+        eq('hideChipOn', hideBtn.classList.contains('on'), true);
+        eq('showChipOff', showBtn.classList.contains('on'), false);
+        eq('enginesShrinkNow', getVisibleEngineKeys().indexOf('google') < 0, true);
+        eq('domesticEngineKept', getVisibleEngineKeys().indexOf('bing') >= 0, true);
+        eq('vpnCardHiddenNow', document.querySelector('#cat-general a[href="https://www.google.com"]').getAttribute('data-hidden'), '1');
+        showBtn.click();
+        eq('showSetsAlways', vpnMode, 'always');
+        eq('showChipOnAgain', showBtn.classList.contains('on'), true);
+        eq('enginesBackNow', getVisibleEngineKeys().indexOf('google') >= 0, true);
+        eq('vpnCardShownNow', document.querySelector('#cat-general a[href="https://www.google.com"]').getAttribute('data-hidden'), '0');
+        // ---- 高级搜索（百度式浮层；只对 必应/百度/谷歌/Yandex 生效） ----
+        var raw = '中文搜索';
+        eq('advOffByDefault', buildSearchUrl('bing', raw), engineUrls.bing + encodeURIComponent(raw));
+        toggleSearchAdv();
+        saveSearchAdvField('all', 'a，b;c、d e');
+        saveSearchAdvField('any', 'arxiv，google;谷歌');
+        saveSearchAdvField('none', '广告，推广;垃圾');
+        var qSep = buildSearchQuery(raw, loadSearchAdv(), 'bing');
+        eq('sepAllWords', qSep.indexOf('a b c d e') >= 0, true);
+        eq('sepAnyOr', qSep.indexOf('(arxiv OR google OR 谷歌)') >= 0, true);
+        eq('sepNone', qSep.indexOf('-广告 -推广 -垃圾') >= 0, true);
+        setAdvPos('title');
+        var qTitle = buildSearchQuery(raw, loadSearchAdv(), 'bing');
+        eq('titlePerWord', qTitle.indexOf('intitle:a intitle:b') >= 0, true);
+        eq('titleInOrGroup', qTitle.indexOf('(intitle:arxiv OR intitle:google OR intitle:谷歌)') >= 0, true);
+        eq('titleYandexVariant', buildSearchQuery(raw, loadSearchAdv(), 'yandex').indexOf('title:arxiv') >= 0, true);
+        setAdvPos('url');
+        eq('urlPerWord', buildSearchQuery(raw, loadSearchAdv(), 'bing').indexOf('inurl:a') >= 0, true);
+        setAdvPos('any');
+        saveSearchAdvField('all', '人工智能 检索');
+        saveSearchAdvField('any', 'arxiv 谷歌');
+        saveSearchAdvField('none', '广告，推广');
+        saveSearchAdvField('site', 'https://zhihu.com/people/x');
+        setAdvFiletype('pdf');
+        setAdvTime('week');
+        setAdvPages('20');
+        var lh = JSON.parse(ls('nav_search_adv') || '{}');
+        eq('advSaved', lh.on === true && lh.filetype === 'pdf' && lh.time === 'week' && lh.pages === '20', true);
+        var b = buildSearchUrl('bing', raw);
+        eq('advAllWords', b.indexOf(encodeURIComponent('人工智能 检索')) >= 0, true);
+        eq('advAnyOr', b.indexOf(encodeURIComponent('(arxiv OR 谷歌)')) >= 0, true);
+        eq('advNoneExcluded', b.indexOf('%20-%E5%B9%BF%E5%91%8A') >= 0, true);
+        eq('advSiteTrimmed', b.indexOf('site%3Azhihu.com') >= 0, true);
+        eq('advFiletype', b.indexOf('filetype%3Apdf') >= 0, true);
+        eq('advBingCount', b.indexOf('&count=20') >= 0, true);
+        eq('advBingTime', b.indexOf(encodeURIComponent('filterui:age-lt10080')) >= 0, true);
+        eq('advBingTimeNoPlus', b.indexOf('%2Bfilterui') < 0, true);
+        var g = buildSearchUrl('google', raw);
+        eq('advGoogleNum', g.indexOf('&num=20') >= 0, true);
+        eq('advGoogleTime', g.indexOf('&tbs=qdr:w') >= 0, true);
+        eq('advGoogleFiletype', g.indexOf('filetype%3Apdf') >= 0, true);
+        var bd = buildSearchUrl('baidu', raw);
+        eq('advBaiduRn', bd.indexOf('&rn=20') >= 0, true);
+        eq('advBaiduTime', bd.indexOf('gpc=') >= 0 && bd.indexOf('stftype') >= 0, true);
+        var yd = buildSearchUrl('yandex', raw);
+        eq('advYandexMime', yd.indexOf('mime%3Apdf') >= 0, true);
+        eq('advYandexNoFiletype', yd.indexOf('filetype%3A') < 0, true);
+        eq('advYandexDateOperator', yd.indexOf('date%3A') >= 0, true);
+        eq('advYandexNoCount', yd.indexOf('count=') < 0 && yd.indexOf('num=') < 0, true);
+        eq('advYandexNoreask', yd.indexOf('&noreask=1') >= 0, true);
+        ['sogou', 'metaso', 'trans2zh', 'zhihu'].forEach(function(eng) {
+          eq('advGated_' + eng, buildSearchUrl(eng, raw), engineUrls[eng] + encodeURIComponent(raw));
+        });
+        toggleAdvOption('exact');
+        eq('advExactQuoted', buildSearchUrl('bing', raw).indexOf('%22') >= 0, true);
+        saveSearchAdvField('from', '2025-01-01');
+        saveSearchAdvField('to', '2025-01-31');
+        eq('advGoogleCustomRange', buildSearchUrl('google', raw).indexOf('cdr%3A1') >= 0, true);
+        eq('advBaiduCustomRange', buildSearchUrl('baidu', raw).indexOf('gpc=') >= 0, true);
+        eq('advYandexCustomDate', buildSearchUrl('yandex', raw).indexOf(encodeURIComponent('date:20250101..20250131')) >= 0, true);
+        clearAdvDates();
+        eq('advDatesCleared', (JSON.parse(ls('nav_search_adv') || '{}')).from, '');
+        // 浮层：搜索框旁独立弹出，不在设置窗口；图标明暗跟随启用
+        var panel = document.getElementById('advPanel');
+        eq('advPanelNotInSettings', !document.getElementById('settingsOverlay').contains(panel), true);
+        eq('advPanelClosedByDefault', panel.classList.contains('open'), false);
+        openSettings();
+        eq('settingsHasNoAdvSection', !document.querySelector('.settings-panel #setAdvToggle'), true);
+        closeSettings();
+        document.getElementById('advBtn').click();
+        eq('advPanelOpens', panel.classList.contains('open'), true);
+        var pr = panel.getBoundingClientRect();
+        var boxR = document.querySelector('.search-box').getBoundingClientRect();
+        eq('advPanelBelowSearchBox', Math.abs(pr.top - (boxR.bottom + 8)) <= 2, true);
+        eq('advPanelWithinViewport', pr.left >= 0 && pr.right <= window.innerWidth + 1, true);
+        eq('advPanelNotTooWide', pr.width <= 621, true);
+        eq('advPanelTwoColumns', getComputedStyle(document.querySelector('.adv-panel .adv-grid')).gridTemplateColumns.split(' ').length >= 2, true);
+        var advBtnEl = document.getElementById('advBtn');
+        advBtnEl.style.transition = 'none';
+        var onStyle = getComputedStyle(advBtnEl);
+        eq('advBtnMarkedOn', advBtnEl.classList.contains('on'), true);
+        eq('advBtnOpacityOn', Number(onStyle.opacity), 1);
+        eq('advBtnSolidWhenOn', onStyle.backgroundImage.indexOf('gradient') >= 0, true);
+        eq('uiToggleOn', document.getElementById('setAdvToggle').classList.contains('on'), true);
+        eq('uiExactOn', document.getElementById('setAdvExact').classList.contains('on'), true);
+        eq('uiSiteValue', document.getElementById('advSiteInput').value, 'https://zhihu.com/people/x');
+        eq('uiAllValue', document.getElementById('advAllInput').value, '人工智能 检索');
+        var pdfChip = null, weekChip = null, pageChip = null;
+        document.querySelectorAll('[data-advft]').forEach(function(el) { if (el.getAttribute('data-advft') === 'pdf') pdfChip = el; });
+        document.querySelectorAll('[data-advtime]').forEach(function(el) { if (el.getAttribute('data-advtime') === 'week') weekChip = el; });
+        document.querySelectorAll('[data-advpages]').forEach(function(el) { if (el.getAttribute('data-advpages') === '20') pageChip = el; });
+        eq('uiPdfOn', !!(pdfChip && pdfChip.classList.contains('on')), true);
+        eq('uiWeekOn', !!(weekChip && weekChip.classList.contains('on')), true);
+        eq('uiPagesOn', !!(pageChip && pageChip.classList.contains('on')), true);
+        document.getElementById('advBtn').click();
+        eq('advPanelToggles', panel.classList.contains('open'), false);
+        eq('exportAdv', (buildConfigData().settings || {}).searchAdv.on, true);
+        // 关掉高级搜索 → 图标变淡
+        toggleSearchAdv();
+        eq('advOffPlain', buildSearchUrl('google', raw), engineUrls.google + encodeURIComponent(raw));
+        eq('advBtnOff', advBtnEl.classList.contains('on'), false);
+        var offStyle = getComputedStyle(advBtnEl);
+        eq('advBtnDimWhenOff', Number(offStyle.opacity) < 0.7, true);
+        eq('advBtnNoFillWhenOff', offStyle.backgroundImage.indexOf('gradient') < 0, true);
+        // ---- 常用站点在内容区顶部 ----
+        var fs = document.getElementById('frequentSection');
+        eq('freqInMainContent', !!fs.closest('.main-content'), true);
+        eq('freqNotInHero', fs.closest('.hero'), null);
+        eq('freqBeforeCategories', !!(fs.nextElementSibling && fs.nextElementSibling.classList.contains('category-section')), true);
+      }
+      else if (CASE === 'unit_conv_common') {
+        function labels(cat) { return convData[cat].map(function(u) { return u.label; }).join('|'); }
+        eq('hasMu', labels('area').indexOf('亩') >= 0, true);
+        eq('hasHectare', labels('area').indexOf('公顷') >= 0, true);
+        eq('hasLiter', labels('volume').indexOf('升') >= 0, true);
+        eq('hasDou', labels('volume').indexOf('斗') >= 0, true);
+        eq('hasHp', labels('power').indexOf('马力') >= 0, true);
+        eq('hasJin', labels('mass').indexOf('斤') >= 0, true);
+        eq('hasLi', labels('length').indexOf('里') >= 0, true);
+        eq('hasChi', labels('length').indexOf('尺') >= 0, true);
+        function factorOf(cat, kw) {
+          var u = convData[cat].filter(function(x) { return x.label.indexOf(kw) >= 0; })[0];
+          return u ? u.factor : null;
+        }
+        eq('muFactor', Math.round(factorOf('area', '亩') * 10000) / 10000, 666.6667);
+        eq('jinFactor', factorOf('mass', '斤'), 0.5);
+        eq('liFactor', factorOf('length', '里'), 500);
+        eq('douFactor', factorOf('volume', '斗'), 10);
+        eq('hpFactor', Math.round(factorOf('power', '机械马力')), 746);
+        eq('psFactor', Math.round(factorOf('power', '公制马力')), 735);
+        openConvWindow();
+        convSwitchCat('area');
+        convCat = 'area';
+        convInitUnits();
+        var muIdx = convData.area.map(function(u) { return u.label; }).indexOf('亩');
+        document.getElementById('convUnit').value = String(muIdx);
+        document.getElementById('convInput').value = '1';
+        convCalc();
+        // 结果里 m² 那一行应是 666.67 左右
+        var muRow = null;
+        document.querySelectorAll('#convResults .conv-result-item').forEach(function(it) {
+          var lb = it.querySelector('.conv-result-label');
+          if (lb && lb.textContent.indexOf('平方米') >= 0) muRow = it.querySelector('.conv-result-value');
+        });
+        var muVal = muRow ? parseFloat(String(muRow.textContent).replace(/[^\d.]/g, '')) : NaN;
+        eq('oneMuIs666m2', Math.abs(muVal - 666.6667) < 0.01, true);
+        closeConvWindow();
+      }
+      else if (CASE === 'earth_wallpaper') {
+        eq('chipExists', !!document.getElementById('setWpEarth'), true);
+        eq('typeFromStorage', wallpaperType, 'earth');
+        var day = earthDay();
+        // 「一定要最新」：首选今天，而不是昨天
+        eq('dayIsToday', day, (function() {
+          var d = new Date();
+          var m = d.getUTCMonth() + 1, dd = d.getUTCDate();
+          return d.getUTCFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (dd < 10 ? '0' : '') + dd;
+        })());
+        eq('candidatesStartWithToday',
+           earthCandidates()[0].day === day && earthCandidates().length === 9, true);
+        eq('candidatesCoverThreeDays',
+           earthCandidates().map(function(c) { return c.day; }).filter(function(v, i, a) { return a.indexOf(v) === i; }).length, 3);
+        eq('layersOrderHasModisTerra', EARTH_LAYERS[0].indexOf('MODIS_Terra') === 0, true);
+        eq('layersIncludeSnpp', EARTH_LAYERS.join(',').indexOf('VIIRS_SNPP_CorrectedReflectance_TrueColor') >= 0, true);
+        var u = earthUrlFor(day, undefined, EARTH_LAYERS[0]);
+        eq('urlHost', u.indexOf('https://gibs.earthdata.nasa.gov/') === 0, true);
+        eq('urlLayer', u.indexOf('MODIS_Terra_CorrectedReflectance_TrueColor') >= 0, true);
+        eq('subsolarAtNoonUtc', Math.round(earthSubsolarLon(new Date('2026-10-17T12:00:00Z'))), 0);
+        eq('subsolarAt06Utc', Math.round(earthSubsolarLon(new Date('2026-10-17T06:00:00Z'))), 90);
+        eq('bboxNoonUtc', earthBboxNow(new Date('2026-10-17T12:00:00Z')), '-60,-75,70,75');
+        eq('bboxClampWest', earthBboxNow(new Date('2026-10-17T00:00:00Z')), '-60,30,70,180');
+        eq('bboxClampEast', earthBboxNow(new Date('2026-10-17T23:00:00Z')), '-60,-180,70,-30');
+        var bb = (u.match(/BBOX=([\d.,-]+)/) || [])[1].split(',').map(Number);
+        eq('bboxLatMin', bb[0], -60);
+        eq('bboxLatMax', bb[2], 70);
+        eq('bboxLonSpan', Math.round(bb[3] - bb[1]), 150);
+        eq('bboxSpanAbove120', (bb[3] - bb[1]) >= 120, true);
+        var nowLon = earthSubsolarLon();
+        eq('bboxCentredOnNoon', Math.abs(((bb[1] + bb[3]) / 2) - nowLon) < 0.01 || bb[1] === -180 || bb[3] === 180, true);
+        eq('urlSize', u.indexOf('WIDTH=1200&HEIGHT=1040') >= 0, true);
+        eq('urlDate', u.indexOf('TIME=' + day) >= 0, true);
+        eq('bucketFn', earthBucket(new Date('2026-10-17T13:59:00Z')), 13);
+        eq('bucketSameHour', earthBucket(new Date('2026-10-17T13:01:00Z')) === earthBucket(new Date('2026-10-17T13:58:00Z')), true);
+        // 空白图判定函数存在（GIBS 未出炉的日期会返回整张纯黑）
+        eq('usableCheckerFn', typeof earthImageUsable, 'function');
+        // 主源已换成气象局 FY-4B 中国区域真彩云图（15 分钟一帧）
+        eq('fy4XmlHost', FY4_XML.indexOf('img.nsmc.org.cn/CLOUDIMAGE/FY4B/') > 0, true);
+        var fy4Items = fy4Parse('<imagelist><image time="2026-10-17 09:30 (UTC)" url="//img.nsmc.org.cn/a/FY4B_china_20261017093000.JPG"/><image time="2026-10-17 09:30 (UTC)" url="//img.nsmc.org.cn/a/FY4B_china_20261017093000.JPG-thumb.JPG"/></imagelist>');
+        eq('fy4ParseSkipsThumb', fy4Items.length, 1);
+        eq('fy4ParseTime', fy4Items[0].time, '2026-10-17 09:30 (UTC)');
+        eq('fy4AbsUrlFromProtocolRelative', fy4Items[0].url,
+           'https://img.nsmc.org.cn/a/FY4B_china_20261017093000.JPG');
+        eq('fy4ThumbUrl', fy4ThumbOf('https://x/FY4B_china_20261017093000.JPG'),
+           'https://x/FY4B_china_20261017093000.JPG-thumb.JPG');
+        eq('fy4SlotUrl', fy4UrlForSlot(new Date(Date.UTC(2026, 9, 17, 9, 31, 0))),
+           'https://img.nsmc.org.cn/CLOUDIMAGE/FY4B/AGRI/GCLR/SEC/china/2026/20261017/FY4B_china_20261017093000.JPG');
+        eq('fy4SlotFloorsTo15min', fy4UrlForSlot(new Date(Date.UTC(2026, 9, 17, 9, 14, 0))).indexOf('20261017090000') > 0, true);
+        openSettings();
+        eq('chipOn', document.getElementById('setWpEarth').classList.contains('on'), true);
+        eq('hintMentionsChina', (document.getElementById('wpStatusHint').textContent || '').indexOf('中国') >= 0, true);
+        closeSettings();
+        var fake = { ver: EARTH_VER, day: day, bucket: earthBucket(),
+                     dataUrl: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwcJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPDs0NDT/wAALCAABAAEBAREA/8QAFAABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AmAA=',
+                     ts: Date.now() };
+        idbSet('nav_earth_cache', fake).then(function() {
+          earthWallpaperUrl = '';
+          return idbGet('nav_earth_cache');
+        }).then(function(v) {
+          eq('cacheRoundTrip', !!(v && v.day === day && v.ver === EARTH_VER && String(v.dataUrl).indexOf('data:image') === 0), true);
+          earthWallpaperUrl = v.dataUrl;
+          applyHeroBg();
+          var bg = document.querySelector('.hero-bg');
+          eq('heroApplied', (bg.style.backgroundImage || '').indexOf('data:image') >= 0, true);
+          eq('heroPosition', bg.style.backgroundPosition, 'center center');
+          // 完整显示：底层模糊铺满 + 上层 contain 完整图
+          // 铺满整个首屏：cover 按比例放大、不留白也不变形；折叠时首屏满屏，展开后回到常高
+          eq('noBlurLayer', getComputedStyle(bg).filter, 'none');
+          eq('heroSizeCover', getComputedStyle(bg).backgroundSize, 'cover');
+          eq('noHeroBgFull', !document.getElementById('heroBgFull'), true);
+          var heroEl = document.querySelector('.hero');
+          var expandedH = heroEl.getBoundingClientRect().height;
+          eq('heroNotFullScreenWhenExpanded', expandedH < window.innerHeight - 2, true);
+          document.body.classList.add('all-hidden');
+          var collapsedH = heroEl.getBoundingClientRect().height;
+          document.body.classList.remove('all-hidden');
+          eq('heroFullScreenWhenCollapsed', collapsedH >= window.innerHeight - 2, true);
+          // 展开导航按钮必须真的能把导航展开（autofold 默认下点一下立刻可见）
+          eq('toggleBtnExists', !!document.getElementById('heroToggleBtn'), true);
+          setNavFold('autofold');            // 折叠（allHidden=true，与 body 类同步）
+          eq('collapsedBeforeToggle', document.body.classList.contains('all-hidden'), true);
+          toggleAllContent();                // 真点一下「展开导航」
+          eq('toggleExpands', document.body.classList.contains('all-hidden'), false);
+          eq('wrapperVisible', getComputedStyle(document.querySelector('.page-wrapper')).display, 'flex');
+          eq('heroBackToNormal', document.querySelector('.hero').getBoundingClientRect().height < window.innerHeight - 2, true);
+          // 地球实况要"看得清"：背景几乎不透明（浅色 0.98 / 深色 0.94）
+          eq('heroOpacityLight', bg.style.opacity, '0.98');
+          setWallpaper('default');
+          eq('switchToDefault', wallpaperType, 'default');
+          setWallpaper('earth');
+          eq('switchBackEarth', wallpaperType, 'earth');
+          eq('persisted', ls('nav_wallpaper'), 'earth');
+          flush();
+        }).catch(function(e) {
+          out.push('[FAIL] earthCache: ' + e.message);
+          flush();
+        });
+        return;
+      }
+      else if (CASE === 'hero_clock_credit_todo') {
+        // 右上角时钟：日期 / 周几 / 时间都在且格式正确
+        var d = new Date();
+        var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+        eq('clockDateShown', document.getElementById('hcDate').textContent,
+           pad(d.getMonth() + 1) + '月' + pad(d.getDate()) + '日');
+        eq('clockWeekShown', document.getElementById('hcWeek').textContent.indexOf('周') === 0, true);
+        eq('clockTimeShown', /^\d{2}:\d{2}:\d{2}$/.test(document.getElementById('hcTime').textContent), true);
+        // 两行布局：第一行「需 VPN + 主题」，第二行「时钟 + 天气」（用户指定）
+        var cR = document.getElementById('heroClock').getBoundingClientRect();
+        var tR = document.querySelector('.theme-toggle').getBoundingClientRect();
+        var heroR = document.querySelector('.hero').getBoundingClientRect();
+        var qR = document.getElementById('vpnQuickRow').getBoundingClientRect();
+        var wR = document.getElementById('heroWeatherBtn').getBoundingClientRect();
+        eq('clockInTopRight', cR.right > heroR.left + heroR.width * 0.5 && cR.top < heroR.top + 140, true);
+        eq('twoCornerRows', document.querySelectorAll('#heroCorner .hc-row').length, 2);
+        eq('clockBelowVpn', cR.top >= qR.bottom - 1, true);
+        eq('clockRowNoOverlap', cR.right <= wR.left + 1 && cR.top >= qR.bottom - 1, true);
+        eq('weatherUnderTheme', Math.abs(wR.right - tR.right) < 2 && wR.top >= tR.bottom - 1, true);
+        eq('cornerFlexContainer', !!document.getElementById('heroCorner') &&
+           getComputedStyle(document.getElementById('heroCorner')).display === 'flex', true);
+        eq('cornerColumnDirection',
+           getComputedStyle(document.getElementById('heroCorner')).flexDirection, 'column');
+        // 不越出 hero 右边界、不压左上角齿轮
+        var cornerR = document.getElementById('heroCorner').getBoundingClientRect();
+        eq('cornerFitsHero', cornerR.left >= heroR.left && cornerR.right <= heroR.right + 1, true);
+        eq('cornerClearOfSettings',
+           cornerR.left >= document.querySelector('.settings-btn').getBoundingClientRect().right, true);
+        eq('clockHeightSane', cR.height >= 20 && cR.height <= 44, true);
+        eq('weatherBtnNotSmall', wR.width >= 36 && wR.height >= 36, true);
+        // 图源说明（浅淡小字）存在且可点击跳转 zoom.earth
+        var credit = document.getElementById('earthCredit');
+        eq('creditExists', !!credit, true);
+        eq('creditHasNasaOrZoom', /NASA|Zoom/.test(credit.textContent), true);
+        eq('creditClickable', credit.getAttribute('onclick') === 'openEarthSource()', true);
+        // 时钟字号必须够大（用户要求"再大一点"）：>= 13px（0.86rem @16px ≈ 13.76px）
+        eq('clockFontBigEnough',
+           parseFloat(getComputedStyle(document.getElementById('heroClock')).fontSize) >= 13, true);
+        // 点图源一律打开 zoom.earth/maps/satellite（用户指定 URL）
+        var openedUrl = null;
+        var origOpen = window.open;
+        window.open = function(u) { openedUrl = u; };
+        openEarthSource();
+        window.open = origOpen;
+        eq('creditOpensZoomEarthSite', openedUrl, 'https://zoom.earth/maps/satellite/');
+        // 待办：未完成时工具条有红色数字徽标 + 顶部提醒条
+        eq('todoBadgeCount', (function() {
+          var tab = null;
+          document.querySelectorAll('.rt-edge .rt-tab').forEach(function(t) {
+            if (t.getAttribute('title') && t.getAttribute('title').indexOf('待办') === 0) tab = t;
+          });
+          var b = tab && tab.querySelector('.rt-badge');
+          return b ? b.textContent : 'none';
+        })(), '2');
+        eq('todoPulseClass', (function() {
+          var tab = null;
+          document.querySelectorAll('.rt-edge .rt-tab').forEach(function(t) {
+            if (t.getAttribute('title') && t.getAttribute('title').indexOf('待办') === 0) tab = t;
+          });
+          return !!(tab && tab.classList.contains('rt-has-todo'));
+        })(), true);
+        eq('todoAlertShown', document.getElementById('todoAlert').classList.contains('show'), true);
+        // 全部完成 → 徽标和提醒条都消失
+        todoItems.forEach(function(t) { t.completed = true; });
+        saveTodoItems();
+        renderTodoList();
+        eq('todoBadgeGoneWhenDone', document.querySelectorAll('.rt-edge .rt-badge').length, 0);
+        eq('todoAlertGoneWhenDone', document.getElementById('todoAlert').classList.contains('show'), false);
+        // 天气工具：已从右侧工具条移到首屏右上角（主题切换正下方）
+        eq('weatherNotInBar', (function() {
+          var hit = false;
+          document.querySelectorAll('.rt-edge .rt-tab').forEach(function(t) {
+            if (t.getAttribute('title') === '天气') hit = true;
+          });
+          return hit;
+        })(), false);
+        eq('weatherBtnInHeroCorner', !!document.getElementById('heroWeatherBtn') &&
+           !!document.getElementById('heroWeatherBtn').closest('#heroCorner'), true);
+        var wbR = document.getElementById('heroWeatherBtn').getBoundingClientRect();
+        var tglR = document.querySelector('.theme-toggle').getBoundingClientRect();
+        eq('weatherUnderTheme', Math.abs(wbR.right - tglR.right) < 2 && wbR.top >= tglR.bottom - 1, true);
+        toggleWeatherWindow();
+        eq('weatherWindowOpens', document.getElementById('weatherWindow').classList.contains('visible'), true);
+        eq('weatherBtnOnState', document.getElementById('heroWeatherBtn').classList.contains('on'), true);
+        eq('weatherMsnMapBtn', !!document.querySelector('.weather-foot button[onclick*="maps"]'), true);
+        eq('weatherLocDefault', weatherLoc.name, '北京');
+        closeWeatherWindow();
+        eq('weatherWindowCloses', document.getElementById('weatherWindow').classList.contains('visible'), false);
+        eq('weatherBtnOffState', document.getElementById('heroWeatherBtn').classList.contains('on'), false);
+        // 卫星平面图已按用户要求删除：不再有 zoom 壁纸 / iframe / heroLive / live map 相关元素与函数
+        eq('noZoomChip', !document.getElementById('setWpZoom'), true);
+        eq('noZoomIframe', !document.getElementById('heroEmbedFrame'), true);
+        eq('noHeroLive', !document.getElementById('heroLive'), true);
+        eq('noLiveMapFns', typeof window.liveMapBbox === 'undefined' && typeof window.syncLiveWallpaper === 'undefined', true);
+        eq('noLiveMapClass', document.body.classList.contains('wp-zoom'), false);
+        // 地球实况只有一个中国区域源（不再有「实时卫星图」壁纸、也不再有两个取景子模式）
+        eq('noFy4Chip', !document.getElementById('setWpFy4'), true);
+        eq('noScopeRow', !document.getElementById('earthScopeRow'), true);
+        eq('noScopeFns', typeof window.setEarthScope, 'undefined');
+        eq('beijingTimeConvert', beijingTimeText('2026-10-17 09:30 (UTC)'), '2026-10-17 17:30（北京时间）');
+        eq('beijingStampConvert', beijingTimeOfStamp(Date.UTC(2026, 9, 17, 9, 30)), '2026-10-17 17:30（北京时间）');
+        // 中国区域取的就是该产品自己的清单与文件
+        eq('regionXmlIsChinaProduct',
+           FY4_XML === 'https://img.nsmc.org.cn/CLOUDIMAGE/FY4B/AGRI/GCLR/SEC/xml/FY4B-china-72h.xml', true);
+        eq('regionSlotIsChinaPath',
+           fy4UrlForSlot(new Date(Date.UTC(2026, 9, 17, 9, 45, 0))).indexOf('/GCLR/SEC/china/') > 0, true);
+        eq('regionThumbSuffix', fy4ThumbOf('https://x/FY4B_china_20261017094500.JPG').indexOf('-thumb.JPG') > 0, true);
+        // 这些辅助函数少一个都会让 fetchFy4Image 抛错、静默退回 NASA（曾真出过这个 bug）
+        ['fy4AbsUrl', 'fy4Parse', 'fy4ThumbOf', 'fy4UrlForSlot', 'fy4LoadList', 'fy4FetchRegion',
+         'fy4SlotStamp', 'fy4DayOf', 'fetchFy4Image', 'refreshEarthWallpaper'].forEach(function(fn) {
+          eq('fy4fn_' + fn, typeof window[fn], 'function');
+        });
+        eq('fy4DayOfWorks', fy4DayOf('2026-10-17 09:45 (UTC)'), '2026-10-17');
+        eq('fy4DayOfEmpty', fy4DayOf(''), '');
+        setWallpaper('earth');
+        eq('earthCreditMentionsChina', /中国区域真彩/.test(document.getElementById('earthCredit').textContent), true);
+      }
+      else if (CASE === 'fold_default_autofold') {
+        // 默认折叠模式 = 「刷新后自动折叠」：全新浏览器载入即折叠
+        eq('defaultModeAutofold', navFoldMode, 'autofold');
+        eq('loadsCollapsed', document.body.classList.contains('all-hidden'), true);
+        eq('autoChipOn', document.getElementById('setNavAuto').classList.contains('on'), true);
+        eq('showChipOff', document.getElementById('setNavShow').classList.contains('on'), false);
+        eq('hideChipOff', document.getElementById('setNavHide').classList.contains('on'), false);
+        eq('wrapperHidden', getComputedStyle(document.querySelector('.page-wrapper')).display, 'none');
+        // 手动展开后仍保持 autofold 模式（下次刷新会再折叠）
+        setNavFold('show');
+        eq('manualExpand', document.body.classList.contains('all-hidden'), false);
+        eq('modeUnchangedByManualExpand', navFoldMode, 'show');
+        setNavFold('autofold');
+        eq('modeBackToAuto', ls('nav_fold_mode'), 'autofold');
+        eq('collapsedAgain', document.body.classList.contains('all-hidden'), true);
+      }
+      else if (CASE === 'round_ui_polish') {
+        // ① 「刷新后自动折叠」：载入即折叠，但手动展开不改变模式
+        eq('autofoldOnLoad', document.body.classList.contains('all-hidden'), true);
+        eq('autofoldChipOn', document.getElementById('setNavAuto').classList.contains('on'), true);
+        eq('autofoldShowChipOff', document.getElementById('setNavShow').classList.contains('on'), false);
+        setNavFold('show');
+        eq('manualExpandWorks', document.body.classList.contains('all-hidden'), false);
+        eq('modePersistedShow', ls('nav_fold_mode'), 'show');
+        setNavFold('autofold');
+        eq('backToAutofold', document.body.classList.contains('all-hidden'), true);
+        eq('modePersistedAuto', ls('nav_fold_mode'), 'autofold');
+
+        // ② 关注地 = 用户手动设置（不被 IP 定位覆盖）
+        eq('userLocKept', weatherLoc.name, '上海');
+        eq('locIsUser', weatherLocIsUser(), true);
+        eq('geoNotOverridden', Math.abs(weatherLoc.lat - 31.2304) < 0.01, true);
+
+        // ③ 天气窗口要素：能见度 / 过敏 / 穿衣 / 紫外线，全部来自固定 fixture，不依赖网络
+        renderWeather({
+          ts: Date.now(),
+          forecast: {
+            current: { weather_code: 61, temperature_2m: 12.4, apparent_temperature: 10.2,
+                       relative_humidity_2m: 80, surface_pressure: 1005, visibility: 2800,
+                       wind_speed_10m: 9, wind_direction_10m: 315 },
+            daily: { temperature_2m_max: [16], temperature_2m_min: [9],
+                     sunrise: ['2026-10-17T06:26'], sunset: ['2026-10-17T17:32'],
+                     uv_index_max: [3], precipitation_probability_max: [70] }
+          },
+          air: { current: { us_aqi: 80, pm2_5: 20, grass_pollen: null } }
+        });
+        var wtext = document.getElementById('weatherBody').textContent;
+        eq('hasVisibility', wtext.indexOf('能见度') >= 0 && wtext.indexOf('2.8 km') >= 0, true);
+        eq('hasClothing', wtext.indexOf('穿衣建议') >= 0 && /外套|毛衣|短袖|羽绒/.test(wtext), true);
+        eq('hasAllergyHiddenWhenNoData', wtext.indexOf('过敏') < 0, true);
+        eq('airSectionTitleOnly', wtext.indexOf('空气质量') >= 0 && wtext.indexOf('空气与过敏') < 0, true);
+        eq('hasUv', wtext.indexOf('紫外线') >= 0, true);
+        eq('hasPrecipProb', wtext.indexOf('70%') >= 0, true);
+        // 首屏按钮自动变成该天气的图标（第一份 fixture 是 61 = 小雨 🌦️）
+        eq('heroIconFollowsWeather', document.getElementById('heroWeatherBtn').textContent, '🌦️');
+        // 有花粉数据时才出现「过敏」这一行（欧洲区）
+        renderWeather({
+          ts: Date.now(),
+          forecast: { current: { weather_code: 0, temperature_2m: 20, apparent_temperature: 20,
+                                 relative_humidity_2m: 50, surface_pressure: 1010, visibility: 20000,
+                                 wind_speed_10m: 5, wind_direction_10m: 90 },
+                      daily: { temperature_2m_max: [24], temperature_2m_min: [15],
+                               sunrise: ['2026-10-17T06:20'], sunset: ['2026-10-17T17:40'],
+                               uv_index_max: [5], precipitation_probability_max: [10] } },
+          air: { current: { us_aqi: 30, pm2_5: 8, grass_pollen: 60, birch_pollen: 3 } }
+        });
+        var wtext2 = document.getElementById('weatherBody').textContent;
+        eq('allergyShownWhenData', wtext2.indexOf('过敏（花粉）') >= 0, true);
+        eq('allergySourceListed', wtext2.indexOf('禾本科 60 粒/m³') >= 0, true);
+        eq('allergyTitleMerged', wtext2.indexOf('空气与过敏') >= 0, true);
+        // 第二份 fixture 是晴天（0）→ 按钮图标同步变成 ☀️
+        eq('heroIconUpdates', document.getElementById('heroWeatherBtn').textContent, '☀️');
+
+        // ④ 单位换算辅助函数
+        eq('visKm', visText(2800), '2.8 km');
+        eq('visBigKm', visText(15000), '15 km');
+        eq('visMeters', visText(500), '500 m');
+        eq('clothHot', clothingAdvice(30).base.indexOf('短袖') >= 0, true);
+        eq('clothColdExtra', clothingAdvice(2, 8, 80, 9).extra.length >= 2, true);
+        eq('pollenHigh', pollenInfo({ current: { grass_pollen: 60 } }).level, '高');
+        eq('pollenUnknown', pollenInfo({ current: { grass_pollen: null } }).known, false);
+
+        // ⑤ MSN 跳转地址（旧的 /weather/overview 会 404 → 太容易看到源码）
+        var urls = [];
+        var origOpen = window.open;
+        window.open = function(u) { urls.push(u); };
+        openMsnWeather('overview');
+        openMsnWeather('maps');
+        window.open = origOpen;
+        eq('msnForecastUrl', urls[0].indexOf('/zh-cn/weather/forecast/in-') >= 0, true);
+        eq('msnNoOverview404', urls[0].indexOf('/overview') < 0, true);
+        eq('msnMapsUrl', urls[1].indexOf('/zh-cn/weather/maps?loc=') >= 0, true);
+
+        // ⑥ 快捷工具：只有 <600px 才隐藏；搜索框宽度比原来宽但不夸张
+        var hiddenRule = '', tinyRule = '';
+        for (var si = 0; si < document.styleSheets.length; si++) {
+          var rules;
+          try { rules = document.styleSheets[si].cssRules; } catch(e) { continue; }
+          for (var ri = 0; ri < rules.length; ri++) {
+            var r = rules[ri];
+            if (r.type !== 4 || !r.conditionText) continue;   // 4 = CSSMediaRule
+            if (r.cssText.indexOf('.rt-edge') < 0) continue;
+            if (r.conditionText.indexOf('599px') >= 0) hiddenRule = r.cssText;
+            if (r.conditionText.indexOf('1023px') >= 0) tinyRule = r.cssText;
+          }
+        }
+        eq('toolbarHidesBelow600', hiddenRule.indexOf('.rt-edge') >= 0 && hiddenRule.indexOf('599px') >= 0, true);
+        eq('toolbarNotHiddenAt1023', tinyRule, '');
+        var sw = document.querySelector('.search-box').getBoundingClientRect().width;
+        eq('searchWiderThanDefault', sw > 700, true);
+        eq('searchNotTooWide', sw < 900, true);
+
+        // ⑦ 右上角是「玻璃面板 + 两行」
+        var corner = document.getElementById('heroCorner');
+        eq('cornerPanelRounded', parseInt(getComputedStyle(corner).borderTopLeftRadius, 10) >= 10, true);
+        eq('cornerTwoRows', corner.querySelectorAll('.hc-row').length, 2);
+        eq('weatherIconBigger',
+           parseFloat(getComputedStyle(document.getElementById('heroWeatherBtn')).fontSize) >
+           parseFloat(getComputedStyle(document.querySelector('.theme-toggle')).fontSize), true);
       }
       else if (CASE === 'engine_modifier_switch') {
         // 单独按 Ctrl → 下一个可用引擎；单独按 Alt → 上一个可用引擎（按显示顺序循环）
@@ -942,8 +1498,10 @@ INJECT = r'''
 '''
 
 CASES = [
-    ('wp_fresh', [('nav_wallpaper', None), ('nav_wp_default_migrated', None)]),
-    ('wp_legacy_bing', [('nav_wallpaper', 'bing'), ('nav_wp_default_migrated', None)]),
+    ('wp_fresh', [('nav_wallpaper', None), ('nav_wp_default_migrated', None), ('nav_wp_earth_ver', None)]),
+    ('wp_static_default', [('nav_wallpaper', 'default'), ('nav_wp_default_migrated', '1'), ('nav_wp_earth_ver', '1')]),
+    ('wp_earth_keep_custom', [('nav_wallpaper', 'custom'), ('nav_wp_default_migrated', '1'), ('nav_wp_earth_ver', None)]),
+    ('wp_legacy_bing', [('nav_wallpaper', 'bing'), ('nav_wp_default_migrated', None), ('nav_wp_earth_ver', '1')]),
     ('wp_migrated_bing', [('nav_wallpaper', 'bing'), ('nav_wp_default_migrated', '1')]),
     ('wp_custom', [('nav_wallpaper', 'custom'), ('nav_wp_default_migrated', '1')]),
     ('sort_default_fixed', [('nav_cat_sort_mode', None), ('nav_cat_sort_migrated', None),
@@ -986,6 +1544,10 @@ CASES = [
                                                   ensure_ascii=False))]),
     ('settings_panel_render', [('nav_wallpaper', 'default'), ('nav_cat_sort_mode', 'fixed'), ('nav_theme', 'light')]),
     ('ext_module_smoke', [('nav_wallpaper', 'default')]),
+    ('fold_default_autofold', [('nav_wallpaper', 'default')]),
+    ('round_ui_polish', [('nav_wallpaper', 'default'), ('nav_fold_mode', 'autofold'), ('nav_all_hidden', '0'),
+                          ('nav_weather_loc', json.dumps({'name': '上海', 'lat': 31.2304, 'lon': 121.4737}, ensure_ascii=False)),
+                          ('nav_weather_loc_src', 'user'), ('nav_weather_geo', None)]),
     ('sort_mode_not_in_popup', [('nav_wallpaper', 'default')]),
     ('rt_per_tool_side', [('nav_wallpaper', 'default'), ('nav_rt_sides', None)]),
     ('vpn_badge_and_hide', [('nav_wallpaper', 'default'),
@@ -1006,12 +1568,26 @@ CASES = [
     ('engine_defaults_vpn', [('nav_wallpaper', 'default'), ('nav_engine', 'bing'),
                              ('nav_hidden_engines', None), ('nav_engines_ver', None),
                              ('nav_vpn_mode', 'off'), ('nav_vpn_mode_migrated', '1')]),
+    ('vpn_quick_and_adv', [('nav_wallpaper', 'default'), ('nav_vpn_mode', 'always'),
+                           ('nav_vpn_mode_migrated', '1'), ('nav_vpn_mode_ver', '2'),
+                           ('nav_search_adv', None)]),
+    ('unit_conv_common', [('nav_wallpaper', 'default')]),
+    ('earth_wallpaper', [('nav_wallpaper', 'earth'), ('nav_wp_default_migrated', '1')]),
+    ('hero_clock_credit_todo', [('nav_wallpaper', 'default'), ('nav_wp_earth_ver', '1'),
+                                ('nav_todo_items', json.dumps([
+                                    {'id': 't1', 'text': '写周报', 'completed': False, 'priority': 'high'},
+                                    {'id': 't2', 'text': '看论文', 'completed': False, 'priority': 'mid'}
+                                ], ensure_ascii=False))]),
 ]
 
 
 def run_case(case, prep, tmpdir, hold_url=''):
     with io.open(os.path.join(ROOT, 'index.html'), 'r', encoding='utf-8') as f:
         html = f.read()
+    # 导航折叠的默认模式现在是「刷新后自动折叠」→ 页面载入即折叠，会隐藏整块导航。
+    # 绝大多数用例要测的是导航本身，所以默认先把折叠模式设成展开；需要测折叠的用例自己覆盖。
+    if case != 'fold_default_autofold':
+        prep = [('nav_fold_mode', 'show'), ('nav_all_hidden', '0')] + list(prep or [])
     inject = INJECT.replace('__CASE__', json.dumps(case)).replace('__PREP__', json.dumps(prep, ensure_ascii=False))
     inject = inject.replace('__HOLD__', json.dumps(hold_url if case == 'wallpaper_idb' else ''))
     html = html.replace('</body>', inject + '\n</body>')

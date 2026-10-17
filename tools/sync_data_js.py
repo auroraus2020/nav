@@ -12,7 +12,7 @@ INDEX = os.path.join(ROOT, 'index.html')
 DATA_JS = os.path.join(ROOT, 'config-editor', 'data.js')
 
 SECTION_RE = re.compile(r'<section class="category-section" id="([^"]+)">(.*?)</section>', re.S)
-HEAD_RE = re.compile(r'<h2>(.*?)</h2>.*?<img src="([^"]+)"', re.S)
+HEAD_RE = re.compile(r'<h2>(.*?)</h2>.*?<img[^>]*\ssrc="([^"]+)"', re.S)
 CARD_RE = re.compile(
     r'<a class="nav-card"(?P<attrs>[^>]*)>\s*'
     r'<div class="icon icon-(?P<color>[a-z]+)">(?P<glyph>[^<]*)</div>\s*'
@@ -39,7 +39,7 @@ def main():
     for sid, body in SECTION_RE.findall(html):
         head = HEAD_RE.search(body)
         name = re.search(r'<h2>(.*?)</h2>', body).group(1) if head is None else head.group(1)
-        icon = re.search(r'<img src="([^"]+)"', body).group(1)
+        icon = re.search(r'<img[^>]*\ssrc="([^"]+)"', body).group(1)
         sites = []
         for m_card in CARD_RE.finditer(body):
             attrs = m_card.group('attrs')
