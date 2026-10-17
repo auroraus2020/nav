@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="msvalidate.01" content="EB8C85A75B0B2724A5F6BD5D01ED41D3">
-  <meta http-equiv="Cache-Control" content="public, max-age=86400">
-  <meta http-equiv="Expires" content="86400">
-  <link rel="dns-prefetch" href="https://hm.baidu.com">
-  <link rel="preconnect" href="https://hm.baidu.com" crossorigin>
+  <!-- 缓存策略交给 sw.js：页面「缓存 10 分钟就秒开 + 后台更新」，这里不再放 meta 缓存指令（旧写法容易让页面更新不生效） -->
   <title>AURORAUS导航</title>
 
   <style>
@@ -539,6 +536,9 @@
     .mobile-tab img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; }
 
     /* === Category === */
+    /* 曾经试过给 .category-section 加 content-visibility: auto（布局增量 176ms→13ms），
+       但实测「点左侧分类跳转」会因高度估算而落偏（sec.top 跑到 -880px），
+       为了不牺牲「快速选站点」这个核心功能，这里放弃该优化，只靠去掉 backdrop-filter 提速。 */
     .category-section { margin-bottom: 2.5rem; scroll-margin-top: 80px; }
     .category-header {
       display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.1rem;
@@ -1231,16 +1231,6 @@
     .weather-loading { font-size: 0.74rem; color: var(--muted); text-align: center; padding: 1.2rem 0; }
     @media (max-width: 599px) { .weather-window { display: none !important; } }
   </style>
-  <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.async = true;
-  hm.src = "https://hm.baidu.com/hm.js?ac6e171eb4ded069b81cd6f50f3d1032";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
-  </script>
 </head>
 <body>
 
@@ -3136,9 +3126,9 @@
       <div class="settings-section full">
         <h4>🖼️ 壁纸来源</h4>
         <div class="settings-row" style="flex-wrap:wrap;gap:0.5rem;">
+          <span class="settings-chip on" onclick="setWallpaper('default',this)" id="setWpDefault">🎨 默认壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('earth',this)" id="setWpEarth">🌍 地球实况</span>
           <span class="settings-chip" onclick="setWallpaper('bing',this)" id="setWpBing">在线风景壁纸</span>
-          <span class="settings-chip on" onclick="setWallpaper('default',this)" id="setWpDefault">默认壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('custom',this)" id="setWpCustom">自定义网络壁纸</span>
           <span class="settings-chip" onclick="setWallpaper('local',this)" id="setWpLocal">本地图片壁纸</span>
           <button class="settings-action-btn" id="randomWpBtn" style="font-size:0.72rem;padding:0.25rem 0.6rem;" onclick="randomPickWp()" title="从assets库中随机切换一张壁纸">🎲 换一张</button>
@@ -3198,6 +3188,11 @@
           <span class="settings-chip" id="setSearchFull" onclick="setSearchMode('full',this)">全搜索</span>
         </div>
         <p class="settings-hint" id="searchModeHint"></p>
+        <div class="settings-row" style="margin-top:0.5rem;">
+          <span class="settings-chip" id="setSearchKeepOn" onclick="setSearchKeep(true,this)">搜索后保留输入</span>
+          <span class="settings-chip" id="setSearchKeepOff" onclick="setSearchKeep(false,this)">搜索后清空输入</span>
+        </div>
+        <p class="settings-hint" id="searchKeepHint"></p>
       </div>
 
       <div class="settings-section wide">
@@ -3331,7 +3326,8 @@
       var query = input.value.trim();
       if (!query) return;
       window.open(buildSearchUrl(getSelectedEngine(), query), '_blank');
-      clearSearchInput();          // 回车 / 点「搜索」提交后立即清空输入框（含悬浮搜索条）
+      // 默认保留输入框里的关键词（用户要求）；设置 → 搜索模式 → 可切成「搜索后清空输入」
+      if (!searchKeepInput) clearSearchInput();
     }
 
     // ---------- 高级搜索（参考百度高级搜索；只对 必应/百度/谷歌/ Yandex 生效） ----------
@@ -3769,6 +3765,33 @@
         ? '专注搜索：搜索框只负责联网搜索——输入时不会匹配本站网站、也不会自动展开下方分类；导航的展开/收起状态保持你现在的样子（不替你收起，也不替你展开）。'
         : '全搜索（默认）：输入关键词时同时筛选本页网站、自动展开匹配的分类；回车或点「搜索」再用所选引擎联网搜索。';
     }
+    // ---------- 搜索提交后是否清空输入框（用户要求：默认「保留」，并在设置里可切换） ----------
+    var searchKeepInput = true;
+    function loadSearchKeep() {
+      try { searchKeepInput = localStorage.getItem('nav_search_keep') !== '0'; }
+      catch(e) { searchKeepInput = true; }
+    }
+    function searchKeepHintText() {
+      return searchKeepInput
+        ? '保留（默认）：回车或点「搜索」后，关键词仍留在输入框里，方便改词再搜、或对比不同引擎的结果。'
+        : '清空：每次搜索后输入框清空并重新聚焦，适合「搜完立刻换下一个词」的习惯。';
+    }
+    function applySearchKeepUi() {
+      var on = document.getElementById('setSearchKeepOn');
+      var off = document.getElementById('setSearchKeepOff');
+      if (on) on.classList.toggle('on', !!searchKeepInput);
+      if (off) off.classList.toggle('on', !searchKeepInput);
+      var hint = document.getElementById('searchKeepHint');
+      if (hint) hint.textContent = searchKeepHintText();
+    }
+    function setSearchKeep(keep, el) {
+      searchKeepInput = !!keep;
+      ixSet('nav_search_keep', searchKeepInput ? '1' : '0');
+      applySearchKeepUi();
+    }
+    window.setSearchKeep = setSearchKeep;
+    loadSearchKeep();
+
     function applySearchModeUi() {
       var f = document.getElementById('setSearchFocus');
       var u = document.getElementById('setSearchFull');
@@ -4622,7 +4645,7 @@
       if (fy4ListCache && (Date.now() - fy4ListCache.ts) < 5 * 60 * 1000 && fy4ListCache.items.length) {
         return Promise.resolve(fy4ListCache.items);
       }
-      return fetch(FY4_XML, { mode: 'cors', cache: 'no-store' })
+      return fetchT(FY4_XML, { mode: 'cors', cache: 'no-store' }, 6000)
         .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(function(txt) {
           var items = fy4Parse(txt);
@@ -4650,16 +4673,16 @@
     // 拉最新一帧中国区域云图（缩略图 1719×1080，约 880KB，CORS 允许，可落 IndexedDB）
     function fy4FetchRegion() {
       return fy4LoadList().then(function(items) {
-        var cands = items.slice(0, 8).map(function(it) { return { url: fy4ThumbOf(it.url), time: it.time }; });
+        var cands = items.slice(0, 3).map(function(it) { return { url: fy4ThumbOf(it.url), time: it.time }; });
         // 列表抽风时用「现在往前 30 分钟」的规律 URL 兜底
-        for (var n = 0; n < 4; n++) {
+        for (var n = 0; n < 2; n++) {
           var d = new Date(Date.now() - (30 + n * 15) * 60000);
           cands.push({ url: fy4ThumbOf(fy4UrlForSlot(d)), time: '' });
         }
         function tryAt(i) {
           if (i >= cands.length) return Promise.reject(new Error('fy4-empty'));
           var c = cands[i];
-          return fetch(c.url, { mode: 'cors', cache: 'force-cache' })
+          return fetchT(c.url, { mode: 'cors', cache: 'force-cache' }, 12000)
             .then(function(r) {
               if (!r.ok) throw new Error('HTTP ' + r.status);
               return r.blob().then(function(b) { return { blob: b, time: c.time || '', lm: r.headers.get('Last-Modified') }; });
@@ -4722,15 +4745,14 @@
       return d.getUTCFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
     }
     function earthDay() { return earthDayOffset(0); }        // 首选「今天」
-    // 候选顺序：今天 × 3 图层 → 昨天 × 3 图层 → 前天 × 3 图层
+    // 候选顺序：今天 × 3 图层 → 昨天 × 1 图层。
+    // 只留 4 个：兜底是「锦上添花」，弱网时 9 个候选 × 12s 超时能把网络拖两分钟。
     function earthCandidates() {
       var list = [];
-      for (var n = 0; n < 3; n++) {
-        var day = earthDayOffset(n);
-        for (var i = 0; i < EARTH_LAYERS.length; i++) {
-          list.push({ day: day, layer: EARTH_LAYERS[i], age: n });
-        }
+      for (var i = 0; i < EARTH_LAYERS.length; i++) {
+        list.push({ day: earthDayOffset(0), layer: EARTH_LAYERS[i], age: 0 });
       }
+      list.push({ day: earthDayOffset(1), layer: EARTH_LAYERS[0], age: 1 });
       return list;
     }
     // 太阳直射点经度：UTC 12 点时在 0°（格林尼治），每小时西移 15°
@@ -4780,23 +4802,36 @@
     }
     // Zoom Earth 实时卫星图网址（图源说明点一下就去这里）
     var ZOOM_EARTH_SITE = 'https://zoom.earth/maps/satellite/';
-    // ---------- 右上角时钟：日期 / 周几 / 本地时间 ----------
+    // ---------- 右上角时钟：日期 / 周几 / 本地时间（纯本地，零网络；只在值真变了才写 DOM）----------
     var WEEK_CN = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var clockLastText = { date: '', week: '', time: '' };
     function tickHeroClock() {
+      if (document.hidden) return;                    // 标签页不可见就别烧 CPU
       var d = new Date();
       var month = d.getMonth() + 1, day = d.getDate();
       var dateEl = document.getElementById('hcDate');
       var weekEl = document.getElementById('hcWeek');
       var timeEl = document.getElementById('hcTime');
-      if (dateEl) dateEl.textContent = (month < 10 ? '0' : '') + month + '月' + (day < 10 ? '0' : '') + day + '日';
-      if (weekEl) weekEl.textContent = WEEK_CN[d.getDay()];
+      if (dateEl) {
+        var ds = (month < 10 ? '0' : '') + month + '月' + (day < 10 ? '0' : '') + day + '日';
+        if (ds !== clockLastText.date) { clockLastText.date = ds; dateEl.textContent = ds; }
+      }
+      if (weekEl) {
+        var ws = WEEK_CN[d.getDay()];
+        if (ws !== clockLastText.week) { clockLastText.week = ws; weekEl.textContent = ws; }
+      }
       if (timeEl) {
         var hh = d.getHours(), mi = d.getMinutes(), ss = d.getSeconds();
-        timeEl.textContent = (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi + ':' + (ss < 10 ? '0' : '') + ss;
+        var ts = (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi + ':' + (ss < 10 ? '0' : '') + ss;
+        if (ts !== clockLastText.time) { clockLastText.time = ts; timeEl.textContent = ts; }
       }
     }
     tickHeroClock();
     setInterval(tickHeroClock, 1000);
+    // 切回标签页时立即补一次，不用等下一秒
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) tickHeroClock();
+    });
     function blobToDataUrl(blob) {
       return new Promise(function(res, rej) {
         var fr = new FileReader();
@@ -4843,7 +4878,7 @@
         if (i >= candidates.length) return Promise.reject(new Error('no-usable-image'));
         var cand = candidates[i];
         var url = earthUrlFor(cand.day, undefined, cand.layer);
-        return fetch(url, { mode: 'cors', cache: 'force-cache' })
+        return fetchT(url, { mode: 'cors', cache: 'force-cache' }, 12000)
           .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
           .then(function(blob) {
             return blobToDataUrl(blob).then(function(dataUrl) {
@@ -4874,12 +4909,30 @@
       });
     }
     // 取最新一帧：优先气象局 FY-4B（15 分钟级），失败再退 NASA GIBS 当日真彩
+    // 整条链路的总超时：超过就不再等（各请求自身也有超时，这里防「串行叠加」）
+    var EARTH_TOTAL_TIMEOUT = 25000;
+    var earthGiveUpUntil = 0;
+    function withDeadline(promise, ms) {
+      return new Promise(function(resolve, reject) {
+        var done = false;
+        var timer = setTimeout(function() { if (!done) { done = true; reject(new Error('earth-timeout')); } }, ms);
+        promise.then(function(v) { if (!done) { done = true; clearTimeout(timer); resolve(v); } },
+                     function(e) { if (!done) { done = true; clearTimeout(timer); reject(e); } });
+      });
+    }
     function refreshEarthWallpaper() {
-      return fetchFy4Image().catch(function(err) {
+      if (earthGiveUpUntil && Date.now() < earthGiveUpUntil) {
+        return Promise.resolve('');          // 刚失败过：10 分钟内不再刷网络
+      }
+      return withDeadline(fetchFy4Image().catch(function(err) {
         // 注意：这里一旦静默退回 NASA，看起来就像"图源不对"，所以留一条显眼的日志
         if (window.console && console.warn) console.warn('[earth] FY-4B 取图失败，退回 NASA GIBS：', err && err.message);
         return fetchEarthImage(earthDay());
-      }).catch(function() {});
+      }), EARTH_TOTAL_TIMEOUT).catch(function(err) {
+        earthGiveUpUntil = Date.now() + 10 * 60 * 1000;
+        if (window.console && console.warn) console.warn('[earth] 取图整体失败，10 分钟内不再重试：', err && err.message);
+        return '';
+      });
     }
     // 启动：先读 IndexedDB 缓存秒开；
     // 缓存超过 10 分钟（FY-4B 是 15 分钟一帧）就静默换成更新的一帧
@@ -4916,31 +4969,38 @@
     window.initEarthWallpaper = initEarthWallpaper;
 
     function initWallpaper() {
-      // 默认壁纸：首次访问 / 未手动选择过壁纸的用户，默认使用「默认壁纸」
+      // 默认壁纸 = 「默认壁纸」（静态 hero_bg_light.jpg）。用户 2026-10-17 定稿：
+      // 新访客与「之前被自动迁到地球实况」的老访客都回到默认壁纸；五种壁纸选项全保留，想用卫星图点一下即可。
+      var WP_VER = '36';                       // 默认值换代版本号（只做一次性迁移）
+      var KNOWN = { 'default': 1, 'earth': 1, 'bing': 1, 'custom': 1, 'local': 1 };
       var saved = null;
       try { saved = localStorage.getItem('nav_wallpaper'); } catch(e) {}
       try {
-        var migrated = localStorage.getItem('nav_wp_default_migrated') === '1';
-        // 老用户的 'zoom'（已删除的卫星平面图）/ 'fy4'（已并入地球实况）都迁移到「地球实况」
+        // 旧代号迁移：zoom（已删除的卫星平面图）/ fy4（已并入地球实况）→ earth
         if (saved === 'zoom' || saved === 'fy4') {
           saved = 'earth';
           try { localStorage.setItem('nav_wallpaper', 'earth'); } catch(e) {}
         }
         try { localStorage.removeItem('nav_earth_scope'); } catch(e) {}
-        if (saved === 'custom' || saved === 'local' || saved === 'default' || saved === 'earth' || saved === 'fy4') {
-          // 用户主动选过，尊重其选择
-          wallpaperType = saved;
-          useBingWallpaper = false;
-        } else if (!migrated) {
-          // 键缺失，或仍是旧默认值 bing（未手动改过）→ 一次性迁移到默认壁纸
-          wallpaperType = 'default';
-          useBingWallpaper = false;
-          localStorage.setItem('nav_wallpaper', 'default');
-        } else {
-          wallpaperType = 'bing';
-          useBingWallpaper = true;
+        // 一次性换代：把「没有键」和「被自动写成 earth」的都恢复成默认壁纸。
+        // 之后用户在设置里改的任何选择（含重新选地球实况）都会保留，因为版本号已经写好了。
+        if (localStorage.getItem('nav_wp_ver') !== WP_VER) {
+          if (!saved || saved === 'earth' || !KNOWN[saved]) {
+            saved = 'default';
+            try { localStorage.setItem('nav_wallpaper', 'default'); } catch(e) {}
+          }
+          try { localStorage.setItem('nav_wp_ver', WP_VER); } catch(e) {}
         }
-        localStorage.setItem('nav_wp_default_migrated', '1');
+        // 老规则保留：旧的默认值 bing（用户没主动改过）→ 默认壁纸
+        var migrated = localStorage.getItem('nav_wp_default_migrated') === '1';
+        if (saved === 'bing' && !migrated) saved = 'default';
+        if (!KNOWN[saved]) saved = 'default';
+        wallpaperType = saved;
+        useBingWallpaper = (saved === 'bing');
+        try { localStorage.setItem('nav_wallpaper', saved); } catch(e) {}   // 保证键里永远是实际生效的值
+        // 老键保留写一次，便于旧版本回退时也能读到同一个选择
+        try { localStorage.setItem('nav_wp_default_migrated', '1'); } catch(e) {}
+        try { localStorage.setItem('nav_wp_earth_ver', '1'); } catch(e) {}
       } catch(e) {
         wallpaperType = 'default';
         useBingWallpaper = false;
@@ -4958,20 +5018,9 @@
       if (typeof restoreLocalWallpaperAsync === 'function') {
         try { restoreLocalWallpaperAsync(); } catch(e) {}
       }
-      // 一次性迁移：默认壁纸改为「🌍 地球实况」（用户自己选过 bing/自定义/本地的不动）
-      try {
-        if (localStorage.getItem('nav_wp_earth_ver') !== '1') {
-          if (wallpaperType === 'default') {
-            wallpaperType = 'earth';
-            useBingWallpaper = false;
-            localStorage.setItem('nav_wallpaper', 'earth');
-          }
-          localStorage.setItem('nav_wp_earth_ver', '1');
-        }
-      } catch(e) {}
       applyHeroBg();
       if (wallpaperType === 'bing') fetchBingWallpaper();
-      if (wallpaperType === 'earth') initEarthWallpaper();
+      if (wallpaperType === 'earth') runWhenIdle(initEarthWallpaper, 400);   // 卫星图不着急，别跟首屏抢网络
       if (wallpaperType === 'fy4') initFy4Wallpaper();
     }
 
@@ -5220,6 +5269,7 @@
       on('setNavHide', navFoldMode === 'hide');
       on('setNavAuto', navFoldMode === 'autofold');
       applySearchModeUi();      // 搜索模式 chip + 说明文案
+      applySearchKeepUi();      // 搜索后是否清空输入框
       applySearchAdvUi();       // 高级搜索 chip/输入框回显
       var ft = $('setFreqToggle');
       if (ft) ft.classList.toggle('on', freqVisible);
@@ -5302,6 +5352,7 @@
     }
 
     function wallpaperHintText(type) {
+      if (type === 'default') return '<strong>默认壁纸</strong>（当前默认）：导航页自带的静态背景 <code>assets/hero_bg_light.jpg</code>，<strong>不联网、最快</strong>。想要真实卫星云图，点旁边的「🌍 地球实况」。';
       if (type === 'local') return '本地图片仅存在本机浏览器存储中，导出配置时会留空';
       if (type === 'custom') return '请输入网络图片URL，支持JPG/PNG/GIF';
       if (type === 'earth') return '地球实况：国家卫星气象中心 <strong>风云四号B「中国区域真彩云图」</strong>，<strong>每 15 分钟一帧</strong>、每次打开都取最新那帧；缩略图 1719×1080 约 880KB，本地缓存 10 分钟；取不到时退回 NASA 当日真彩。右下角显示北京时间的观测时刻。';
@@ -5547,6 +5598,9 @@
             if (settings.catSortMode === 'fixed' || settings.catSortMode === 'recent') {
               localStorage.setItem('nav_cat_sort_mode', settings.catSortMode);
             }
+            if (typeof settings.searchKeep === 'boolean') {
+              try { localStorage.setItem('nav_search_keep', settings.searchKeep ? '1' : '0'); } catch(e) {}
+            }
             if (settings.searchMode === 'focus' || settings.searchMode === 'full') {
               localStorage.setItem('nav_search_mode', settings.searchMode);
             }
@@ -5577,7 +5631,7 @@
 
       function restoreDefaults() {
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_keep', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       // 大对象在 IndexedDB 里，也要一起清（否则"恢复默认"后本地壁纸/卫星缓存还在）
       try {
@@ -5651,6 +5705,7 @@
         var smd = localStorage.getItem('nav_search_mode');
         settings.searchMode = (smd === 'focus') ? 'focus' : 'full';
       } catch(e) {}
+      try { settings.searchKeep = searchKeepInput; } catch(e) {}
       try {
         var advExport = loadSearchAdv();
         if (advExport.on || advExport.exact || advExport.site || advExport.exclude || advExport.filetype || advExport.time) {
@@ -5966,6 +6021,59 @@
     function ixGetBool(k, dflt) { var v = ixLS(k); return v === null ? dflt : v === '1'; }
 
     function ixClick(el, fn) { if (el && el.addEventListener) el.addEventListener('click', fn); }
+
+    /* ---------- 网络与调度：核心服务优先，锦上添花的功能一律后台跑且必须有超时 ----------
+       背景：天气/IP 定位/卫星图/必应图 都是「加分项」，但它们的请求在弱网或被墙时会长时间挂着，
+       既让标签页一直转圈，又跟首屏抢连接。下面两个工具把它们彻底挡在主流程之外：
+       · fetchT(url, opts, ms)  —— 带 AbortController 超时的 fetch，超时立刻放弃，绝不无限等
+       · runWhenIdle(fn, delay) —— 等首屏（搜索框 + 卡片）画完、主线程空闲后再执行 */
+    function fetchT(url, opts, ms) {
+      var timeout = ms || 8000;
+      opts = opts || {};
+      var o = {}, k;
+      for (k in opts) { if (Object.prototype.hasOwnProperty.call(opts, k)) o[k] = opts[k]; }
+      var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+      var timer = 0;
+      var settled = false;
+      if (ctrl) { o.signal = ctrl.signal; }
+      var p;
+      try { p = fetch(url, o); } catch(e) { return Promise.reject(e); }
+      if (!ctrl) {
+        p = Promise.race([p, new Promise(function(_, rej) {
+          timer = setTimeout(function() { rej(new Error('timeout')); }, timeout);
+        })]);
+      } else {
+        timer = setTimeout(function() { if (!settled) { try { ctrl.abort(); } catch(e) {} } }, timeout);
+      }
+      return p.then(function(r) { settled = true; clearTimeout(timer); return r; },
+                    function(e) { settled = true; clearTimeout(timer); throw e; });
+    }
+    // 访问统计（百度统计）：首屏之后 4 秒的空闲时间才加载，绝不参与首屏竞争
+    function loadAnalytics() {
+      try {
+        if (window.__hmtLoaded) return;
+        window.__hmtLoaded = true;
+        window._hmt = window._hmt || [];
+        var hm = document.createElement('script');
+        hm.async = true;
+        hm.src = 'https://hm.baidu.com/hm.js?ac6e171eb4ded069b81cd6f50f3d1032';
+        (document.head || document.body).appendChild(hm);
+      } catch(e) {}
+    }
+    window.loadAnalytics = loadAnalytics;
+    runWhenIdle(loadAnalytics, 4000);
+
+    function runWhenIdle(fn, delay) {
+      var run = function() {
+        try { fn(); } catch(e) { if (window.console && console.warn) console.warn('[deferred] 后台任务失败：', e && e.message); }
+      };
+      setTimeout(function() {
+        if (window.requestIdleCallback) {
+          try { requestIdleCallback(run, { timeout: 2500 }); return; } catch(e) {}
+        }
+        setTimeout(run, 120);
+      }, delay || 0);
+    }
 
     // ---------- IndexedDB（大对象持久化：本地壁纸等） ----------
     function idbOpen() {
@@ -6643,7 +6751,7 @@
       preferFavoritesActive();     // 展开状态下默认选中「收藏网址」（有收藏时）
       applyEngineVisibility();
       applyFavStars();
-      probeVpnAndApply();
+      runWhenIdle(probeVpnAndApply, 1200);
       // Ctrl+S 打开设置（扩展模块自身的事件绑定）
       var topBtn = document.getElementById('ixTop');
       if (topBtn) topBtn.classList.toggle('show', (window.pageYOffset || document.documentElement.scrollTop) > 300);
@@ -8145,6 +8253,8 @@
     var WEATHER_CACHE_KEY = 'nav_weather_cache';
     var WEATHER_GEO_KEY = 'nav_weather_geo';       // IP 定位缓存（12 小时）
     var WEATHER_SRC_KEY = 'nav_weather_loc_src';   // 'user' = 用户手动选的城市
+    // 天气属于「锦上添花」：缓存 1 小时、每小时最多刷新一次（用户 2026-10-17 明确要求不必很新）
+    var WEATHER_TTL_MS = 60 * 60 * 1000;
     var weatherLoc = { name: '北京', lat: 39.9042, lon: 116.4074 };
     var weatherTimer = null;
     var WMO_TEXT = {
@@ -8196,6 +8306,12 @@
         if (g && typeof g.lat === 'number' && typeof g.lon === 'number' &&
             (Date.now() - (g.ts || 0)) < 12 * 3600 * 1000) {
           weatherLoc = { name: g.name || '当前位置', lat: g.lat, lon: g.lon };
+          return;
+        }
+        // 没有 IP 定位缓存时，用上次天气缓存里的地点（避免为了天气再发一次 IP 查询）
+        var wc = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+        if (wc && wc.loc && typeof wc.loc.lat === 'number' && typeof wc.loc.lon === 'number') {
+          weatherLoc = { name: wc.loc.name || wc.loc.city || weatherLoc.name, lat: wc.loc.lat, lon: wc.loc.lon };
         }
       } catch(e) {}
     }
@@ -8239,7 +8355,7 @@
       function tryOne(i) {
         if (i >= sources.length) return Promise.reject(new Error('no-geo'));
         var s = sources[i];
-        return fetch(s.url, { mode: 'cors', cache: 'no-store' })
+        return fetchT(s.url, { mode: 'cors', cache: 'no-store' }, 5000)
           .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
           .then(function(d) { var g = s.pick(d); if (!g) throw new Error('bad'); return g; })
           .catch(function() { return tryOne(i + 1); });
@@ -8281,7 +8397,7 @@
         '&longitude=' + weatherLoc.lon + '&current=pm2_5,pm10,us_aqi,european_aqi,' +
         'alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=auto';
       function getJSON(u) {
-        return fetch(u, { mode: 'cors', cache: 'no-store' }).then(function(r) {
+        return fetchT(u, { mode: 'cors', cache: 'no-store' }, 8000).then(function(r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         });
@@ -8441,7 +8557,7 @@
       if (!force) {
         try {
           var cache = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
-          if (cache && cache.ts && (Date.now() - cache.ts) < 10 * 60 * 1000 && cache.loc &&
+          if (cache && cache.ts && (Date.now() - cache.ts) < WEATHER_TTL_MS && cache.loc &&
               cache.loc.lat === weatherLoc.lat && cache.loc.lon === weatherLoc.lon) {
             renderWeather(cache.data);
             return Promise.resolve();
@@ -8453,7 +8569,7 @@
         renderWeather(data);
         try {
           localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({
-            ts: data.ts, loc: { lat: weatherLoc.lat, lon: weatherLoc.lon }, data: data
+            ts: data.ts, loc: { name: weatherLoc.name, lat: weatherLoc.lat, lon: weatherLoc.lon }, data: data
           }));
         } catch(e) {}
       }).catch(function(e) { renderWeatherError(e && e.message ? e.message : ''); });
@@ -8475,7 +8591,7 @@
       if (weatherTimer) clearInterval(weatherTimer);
       weatherTimer = setInterval(function() {
         if (document.getElementById('weatherWindow').classList.contains('visible')) loadWeather(false);
-      }, 10 * 60 * 1000);
+      }, WEATHER_TTL_MS);
     }
     function closeWeatherWindow() {
       var win = document.getElementById('weatherWindow');
@@ -8507,7 +8623,7 @@
       if (!q) { input.focus(); return; }
       var url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) +
                 '&count=1&language=zh&format=json';
-      fetch(url, { mode: 'cors', cache: 'no-store' }).then(function(r) {
+      fetchT(url, { mode: 'cors', cache: 'no-store' }, 6000).then(function(r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       }).then(function(j) {
@@ -8562,19 +8678,26 @@
         } catch(e) {}
       });
     })();
-    // 启动：先用缓存把首屏天气图标画上（不用等网络），再解析关注地并拉一次最新天气
+    // 启动：先用缓存把首屏天气图标画上（纯本地，零网络），
+    // 网络部分（IP 定位 + 拉天气）延迟到首屏画完、主线程空闲后再做，绝不跟搜索框/卡片抢资源。
     function initWeatherBadge() {
       loadWeatherLoc();
+      var cachedFresh = false;
       try {
         var c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
         if (c && c.data && c.data.forecast && c.data.forecast.current) {
           var wt = weatherTextOf(c.data.forecast.current.weather_code);
           setHeroWeatherIcon(wt[1], weatherLoc.name + ' 天气 · 点开看详情');
+          cachedFresh = !!(c.ts && (Date.now() - c.ts) < WEATHER_TTL_MS);
+          if (cachedFresh) renderWeather(c.data);       // 天气窗里面也先用缓存铺上
         }
       } catch(e) {}
-      ensureWeatherLocation().then(function() {
-        loadWeather(false);
-      });
+      if (cachedFresh) return;                          // 1 小时内刚拉过 → 这次不再联网
+      runWhenIdle(function() {
+        ensureWeatherLocation().then(function() {
+          loadWeather(false);
+        }).catch(function() {});
+      }, 900);
     }
     window.toggleWeatherWindow = toggleWeatherWindow;
     window.searchWeatherCity = searchWeatherCity;

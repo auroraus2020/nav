@@ -22,7 +22,7 @@
   var hiddenEngines = getLSJ('nav_hidden_engines', {});
   var hiddenCats = getLSJ('nav_hidden_cats', {});
   var theme = getLS('nav_theme', 'light');
-  var wallpaper = getLS('nav_wallpaper', 'earth');
+  var wallpaper = getLS('nav_wallpaper', 'default');   // 默认 = 默认壁纸（用户 2026-10-17 定稿）
   var customWallpaper = getLS('nav_custom_wp', '');
   var freqVisible = getLS('nav_freq_visible', '1') !== '0';
   var freqCount = parseInt(getLS('nav_freq_count', '8')) || 8;
@@ -1034,7 +1034,7 @@
     localStorage.removeItem('nav_note_content');
     localStorage.removeItem('nav_pomo_stats');
     removedSites = {}; addedSites = {}; customCats = []; customEngines = {};
-    hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'earth';
+    hiddenEngines = {}; hiddenCats = {}; theme = 'light'; wallpaper = 'default';
     customWallpaper = ''; freqVisible = true; freqCount = 8; navAllHidden = false; catOrder = null;
     rtEnabled = true; rtCustom = [];
     document.body.className = '';

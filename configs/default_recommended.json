@@ -76,7 +76,7 @@
   "settings": {
     "rtEnabled": true,
     "theme": "light",
-    "wallpaper": "earth",
+    "wallpaper": "default",
     "customWallpaper": "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOG8zZjU2aXlzY2VxMmNldjdlNG81eXJkOWN0c3lxejA5bzVtamNicCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/54QhQQoolGzcHaqxoQ/giphy.gif",
     "freqVisible": false,
     "freqCount": 8,

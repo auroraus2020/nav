@@ -10,9 +10,10 @@
  *   跨域请求（卫星图/必应）→ 不拦截，交给浏览器 HTTP 缓存
  *   tools/、_backup/       → 完全不碰
  */
-var VER = 'v1';
+var VER = 'v2';
 var STATIC_CACHE = 'auroraus-static-' + VER;
 var NAV_CACHE = 'auroraus-nav-' + VER;
+var NAV_FRESH_MS = 10 * 60 * 1000;      // 页面缓存 10 分钟内算「新」，可以直接秒开
 var SKIP = /(\/tools\/|\/_backup\/|\.map$)/i;
 var STATIC_EXT = /\.(css|js|json|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|txt)$/i;
 
@@ -38,19 +39,42 @@ function usable(res) {
   return true;
 }
 
+/* 给缓存的页面盖一个「缓存时间」戳（用自定义响应头），用来判断能不能直接秒开 */
+function stamped(res) {
+  try {
+    var h = new Headers(res.headers);
+    h.set('x-auroraus-cached-at', String(Date.now()));
+    return new Response(res.clone().body, { status: res.status, statusText: res.statusText, headers: h });
+  } catch (e) {
+    return res.clone();
+  }
+}
+
+/* 页面（导航请求）：缓存够新就直接用（不再等网络），同时后台静默更新；
+   缓存没有或太旧才走网络优先。这样「核心可用」永远不被网络拖住，改了文件下次刷新也会更新。 */
 function networkFirst(req) {
   return caches.open(NAV_CACHE).then(function(cache) {
-    return fetch(req).then(function(res) {
-      if (usable(res)) cache.put(req, res.clone());
-      return res;
-    }).catch(function(err) {
-      return cache.match(req).then(function(hit) {
-        if (hit) return hit;
-        return cache.match('index.html').then(function(index) {
-          if (index) return index;
-          throw err;
+    return cache.match(req).then(function(hit) {
+      var update = fetch(req).then(function(res) {
+        if (usable(res)) cache.put(req, stamped(res));
+        return res;
+      }).catch(function() { return null; });
+      if (!hit) {
+        return update.then(function(res) {
+          if (res) return res;
+          return cache.match('index.html').then(function(index) {
+            if (index) return index;
+            throw new Error('offline');
+          });
         });
-      });
+      }
+      var at = Number(hit.headers.get('x-auroraus-cached-at') || 0);
+      var fresh = at && (Date.now() - at) < NAV_FRESH_MS;
+      if (fresh || (self.navigator && self.navigator.onLine === false)) {
+        update.catch(function() {});
+        return hit;                       // 秒开，后台继续拿最新版
+      }
+      return update.then(function(res) { return res || hit; });
     });
   });
 }
