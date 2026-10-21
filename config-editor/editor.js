@@ -727,6 +727,69 @@
     renderRtTools();
   };
 
+  // ===== 快捷工具的图标（emoji）选择器 =====
+  // 用户 2026-10-17：添加自定义工具时默认只有一个 🔗，希望能从合适的候选中挑一个。
+  var EMOJI_LIST = [
+    // 常用 / 工具
+    '🔗','📌','📋','📝','🗒️','✅','☑️','⭐','🔥','💡','🎯','📊','📈','📉','🧮','🔢',
+    '🧰','🛠️','⚙️','🧩','🧪','🔬','🔧','🔨','🪛','🧲','🪄','🧹','🧽',
+    // 文件 / 云 / 网络
+    '📁','🗂️','💾','☁️','🌐','🛰️','📡','📶','🔌','🔋','📤','📥','🔁','🔄','🔗','🖇️',
+    // 沟通
+    '📧','✉️','💬','🗨️','📱','☎️','📞','🔔','🔕','📢','📣',
+    // 设备 / 影音
+    '🖥️','💻','⌨️','🖱️','🖨️','📷','📸','🎥','🎬','🎵','🎧','🎤','📺','📻','🎮','🕹️',
+    // 学习 / 科研
+    '📚','📖','📄','📰','🗞️','📓','📔','📕','🧠','🤖','🧑‍💻','🎓','🏫','🧑‍🔬','🔭','🧬',
+    // 搜索 / 地图
+    '🔍','🔎','🧭','🗺️','📍','🚩','🚀','✈️','🚗','🚲','🚇','🏠','🏢',
+    // 时间 / 财务 / 生活
+    '🕒','⏰','⏳','📅','🗓️','⌛','💰','💳','🛒','🎁','🏆','🥇','🩺','💊','🌡️','☕',
+    '🍅','🍱','🌙','☀️','🌤️','🌍','🔒','🔓','🔑','🛡️','♻️','📦','➕','➖','❓','❗'
+  ];
+  function emojiOutsideClick(e) {
+    var p = document.getElementById('emojiPicker');
+    if (p && !p.contains(e.target)) closeEmojiPicker();
+  }
+  window.closeEmojiPicker = function() {
+    var p = document.getElementById('emojiPicker');
+    if (p) p.parentNode.removeChild(p);
+    document.removeEventListener('mousedown', emojiOutsideClick, true);
+  };
+  window.pickEmoji = function(idx, emoji) {
+    setRtSetting('icon', idx, emoji);     // setRtSetting 内部会清空并重建列表
+    closeEmojiPicker();
+  };
+  window.openEmojiPicker = function(idx, btn) {
+    closeEmojiPicker();
+    var wrap = document.createElement('div');
+    wrap.id = 'emojiPicker';
+    wrap.className = 'emoji-picker';
+    var htm = '<div class="emoji-picker-head"><span>给这个工具选一个图标</span>' +
+      '<button type="button" class="emoji-close" onclick="closeEmojiPicker()" title="关闭">✕</button></div>' +
+      '<div class="emoji-grid">';
+    EMOJI_LIST.forEach(function(e) {
+      htm += '<button type="button" class="emoji-cell" title="' + e + '" onclick="pickEmoji(' + idx + ',this.textContent)">' + e + '</button>';
+    });
+    htm += '</div>';
+    htm += '<div class="emoji-custom"><span class="hint" style="margin:0;">或直接粘贴</span>' +
+      '<input id="emojiCustomInput" type="text" maxlength="16" placeholder="任意 emoji / 字符，回车确认"' +
+      ' onkeydown="if(event.key===\'Enter\'){pickEmoji(' + idx + ',this.value.trim());}"></div>';
+    wrap.innerHTML = htm;
+    document.body.appendChild(wrap);
+    // 贴着按钮弹出；上下左右都不许出视口
+    var r = btn.getBoundingClientRect();
+    var w = wrap.offsetWidth || 340, h = wrap.offsetHeight || 300;
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    var top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    wrap.style.left = left + 'px';
+    wrap.style.top = top + 'px';
+    setTimeout(function() { document.addEventListener('mousedown', emojiOutsideClick, true); }, 0);
+    var inp = document.getElementById('emojiCustomInput');
+    if (inp) inp.focus();
+  };
+
   function renderRtTools() {
     var el = document.getElementById('rtToolsContent');
     var htm = '<h4 style="margin-bottom:.8rem">快捷工具</h4>';
@@ -739,7 +802,9 @@
     htm += '<table class="data-table"><thead><tr><th>图标</th><th>名称</th><th>网址</th><th>侧别</th><th>启用</th><th>操作</th></tr></thead><tbody>';
     rtCustom.forEach(function(t, i) {
       htm += '<tr>';
-      htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.icon||'🔗') + '" onchange="setRtSetting(\'icon\',' + i + ',this.value)" style="width:48px;text-align:center;font-size:1rem;"></td>';
+      htm += '<td class="icon-pick-cell"><button type="button" class="icon-pick-btn" onclick="openEmojiPicker(' + i + ', this)" title="点击从候选里挑一个图标">' +
+        escAttr(t.icon || '🔗') + ' <span class="icon-pick-caret">▾</span></button>' +
+        '<input class="settings-input" type="text" value="' + escAttr(t.icon||'🔗') + '" onchange="setRtSetting(\'icon\',' + i + ',this.value)" title="也可以直接粘贴任意 emoji" style="width:38px;text-align:center;font-size:.95rem;margin-left:3px;vertical-align:middle;"></td>';
       htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.name||'') + '" onchange="setRtSetting(\'name\',' + i + ',this.value)" placeholder="名称"></td>';
       htm += '<td><input class="settings-input" type="text" value="' + escAttr(t.url||'') + '" onchange="setRtSetting(\'url\',' + i + ',this.value)" placeholder="https://..."></td>';
       htm += '<td>' + sideChips('rtc:' + (t.id || t.name || i), 'setRtSideOf') + '</td>';
@@ -832,8 +897,7 @@
       rtCustom[idx].enabled = rtCustom[idx].enabled === false ? true : false;
     } else if (key === 'icon') {
       if (idx < 0 || idx >= rtCustom.length) return;
-      rtCustom[idx].icon = val || '🔗';
-    } else if (key === 'name') {
+      rtCustom[idx].icon = val || '🔗';    } else if (key === 'name') {
       if (idx < 0 || idx >= rtCustom.length) return;
       rtCustom[idx].name = val;
     } else if (key === 'url') {
@@ -841,6 +905,12 @@
       rtCustom[idx].url = val;
     }
     renderRtTools();
+    // 新加的工具：直接把图标候选板弹出来，省得用户不知道去哪儿挑图标
+    if (key === 'add') {
+      var pickBtns = document.querySelectorAll('.icon-pick-btn');
+      var nb = pickBtns[rtCustom.length - 1];
+      if (nb) openEmojiPicker(rtCustom.length - 1, nb);
+    }
   };
 
   function rebuildAddedSitesFromEditing() {
@@ -914,8 +984,50 @@
     var fhe={};allEngIds.forEach(function(id){fhe[id]=!!hiddenEngines[id];});
     s.hiddenEngines=fhe;
     s.rtEnabled = !!rtEnabled;
+    // 编辑器里没有控件、但主页确实在用的设置：直接从 localStorage 读，导出时一并带上（否则「编辑器导出」会悄悄丢设置）
+    try {
+      var skX = localStorage.getItem('nav_search_keep');
+      if (skX === '0' || skX === '1') s.searchKeep = skX === '1';
+      var smX = localStorage.getItem('nav_search_mode');
+      if (smX === 'focus' || smX === 'full') s.searchMode = smX;
+      var advX = JSON.parse(localStorage.getItem('nav_search_adv') || 'null');
+      if (advX && (advX.on || advX.exact || advX.site || advX.exclude || advX.filetype || advX.time)) s.searchAdv = advX;
+      var oaX = localStorage.getItem('nav_only_active');
+      if (oaX === '0' || oaX === '1') s.onlyActive = oaX === '1';
+      var vmX = localStorage.getItem('nav_vpn_mode');
+      if (vmX === 'auto' || vmX === 'off' || vmX === 'always') s.vpnMode = vmX;
+      var nfmX = localStorage.getItem('nav_fold_mode');
+      if (nfmX === 'show' || nfmX === 'hide' || nfmX === 'autofold') s.navFold = nfmX;
+    } catch(e) {}
     data.settings=s;
     if (rtCustom.length) data.rtTools = rtCustom;
+    // 「浏览器侧配置」：与主页共用同一份 localStorage，原样带上 —— 换电脑导入后每个快捷工具在左/在右、折叠状态完全一致
+    var uiX = {};
+    try {
+      var sidesX = JSON.parse(localStorage.getItem('nav_rt_sides') || '{}');
+      if (sidesX && Object.keys(sidesX).length) uiX.rtSides = sidesX;
+      var sbX = localStorage.getItem('nav_sidebar');
+      if (sbX === 'collapsed' || sbX === 'expanded') uiX.sidebar = sbX;
+      var ccX = JSON.parse(localStorage.getItem('nav_cat_collapse') || '{}');
+      if (ccX && Object.keys(ccX).length) uiX.catCollapse = ccX;
+      var engX = localStorage.getItem('nav_engine');
+      if (engX) uiX.engine = engX;
+      var wpeX = localStorage.getItem('nav_wp_export');
+      if (wpeX === '0' || wpeX === '1') uiX.wpExport = wpeX === '1';
+      var clnX = localStorage.getItem('nav_clean_ui');
+      if (clnX === '0' || clnX === '1') uiX.cleanUi = clnX === '1';
+      var poolX = JSON.parse(localStorage.getItem('nav_wp_pool') || '[]');
+      if (Array.isArray(poolX) && poolX.length) uiX.wpPool = poolX;
+      var posX = {};
+      ['todo','note','pomo','conv','weather'].forEach(function(k) {
+        var vX = localStorage.getItem('nav_' + k + '_pos');
+        if (vX) posX[k] = vX;
+      });
+      if (Object.keys(posX).length) uiX.pos = posX;
+      var cuX = localStorage.getItem('nav_cfg_url');
+      if (cuX) uiX.configUrl = cuX;
+    } catch(e) {}
+    if (Object.keys(uiX).length) data.ui = uiX;
     try {
       var todoItems = JSON.parse(localStorage.getItem('nav_todo_items') || '[]');
       if (todoItems.length) data.todoItems = todoItems;
@@ -970,6 +1082,46 @@
           if (typeof s.rtEnabled === 'boolean') rtEnabled = s.rtEnabled;
         }
         if (data.rtTools && Array.isArray(data.rtTools)) rtCustom = data.rtTools;
+        // 「浏览器侧配置」：主页导出的 ui 段（每个工具在左/在右、侧边栏与分类折叠、浮窗位置、记住的配置地址）
+        if (data.ui && typeof data.ui === 'object') {
+          if (data.ui.rtSides && typeof data.ui.rtSides === 'object') {
+            rtSides = data.ui.rtSides;
+            try { localStorage.setItem('nav_rt_sides', JSON.stringify(rtSides)); } catch(e) {}
+          }
+          if (data.ui.sidebar === 'collapsed' || data.ui.sidebar === 'expanded') {
+            try { localStorage.setItem('nav_sidebar', data.ui.sidebar); } catch(e) {}
+          }
+          if (data.ui.catCollapse && typeof data.ui.catCollapse === 'object') {
+            try { localStorage.setItem('nav_cat_collapse', JSON.stringify(data.ui.catCollapse)); } catch(e) {}
+          }
+          if (data.ui.pos && typeof data.ui.pos === 'object') {
+            Object.keys(data.ui.pos).forEach(function(k) {
+              if (['todo','note','pomo','conv','weather'].indexOf(k) < 0) return;
+              try { localStorage.setItem('nav_' + k + '_pos', data.ui.pos[k]); } catch(e) {}
+            });
+          }
+          if (typeof data.ui.configUrl === 'string' && /^https?:\/\//.test(data.ui.configUrl)) {
+            try {
+              localStorage.setItem('nav_cfg_url', data.ui.configUrl);
+              localStorage.setItem('nav_cfg_url_at', String(Date.now()));
+            } catch(e) {}
+          }
+          if (typeof data.ui.cleanUi === 'boolean') {
+            try { localStorage.setItem('nav_clean_ui', data.ui.cleanUi ? '1' : '0'); } catch(e) {}
+          }
+        }
+        // 主页新格式的 content 段（待办/记事本/番茄钟），与旧扁平字段并存兼容
+        if (data.content && typeof data.content === 'object') {
+          if (Array.isArray(data.content.todoItems)) {
+            try { localStorage.setItem('nav_todo_items', JSON.stringify(data.content.todoItems)); } catch(e) {}
+          }
+          if (typeof data.content.note === 'string') {
+            try { localStorage.setItem('nav_note_content', data.content.note); } catch(e) {}
+          }
+          if (data.content.pomoStats) {
+            try { localStorage.setItem('nav_pomo_stats', JSON.stringify(data.content.pomoStats)); } catch(e) {}
+          }
+        }
         if (data.todoItems && Array.isArray(data.todoItems)) {
           try { localStorage.setItem('nav_todo_items', JSON.stringify(data.todoItems)); } catch(e) {}
         }

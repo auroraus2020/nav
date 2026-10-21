@@ -191,13 +191,31 @@
 
     /* === Right Quick Links === */
     /* Edge icon bar */
-    .rt-edge { position:fixed; right:0; top:50%; transform:translateY(-50%); z-index:180; display:flex; flex-direction:column; gap:3px; }
+    .rt-edge { position:fixed; right:0; top:50%; transform:translateY(-50%); z-index:180; display:flex; flex-direction:column; }
+    /* 工具条内容容器：正常时与旧版一致（贴右、竖排、3px 间距）；
+       工具过多时高度封顶并允许滚动 —— 保证第一条工具永远落在「右上角时钟区」下方，不会和它重叠。 */
+    .rt-tabs { display:flex; flex-direction:column; gap:3px; max-height:calc(100vh - 18rem); overflow-y:auto; overflow-x:hidden; scrollbar-width:none; -ms-overflow-style:none; }
+    .rt-tabs::-webkit-scrollbar { width:0; height:0; display:none; }
     .rt-tab { width:38px; height:38px; display:flex; align-items:center; justify-content:center; background:var(--bg2); border:1px solid var(--rule); border-right:none; border-radius:7px 0 0 7px; cursor:pointer; font-size:1rem; color:var(--ink); transition:all .15s; position:relative; }
     .rt-tab:hover { background:rgba(37,99,235,.08); color:var(--accent); border-color:var(--accent); }
     .rt-tab .rt-label { display:none; }
     .rt-tab:hover .rt-label { display:block; position:absolute; right:44px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.78); color:#fff; font-size:.72rem; padding:.2rem .55rem; border-radius:4px; white-space:nowrap; pointer-events:none; }
     /* 用户要求：只有横向分辨率低于 600px 才隐藏快捷工具（600~1023 仍然显示，页面留出让位内边距） */
     @media (max-width:599px) { .rt-edge { display:none !important; } }
+
+    /* === 清爽模式（Ctrl + 空格）：只留搜索框 + 站点卡片 === */
+    body.clean-ui .rt-edge,
+    body.clean-ui .hero-corner,
+    body.clean-ui .settings-btn { display: none !important; }
+    /* 切换时的轻提示（1.6 秒后自己消失，不挡住任何东西） */
+    .mode-toast {
+      position: fixed; left: 50%; bottom: 2.2rem; transform: translateX(-50%) translateY(10px);
+      z-index: 460; max-width: min(92vw, 540px); padding: 0.55rem 0.95rem;
+      background: rgba(17, 24, 39, 0.88); color: #fff; font-size: 0.8rem; line-height: 1.5;
+      border-radius: 999px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    }
+    .mode-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     @media (min-width:600px) and (max-width:1023px) {
       body.rt-right-on .page-wrapper { padding-right: 3.4rem; }
       body.rt-left-on .page-wrapper { padding-left: 3.4rem; }
@@ -223,6 +241,8 @@
     /* 地球实况：折叠状态（只有搜索框时）首屏占满一屏；展开导航后恢复常高，卡片立刻可见 */
     body.wp-earth .hero { min-height: clamp(380px, 42vw, 720px); }
     body.all-hidden.wp-earth .hero { min-height: 100vh; }
+    /* 展开导航时主角是站点卡片：地球实况只保留「横幅」高度，别把导航挤出首屏（用户 2026-10-17 要求） */
+    body.wp-earth:not(.all-hidden) .hero { min-height: clamp(230px, 22vw, 360px); }
     body.wp-earth .hero-bg { background-size: cover; background-position: center center; }
     /* 遮罩压淡：用户要求"清晰度高一点"，卫星云图直接看清 */
     body.wp-earth .hero-overlay {
@@ -318,6 +338,9 @@
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     }
     body.dark .hero-corner { background: rgba(15, 23, 42, 0.52); border-color: rgba(148, 163, 184, 0.22); }
+    /* 右侧工具条常显时，右上角整块再往左让 40px：与图标列横向完全错开，任何工具数量都不会压在一起。
+       （<600px 时工具条本身是隐藏的，不需要让位，所以只在大屏生效） */
+    @media (min-width: 600px) { body.rt-right-on .hero-corner { right: calc(1.4rem + 40px); } }
     .hc-row { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; min-height: 40px; }
     .hero-corner > *, .hero-corner .hc-row > * {
       position: static !important; top: auto !important; right: auto !important; left: auto !important;
@@ -358,6 +381,12 @@
       .hero-tool-btn { font-size: 1.2rem; }
       .vpn-quick { font-size: 0.68rem; }
       .vpn-quick .vpn-quick-label { display: none; }
+      /* 手机端：不显示日期时间与天气，连外面那个圆角玻璃框也不要（只留主题/需VPN 两个按钮本身） */
+      .hero-clock, #heroWeatherBtn, #hcRowBottom { display: none !important; }
+      .hero-corner, body.dark .hero-corner {
+        background: none; border: 0; box-shadow: none; padding: 0;
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+      }
     }
 
     /* === 右上角：日期 / 周几 / 当地时间（在需VPN开关与主题切换之间） === */
@@ -2900,8 +2929,8 @@
   </div>
 
   <!-- === Right Quick Links === -->
-  <div class="rt-edge" id="rtEdge"></div>
-  <div class="rt-edge rt-left" id="rtEdgeLeft"></div>
+  <div class="rt-edge" id="rtEdge"><div class="rt-tabs" id="rtEdgeTabs"></div></div>
+  <div class="rt-edge rt-left" id="rtEdgeLeft"><div class="rt-tabs" id="rtEdgeLeftTabs"></div></div>
 
   <!-- === Todo Floating Window === -->
   <div class="todo-window" id="todoWindow">
@@ -3119,8 +3148,11 @@
           <button class="settings-action-btn" onclick="importFromUrl()">🌐 导入网络文件</button>
           <button class="settings-action-btn danger" onclick="restoreDefaults()">🔄 恢复默认导航</button>
           <button class="settings-action-btn" onclick="exportConfig()">📤 导出配置</button>
+          <button class="settings-action-btn" id="cfgUrlUpdateBtn" onclick="updateSavedCfg()" title="重新读取已保存的网络地址，并用上面的最新配置覆盖本机设置" style="display:none">🔄 更新已保存的网络配置</button>
+          <button class="settings-action-btn danger" id="cfgUrlForgetBtn" onclick="forgetSavedCfgUrl()" title="忘掉这个网络地址（本机配置不受影响；之后可重新填新的地址）" style="display:none">🗑 忘记地址</button>
         </div>
-        <p class="settings-hint">支持通过本地JSON文件或网络URL导入/导出全部配置（含快捷工具）</p>
+        <p class="settings-hint" id="cfgUrlHint" style="display:none;">已记住的网络地址：<code id="cfgUrlText"></code> <span id="cfgUrlWhen"></span></p>
+        <p class="settings-hint">支持通过本地JSON文件或网络URL导入/导出全部配置（含快捷工具、每个工具的左/右位置、侧边栏折叠、分类折叠、待办/记事本等浏览器侧设置）。导出成功后可选择记住这份配置的网络地址，下次一键更新；地址随时可忘记或换成新的。</p>
       </div>
 
       <div class="settings-section full">
@@ -3154,6 +3186,15 @@
           <span class="settings-chip on" onclick="setTheme('light',this)" id="setThemeLight">浅色模式</span>
           <span class="settings-chip" onclick="setTheme('dark',this)" id="setThemeDark">深色模式</span>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>🧼 清爽模式</h4>
+        <div class="settings-row">
+          <span class="settings-chip" onclick="setCleanUi(true)" id="setCleanOn" title="隐藏右侧快捷工具、右上角时间/天气/主题与设置按钮">开启（隐藏装饰）</span>
+          <span class="settings-chip on" onclick="setCleanUi(false)" id="setCleanOff" title="正常显示全部按钮与面板">关闭（正常显示）</span>
+        </div>
+        <p class="settings-hint">快捷键 <strong>Ctrl + 空格</strong> 同样可切换。<strong>状态会记住，刷新后保持</strong>；清爽模式打开时，用 Ctrl + S 仍能进入本设置面板把它关掉。</p>
       </div>
 
       <div class="settings-section">
@@ -3729,6 +3770,81 @@
 
     loadCustomEngine();
 
+    // ---------- 清爽模式（Ctrl + 空格）与 Ctrl + Win 展开/收起导航 ----------
+    var cleanUi = false;          // 只在本次会话内有效：刷新即恢复正常（不会把人锁在清爽模式里）
+    function showModeToast(msg) {
+      var t = document.getElementById('modeToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'modeToast';
+        t.className = 'mode-toast';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.add('show');
+      if (t.__hideTimer) clearTimeout(t.__hideTimer);
+      t.__hideTimer = setTimeout(function() { t.classList.remove('show'); }, 1600);
+    }
+    // 清爽模式：用户要求「刷新后也要维持」，所以落盘 nav_clean_ui（'1' 开 / '0' 关）。
+    // 启动时静默套用（不弹提示）；只有主动按 Ctrl + 空格 切换时才提示。
+    var CLEAN_UI_KEY = 'nav_clean_ui';
+    function loadCleanUi() {
+      var on = false;
+      try { on = localStorage.getItem(CLEAN_UI_KEY) === '1'; } catch(e) {}
+      cleanUi = on;
+      document.body.classList.toggle('clean-ui', on);
+      if (on) {
+        // 刷新后仍然清爽，但给一次 1.6 秒的提示，免得忘了怎么退出来
+        setTimeout(function() { showModeToast('🧼 清爽模式（已保留）· 按 Ctrl + 空格 恢复'); }, 400);
+      }
+      return on;
+    }
+    function setCleanUi(on, silent) {
+      cleanUi = !!on;
+      document.body.classList.toggle('clean-ui', cleanUi);
+      try { localStorage.setItem(CLEAN_UI_KEY, cleanUi ? '1' : '0'); } catch(e) {}
+      // 设置面板里的两个 chip 就地回显（不整块重刷）
+      var cOn = document.getElementById('setCleanOn');
+      var cOff = document.getElementById('setCleanOff');
+      if (cOn) cOn.classList.toggle('on', cleanUi);
+      if (cOff) cOff.classList.toggle('on', !cleanUi);
+      if (silent) return;
+      showModeToast(cleanUi
+        ? '🧼 清爽模式：已隐藏快捷工具、时间/天气、主题与设置（Ctrl + 空格 恢复，刷新后保持）'
+        : '↩️ 已恢复：快捷工具 / 时间天气 / 主题 / 设置（刷新后保持）');
+    }
+    function toggleCleanUi() { setCleanUi(!cleanUi); }
+    window.setCleanUi = setCleanUi;
+    window.toggleCleanUi = toggleCleanUi;
+    window.loadCleanUi = loadCleanUi;
+    loadCleanUi();
+
+    var ctrlWinHeld = false;
+    document.addEventListener('keydown', function(e) {
+      var isModKey = (e.key === 'Control' || e.key === 'Meta' || e.key === 'OS' ||
+                      e.code === 'ControlLeft' || e.code === 'ControlRight' ||
+                      e.code === 'MetaLeft' || e.code === 'MetaRight');
+      // ① Ctrl + 空格：清爽模式开关（隐藏快捷工具 + 右上角时间/天气/主题 + 设置按钮，再按恢复）
+      if (e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault();
+        toggleCleanUi();
+        return;
+      }
+      // ② Ctrl + Win：展开 / 收起导航（只认「按下的是 Ctrl 或 Win 本身」，避免 Ctrl+Win+方向键这类系统组合误触）
+      if (e.ctrlKey && e.metaKey && !e.altKey && !e.shiftKey && isModKey) {
+        e.preventDefault();
+        if (!ctrlWinHeld) {
+          ctrlWinHeld = true;
+          toggleAllContent();
+          showModeToast(allHidden ? '📕 已收起导航（Ctrl + Win 展开）' : '📖 已展开导航（Ctrl + Win 收起）');
+        }
+      }
+    }, true);
+    document.addEventListener('keyup', function(e) {
+      if (e.key === 'Control' || e.key === 'Meta' || e.key === 'OS') ctrlWinHeld = false;
+    }, true);
+    window.addEventListener('blur', function() { ctrlWinHeld = false; });
+
     function toggleAllContent() {
       allHidden = !allHidden;
       if (allHidden) {
@@ -4266,7 +4382,9 @@
 
     document.getElementById('searchInput').addEventListener('input', function() {
       var sb = document.querySelector('.search-box');
-      if (searchMode === 'focus') {            // 专注搜索：不匹配本站关键词、不展开分类，导航保持折叠
+      // 专注搜索只在「导航收起」时生效。一旦导航是展开的（用户这时的目的是挑网站），
+      // 输入就直接走全检索：跨全部分类过滤卡片，不会因为选了专注搜索就"展开了却搜不到"。
+      if (searchMode === 'focus' && document.body.classList.contains('all-hidden')) {
         handleFocusSearchInput(sb);
         return;
       }
@@ -5188,8 +5306,12 @@
           else right += rtTabHtml(t);
         });
       }
-      if (edge) edge.innerHTML = right;
-      if (edgeL) edgeL.innerHTML = left;
+      // 工具图标写进内层 .rt-tabs：内层负责「高度封顶 + 滚动」，外层只负责贴边居中定位。
+      // 这样工具再多，第一条也永远在右上角时钟区下方，不会和日期/天气叠在一起。
+      var tabsR = document.getElementById('rtEdgeTabs');
+      var tabsL = document.getElementById('rtEdgeLeftTabs');
+      if (tabsR) tabsR.innerHTML = right; else if (edge) edge.innerHTML = right;
+      if (tabsL) tabsL.innerHTML = left; else if (edgeL) edgeL.innerHTML = left;
       document.body.classList.toggle('rt-left-on', !!left);
       document.body.classList.toggle('rt-right-on', !!right);
       applyTodoBadge();
@@ -5271,6 +5393,9 @@
       applySearchModeUi();      // 搜索模式 chip + 说明文案
       applySearchKeepUi();      // 搜索后是否清空输入框
       applySearchAdvUi();       // 高级搜索 chip/输入框回显
+      refreshCfgUrlUi();        // 「更新已保存的网络配置 / 忘记地址」按钮回显
+      on('setCleanOn', cleanUi);
+      on('setCleanOff', !cleanUi);
       var ft = $('setFreqToggle');
       if (ft) ft.classList.toggle('on', freqVisible);
       var fc = $('setFreqCount');
@@ -5440,34 +5565,141 @@
       e.target.value = '';
     }
 
-    function importFromUrl() {
-      var url = prompt('请输入JSON配置文件的网络地址（URL）：', '');
-      if (!url || !url.trim()) return;
-      url = url.trim();
-      if (!/^https?:\/\//.test(url)) { alert('请输入以 http:// 或 https:// 开头的合法网址'); return; }
+    // ===== 记住「配置文件的网络地址」：导出后可一键记住，下次一键更新，也可随时忘掉/替换 =====
+    var CFG_URL_KEY = 'nav_cfg_url';
+    var CFG_URL_AT_KEY = 'nav_cfg_url_at';
+
+    function getSavedCfgUrl() {
+      try {
+        var u = localStorage.getItem(CFG_URL_KEY) || '';
+        return /^https?:\/\//.test(u) ? u : '';
+      } catch(e) { return ''; }
+    }
+    function savedCfgUrlAt() {
+      try { return parseInt(localStorage.getItem(CFG_URL_AT_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+    }
+    function setSavedCfgUrl(url) {
+      url = String(url || '').trim();
+      if (!/^https?:\/\//.test(url)) return false;
+      try {
+        localStorage.setItem(CFG_URL_KEY, url);
+        localStorage.setItem(CFG_URL_AT_KEY, String(Date.now()));
+      } catch(e) { return false; }
+      refreshCfgUrlUi();
+      return true;
+    }
+    function forgetSavedCfgUrl(skipConfirm) {
+      if (!getSavedCfgUrl()) { refreshCfgUrlUi(); return; }
+      if (!skipConfirm && !confirm('只是忘掉这个网络地址（本机配置不会变），之后想用再点「🌐 导入网络文件」重新填即可。\n\n确定忘记吗？')) return;
+      try {
+        localStorage.removeItem(CFG_URL_KEY);
+        localStorage.removeItem(CFG_URL_AT_KEY);
+      } catch(e) {}
+      refreshCfgUrlUi();
+    }
+    // 设置面板里的「更新 / 忘记」按钮与地址回显
+    function refreshCfgUrlUi() {
+      var url = getSavedCfgUrl();
+      var row = document.getElementById('cfgUrlRow');
+      var hint = document.getElementById('cfgUrlHint');
+      var text = document.getElementById('cfgUrlText');
+      var btnUp = document.getElementById('cfgUrlUpdateBtn');
+      var btnDel = document.getElementById('cfgUrlForgetBtn');
+      if (row) row.style.display = url ? '' : 'none';
+      if (hint) hint.style.display = url ? '' : 'none';
+      if (btnUp) btnUp.style.display = url ? '' : 'none';
+      if (btnDel) btnDel.style.display = url ? '' : 'none';
+      if (text) text.textContent = url || '';
+      if (url) {
+        var at = savedCfgUrlAt();
+        var when = '';
+        try {
+          if (at) {
+            var d = new Date(at);
+            when = '（' + d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) +
+                   ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ' 记录）';
+          }
+        } catch(e) {}
+        var titleEl = document.getElementById('cfgUrlWhen');
+        if (titleEl) titleEl.textContent = when;
+      }
+    }
+    // 统一的网络抓取（带超时）：成功回调 cb(null, text)，失败 cb(msg)
+    function fetchCfgText(url, cb) {
       try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.timeout = 15000;
         xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            processImportJson(xhr.responseText);
-          } else {
-            alert('获取网络文件失败：HTTP ' + xhr.status);
-          }
+          if (xhr.status >= 200 && xhr.status < 300) cb(null, xhr.responseText);
+          else cb('获取网络文件失败：HTTP ' + xhr.status);
         };
-        xhr.onerror = function() { alert('网络请求失败，请检查网址是否正确、是否允许跨域访问'); };
-        xhr.ontimeout = function() { alert('请求超时，请检查网络连接'); };
+        xhr.onerror = function() { cb('网络请求失败，请检查网址是否正确、是否允许跨域访问'); };
+        xhr.ontimeout = function() { cb('请求超时，请检查网络连接'); };
         xhr.send();
       } catch(err) {
-        alert('请求发送失败：' + err.message);
+        cb('请求发送失败：' + (err && err.message));
       }
+    }
+
+    function importFromUrl() {
+      var saved = getSavedCfgUrl();
+      var url = prompt('请输入JSON配置文件的网络地址（URL）：', saved || '');
+      if (!url || !url.trim()) return;
+      url = url.trim();
+      if (!/^https?:\/\//.test(url)) { alert('请输入以 http:// 或 https:// 开头的合法网址'); return; }
+      fetchCfgText(url, function(err, text) {
+        if (err) { alert(err); return; }
+        if (url !== saved && confirm('配置已抓到。是否记住这个网络地址？\n记下之后，「📥 导入/导出」里会多一个「🔄 更新已保存的网络配置」，以后一个按钮就能同步最新配置。')) {
+          setSavedCfgUrl(url);
+        }
+        processImportJson(text);
+      });
+    }
+
+    // 一键更新：重新读取已保存地址上的配置并覆盖本机设置（覆盖前先确认）
+    function updateSavedCfg() {
+      var url = getSavedCfgUrl();
+      if (!url) { refreshCfgUrlUi(); alert('还没有保存网络地址。先导出配置，或点「🌐 导入网络文件」填一次地址。'); return; }
+      if (!confirm('将从以下地址重新读取配置并覆盖本机设置：\n' + url + '\n\n确定更新吗？')) return;
+      var hint = document.getElementById('cfgUrlHint');
+      if (hint) hint.textContent = '正在读取 ' + url + ' …';
+      fetchCfgText(url, function(err, text) {
+        refreshCfgUrlUi();
+        if (err) { alert(err + '\n\n（地址仍然记着，稍后可以再点一次「🔄 更新已保存的网络配置」）'); return; }
+        processImportJson(text);
+      });
+    }
+
+    // 导出成功后的「要不要记住这份配置的网络地址」
+    function askRememberCfgUrlAfterExport() {
+      var cur = getSavedCfgUrl();
+      if (!confirm('配置文件已下载到本机。\n\n如果你已经（或准备）把它上传到某个网络地址（GitHub Raw / Gitee / 自己的服务器 / 云盘直链），可以现在把这个地址记下来 —— 以后在「📥 导入/导出」里点「🔄 更新已保存的网络配置」就能一键同步。\n\n现在记录地址吗？')) return;
+      var url = prompt('请输入这份配置文件所在的网络地址（URL）：', cur || '');
+      if (!url || !url.trim()) return;
+      url = url.trim();
+      if (!/^https?:\/\//.test(url)) { alert('请输入以 http:// 或 https:// 开头的合法网址（地址没有被记录）'); return; }
+      if (setSavedCfgUrl(url)) alert('已记住这个地址：\n' + url + '\n\n以后在「📥 导入/导出」里点「🔄 更新已保存的网络配置」即可一键读取最新配置。');
     }
 
     function processImportJson(raw) {
       try {
         var data = JSON.parse(raw);
         if (!data || typeof data !== 'object') { alert('JSON格式不正确'); return; }
+        var res = applyConfigData(data);
+        if (!res.ok) { alert('配置内容不完整，未做任何修改'); return; }
+        alert('导入成功！共 ' + res.msgs.join('、') + '。页面将刷新以应用配置。');
+        location.reload();
+      } catch(err) {
+        alert('JSON解析失败：' + err.message);
+      }
+    }
+
+    // 只应用配置数据（不弹窗、不刷新）：本地导入 / 网络导入 / 「更新已保存的网络配置」共用同一套规则，
+    // 也让 UI 自检可以直接调用它验证「导出→导入」是否完整往返。
+    function applyConfigData(data) {
+      if (!data || typeof data !== 'object') return { ok: false, msgs: [] };
+      try {
         var customCats = [];
         if (data.categories && Array.isArray(data.categories)) {
             data.categories.forEach(function(cat) {
@@ -5570,8 +5802,13 @@
             if (settings.theme && (settings.theme === 'light' || settings.theme === 'dark')) {
               localStorage.setItem('nav_theme', settings.theme);
             }
-            if (settings.wallpaper && (settings.wallpaper === 'bing' || settings.wallpaper === 'default' || settings.wallpaper === 'custom' || settings.wallpaper === 'local')) {
+            if (settings.wallpaper && (settings.wallpaper === 'default' || settings.wallpaper === 'earth' || settings.wallpaper === 'bing' || settings.wallpaper === 'custom' || settings.wallpaper === 'local')) {
               localStorage.setItem('nav_wallpaper', settings.wallpaper);
+              // 导入视为「用户显式选择」：写好换代标记，否则地球实况会被默认壁纸的一次性迁移改回去
+              try {
+                localStorage.setItem('nav_wp_ver', '36');
+                localStorage.setItem('nav_wp_default_migrated', '1');
+              } catch(e) {}
             }
             if (typeof settings.customWallpaper === 'string' && settings.customWallpaper.length > 0) {
               localStorage.setItem('nav_custom_wp', settings.customWallpaper);
@@ -5612,7 +5849,89 @@
               try { localStorage.setItem('nav_search_adv', JSON.stringify(advIn)); } catch(e) {}
             }
           }
+          // —— 浏览器侧配置：换浏览器/换电脑时必须能完整带走（快捷工具左/右侧别、侧边栏、分类折叠、当前引擎、浮窗位置…）——
           var msgParts = [];
+          var ui = data.ui;
+          var uiCount = 0;
+          if (ui && typeof ui === 'object') {
+            if (ui.rtSides && typeof ui.rtSides === 'object') {
+              var sidesIn = {};
+              Object.keys(ui.rtSides).forEach(function(k) {
+                if (typeof k === 'string' && k.length <= 60) {
+                  sidesIn[k] = ui.rtSides[k] === 'left' ? 'left' : 'right';
+                }
+              });
+              try { localStorage.setItem('nav_rt_sides', JSON.stringify(sidesIn)); } catch(e) {}
+              if (Object.keys(sidesIn).length) uiCount++;
+            }
+            if (ui.sidebar === 'collapsed' || ui.sidebar === 'expanded') {
+              try { localStorage.setItem('nav_sidebar', ui.sidebar); } catch(e) {}
+              uiCount++;
+            }
+            if (ui.catCollapse && typeof ui.catCollapse === 'object') {
+              var ccIn = {};
+              Object.keys(ui.catCollapse).forEach(function(k) {
+                if (typeof k === 'string' && k.length <= 60 && ui.catCollapse[k]) ccIn[k] = true;
+              });
+              try { localStorage.setItem('nav_cat_collapse', JSON.stringify(ccIn)); } catch(e) {}
+              uiCount++;
+            }
+            if (typeof ui.engine === 'string' && /^[a-z0-9_-]{1,32}$/i.test(ui.engine)) {
+              try { localStorage.setItem('nav_engine', ui.engine); } catch(e) {}
+              uiCount++;
+            }
+            if (typeof ui.wpExport === 'boolean') {
+              try { localStorage.setItem('nav_wp_export', ui.wpExport ? '1' : '0'); } catch(e) {}
+              uiCount++;
+            }
+            if (typeof ui.cleanUi === 'boolean') {
+              // 清爽模式也随配置搬：导入后刷新即生效（不走 setCleanUi，避免加载期弹提示）
+              try { localStorage.setItem('nav_clean_ui', ui.cleanUi ? '1' : '0'); } catch(e) {}
+              uiCount++;
+            }
+            if (Array.isArray(ui.wpPool)) {
+              var poolIn = ui.wpPool.filter(function(u) { return typeof u === 'string' && u.length <= 500; }).slice(0, 80);
+              if (poolIn.length) { try { localStorage.setItem('nav_wp_pool', JSON.stringify(poolIn)); } catch(e) {} uiCount++; }
+            }
+            if (ui.pos && typeof ui.pos === 'object') {
+              Object.keys(ui.pos).forEach(function(k) {
+                if (['todo', 'note', 'pomo', 'conv', 'weather'].indexOf(k) < 0) return;
+                var v = ui.pos[k];
+                if (typeof v === 'string' && v.length <= 400) {
+                  try { localStorage.setItem('nav_' + k + '_pos', v); } catch(e) {}
+                  uiCount++;
+                }
+              });
+            }
+            // 记住的「配置网络地址」也随配置迁移：新电脑导入后同样能一键更新
+            if (typeof ui.configUrl === 'string' && /^https?:\/\//.test(ui.configUrl) && ui.configUrl.length <= 2048) {
+              try {
+                localStorage.setItem('nav_cfg_url', ui.configUrl);
+                localStorage.setItem('nav_cfg_url_at', String(Date.now()));
+                refreshCfgUrlUi();
+              } catch(e) {}
+              uiCount++;
+            }
+          }
+          // —— 悬浮窗里的内容（待办 / 记事本 / 番茄钟统计）：「换电脑不想丢」的数据也一起搬 ——
+          var content = (data.content && typeof data.content === 'object') ? data.content : {};
+          // 兼容配置编辑器导出的扁平字段（todoItems / noteContent / pomoStats 直接写在顶层）
+          var contentTodos = Array.isArray(content.todoItems) ? content.todoItems
+                            : (Array.isArray(data.todoItems) ? data.todoItems : null);
+          var contentNote = (typeof content.note === 'string') ? content.note
+                           : ((typeof data.noteContent === 'string') ? data.noteContent : null);
+          var contentPomo = (content.pomoStats && typeof content.pomoStats === 'object') ? content.pomoStats
+                          : ((data.pomoStats && typeof data.pomoStats === 'object') ? data.pomoStats : null);
+          if (contentTodos) {
+            try { localStorage.setItem('nav_todo_items', JSON.stringify(contentTodos)); } catch(e) {}
+          }
+          if (contentNote !== null) {
+            try { localStorage.setItem('nav_note_content', contentNote); } catch(e) {}
+          }
+          if (contentPomo) {
+            try { localStorage.setItem('nav_pomo_stats', JSON.stringify(contentPomo)); } catch(e) {}
+          }
+          if (uiCount) msgParts.push('浏览器侧设置 ' + uiCount + ' 项');
           if (data.rtTools && Array.isArray(data.rtTools)) {
             saveRtCustom(data.rtTools);
             msgParts.push(data.rtTools.length + ' 个快捷工具');
@@ -5622,16 +5941,15 @@
           if (addSites) { var c = 0; Object.keys(addSites).forEach(function(k) { c += addSites[k].length; }); if (c) msgParts.push('添加 ' + c + ' 个站点到已有分类'); }
           if (removeSites) { var c = 0; Object.keys(removeSites).forEach(function(k) { c += removeSites[k].length; }); if (c) msgParts.push('移除 ' + c + ' 个站点'); }
           if (settings) msgParts.push('设置项已应用');
-          alert('导入成功！共 ' + msgParts.join('、') + '。页面将刷新以应用配置。');
-          location.reload();
+          return { ok: true, msgs: msgParts };
         } catch(err) {
-          alert('JSON解析失败：' + err.message);
+          return { ok: false, msgs: [], error: (err && err.message) || '解析失败' };
         }
       }
 
       function restoreDefaults() {
         if (!confirm('确定要恢复默认导航吗？这将清除所有自定义导入的分类、导航和搜索引擎，且无法撤销。')) return;
-        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_keep', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_fav', 'nav_fav_clicks'];
+        var keys = ['nav_custom_cats', 'nav_custom_engines', 'nav_hidden_engines', 'nav_hidden_cats', 'nav_freq_visible', 'nav_freq_count', 'nav_wallpaper', 'nav_wp_default_migrated', 'nav_custom_wp', 'nav_bing_wp_url', 'nav_theme', 'nav_landscape_date', 'nav_landscape_idx', 'nav_wp_last_scan', 'nav_wp_max', 'nav_added_sites', 'nav_removed_sites', 'nav_wp_export', 'nav_local_wp', 'nav_all_hidden', 'nav_fold_mode', 'nav_fy4_cache', 'nav_live_scope', 'nav_live_map_cache', 'nav_earth_scope', 'nav_cat_order', 'nav_cat_order_ver', 'nav_cat_sort_mode', 'nav_cat_sort_migrated', 'nav_search_mode', 'nav_search_keep', 'nav_search_adv', 'nav_vpn_mode_ver', 'nav_notepad', 'nav_notepad_imgs', 'nav_rt_custom_tools', 'nav_rt_enabled', 'nav_rt_sides', 'nav_sidebar', 'nav_cat_collapse', 'nav_cfg_url', 'nav_cfg_url_at', 'nav_clean_ui', 'nav_fav', 'nav_fav_clicks'];
       keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       // 大对象在 IndexedDB 里，也要一起清（否则"恢复默认"后本地壁纸/卫星缓存还在）
       try {
@@ -5651,12 +5969,15 @@
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'auroraus_config_' + new Date().toISOString().slice(0,10) + '.json';
+        var fname = 'auroraus_config_' + new Date().toISOString().slice(0,10) + '.json';
+        a.download = fname;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        alert('配置导出成功！已下载 auroraus_config_' + new Date().toISOString().slice(0,10) + '.json');
+        alert('配置导出成功！已下载 ' + fname);
+        // 用户要求：导出成功后问一下「要不要把这个配置的网络地址记下来」，记下就能一键更新
+        askRememberCfgUrlAfterExport();
       });
       return true;
     }
@@ -5751,6 +6072,60 @@
         var favClkExport = JSON.parse(localStorage.getItem('nav_fav_clicks') || '{}');
         if (favClkExport && Object.keys(favClkExport).length) data.favClicks = favClkExport;
       } catch(e) {}
+
+      // —— 浏览器侧配置：保证「换浏览器/换电脑导入后一模一样」——
+      var ui = {};
+      try {
+        var sidesExport = JSON.parse(localStorage.getItem('nav_rt_sides') || '{}');
+        if (sidesExport && Object.keys(sidesExport).length) ui.rtSides = sidesExport;
+      } catch(e) {}
+      try {
+        var sbExport = localStorage.getItem('nav_sidebar');
+        if (sbExport === 'collapsed' || sbExport === 'expanded') ui.sidebar = sbExport;
+      } catch(e) {}
+      try {
+        var ccExport = JSON.parse(localStorage.getItem('nav_cat_collapse') || '{}');
+        if (ccExport && Object.keys(ccExport).length) ui.catCollapse = ccExport;
+      } catch(e) {}
+      try {
+        var engExport = localStorage.getItem('nav_engine');
+        if (engExport) ui.engine = engExport;
+      } catch(e) {}
+      try { ui.wpExport = localStorage.getItem('nav_wp_export') === '1'; } catch(e) {}
+      try { ui.cleanUi = localStorage.getItem('nav_clean_ui') === '1'; } catch(e) {}
+      try {
+        var poolExport = JSON.parse(localStorage.getItem('nav_wp_pool') || '[]');
+        if (Array.isArray(poolExport) && poolExport.length) ui.wpPool = poolExport;
+      } catch(e) {}
+      var posExport = {};
+      ['todo', 'note', 'pomo', 'conv', 'weather'].forEach(function(k) {
+        try {
+          var pv = localStorage.getItem('nav_' + k + '_pos');
+          if (pv) posExport[k] = pv;
+        } catch(e) {}
+      });
+      if (Object.keys(posExport).length) ui.pos = posExport;
+      try {
+        var cfgUrlExport = getSavedCfgUrl();
+        if (cfgUrlExport) ui.configUrl = cfgUrlExport;
+      } catch(e) {}
+      if (Object.keys(ui).length) data.ui = ui;
+
+      // —— 悬浮窗内容：待办 / 记事本 / 番茄钟统计（换电脑不想丢）——
+      var content = {};
+      try {
+        var todoExport = JSON.parse(localStorage.getItem('nav_todo_items') || '[]');
+        if (Array.isArray(todoExport) && todoExport.length) content.todoItems = todoExport;
+      } catch(e) {}
+      try {
+        var noteExport = localStorage.getItem('nav_note_content');
+        if (noteExport) content.note = noteExport;
+      } catch(e) {}
+      try {
+        var pomoExport = JSON.parse(localStorage.getItem('nav_pomo_stats') || '{}');
+        if (pomoExport && Object.keys(pomoExport).length) content.pomoStats = pomoExport;
+      } catch(e) {}
+      if (Object.keys(content).length) data.content = content;
 
       return data;
     }
@@ -6877,6 +7252,18 @@
       if (e.key === 'Escape') {
         clearSearchInput();
       }
+      // Ctrl + ← / →：按显示顺序切到上 / 下一个可用搜索引擎（取代旧版「单独按 Ctrl / Alt」）
+      if (e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        switchEngineByStep(e.key === 'ArrowRight' ? 1 : -1);
+        return;
+      }
+      // Alt + V：显示 / 隐藏「需 VPN」的站点与搜索引擎（点一下切换）
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        toggleVpnQuick();
+        return;
+      }
       if (e.key === 'k' && e.ctrlKey) {
         e.preventDefault();
         document.getElementById('searchInput').focus();
@@ -6888,9 +7275,8 @@
       }
     });
 
-    var ctrlAlone = false;
-    var altAlone = false;
-
+    // 按显示顺序切换搜索引擎 / 显示隐藏「需 VPN」（用户 2026-10-17 指定的快捷键）
+    // Ctrl + →  下一个可用引擎；Ctrl + ←  上一个可用引擎；Alt + V  显示/隐藏需 VPN 的站点与搜索引擎
     function switchEngineByStep(step) {
       var engine = getSelectedEngine();
       var visibleKeys = getVisibleEngineKeys();
@@ -6906,25 +7292,18 @@
       return visibleKeys[next];
     }
 
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Control') { ctrlAlone = true; altAlone = false; return; }
-      if (e.key === 'Alt') { altAlone = true; ctrlAlone = false; e.preventDefault(); return; }
-      if (e.ctrlKey && e.key !== 'Control' && e.key !== 'Alt') ctrlAlone = false;
-      if (e.altKey && e.key !== 'Alt') altAlone = false;
-      if (!e.ctrlKey && e.key !== 'Control') ctrlAlone = false;
-      if (!e.altKey && e.key !== 'Alt') altAlone = false;
-    });
-    document.addEventListener('keyup', function(e) {
-      if (e.key === 'Control' && ctrlAlone) {
-        ctrlAlone = false;
-        switchEngineByStep(1);
-      }
-      if (e.key === 'Alt' && altAlone) {
-        altAlone = false;
-        switchEngineByStep(-1);
-      }
-    });
-    window.addEventListener('blur', function() { ctrlAlone = false; altAlone = false; });
+    // 点一下就在「显示」和「隐藏」之间切换（与右上角 显示/隐藏 按钮同一套逻辑：固定为 always / off）
+    function toggleVpnQuick() {
+      var showing = (vpnMode === 'auto') ? !!vpnOn : (vpnMode !== 'off');
+      var next = showing ? 'off' : 'always';
+      setVpnMode(next);
+      showModeToast(next === 'always'
+        ? '🌐 已显示「需 VPN」的站点与搜索引擎（Alt + V 切换）'
+        : '🙈 已隐藏「需 VPN」的站点与搜索引擎（Alt + V 切换）');
+      return next;
+    }
+    window.toggleVpnQuick = toggleVpnQuick;
+    window.switchEngineByStep = switchEngineByStep;
 
     function openFeedbackModal() {
       document.getElementById('feedbackModal').classList.add('visible');
