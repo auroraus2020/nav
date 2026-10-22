@@ -4389,10 +4389,16 @@
         return;
       }
       if (!this.value.trim()) {
-        document.querySelectorAll('.nav-card').forEach(function(c) { c.style.display = ''; });
-        document.querySelectorAll('.category-section').forEach(function(s) {
-          s.style.display = hiddenCategories[s.id] ? 'none' : '';
-        });
+        // 退出搜索：把卡片显隐交还给「站点/VPN 规则」并恢复「仅显示选中分类」，
+        // 同时复位 ixSearching（否则只显示一类的状态会永久失效——这是用户 2026-10-17 报的 bug）
+        if (typeof exitNavFilter === 'function') {
+          exitNavFilter();
+        } else {
+          document.querySelectorAll('.nav-card').forEach(function(c) { c.style.display = ''; });
+          document.querySelectorAll('.category-section').forEach(function(s) {
+            s.style.display = hiddenCategories[s.id] ? 'none' : '';
+          });
+        }
         if (allHidden) document.body.classList.add('all-hidden');
         sb.classList.remove('expanded', 'tall', 'multiline');
       } else {
@@ -6879,6 +6885,10 @@
     // ---------- 仅显示选中分类（默认关闭；搜索时自动跨全部分类） ----------
     function applyOnlyActive() {
       var on = ixGetBool('nav_only_active', false);
+      // 兜底：输入框已经是空的，就不该还挂着「正在搜索」的标记 ——
+      // 否则一次搜索会把「仅显示选中分类」永久关掉（用户 2026-10-17 报的 bug）。
+      var box = document.getElementById('searchInput');
+      if (ixSearching && box && !String(box.value || '').trim()) ixSearching = false;
       document.body.classList.toggle('only-active', on && !ixSearching);
       var chip = document.getElementById('setOnlyActiveToggle');
       if (chip) chip.classList.toggle('on', on);
