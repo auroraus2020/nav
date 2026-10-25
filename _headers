@@ -1,14 +1,20 @@
 # 缓存策略（Netlify / Cloudflare Pages 等支持 _headers 的静态托管直接生效）
-# 目的：不变的大文件（壁纸/图标/字体）让浏览器与 CDN 长期缓存，页面本体永远取最新。
+#
+# 2026-10-25 线上实测（tools/probe_live_first_visit.py + curl）：
+#   · /assets/*（immutable，走 CDN 边缘缓存）：50KB 只要 0.65s
+#   · / 与 /index.html（no-cache，每次回源）：489KB/87.7KB brotli，源站上行只有 ≈3KB/s → 首次访问 30~60s
+# 结论：页面本体必须允许「CDN 边缘缓存 + 后台更新」，否则每个访客都在等源站慢慢吐 87KB。
+# 取舍：页面更新最多延迟 s-maxage（10 分钟）见到；需要立刻生效就在 CDN 上清一次缓存。
+# 浏览器端仍是 max-age=0（每次向边缘确认，304 极快）；sw.js 里的导航缓存另有 10 分钟"新鲜即秒开"策略。
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
 /index.html
-  Cache-Control: no-cache
+  Cache-Control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400
 
 /
-  Cache-Control: no-cache
+  Cache-Control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400
 
 /sw.js
   Cache-Control: no-cache
